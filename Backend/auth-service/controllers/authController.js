@@ -305,6 +305,20 @@ exports.getProfile = async (req, res) => {
 // ✏️ Update Profile
 exports.updateProfile = async (req, res) => {
   try {
+    // Debug logging
+    console.log("Update Profile - Headers:", req.headers);
+    console.log("Update Profile - Body:", req.body);
+    console.log("Update Profile - Content-Type:", req.get("Content-Type"));
+
+    // Check if body exists
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body is empty or invalid",
+        received: req.body,
+      });
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({

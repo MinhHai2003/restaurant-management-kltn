@@ -1,0 +1,478 @@
+{
+  "info": {
+    "name": "Restaurant Management System API",
+    "description": "Collection for testing all microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost"
+    },
+    {
+      "key": "customerToken",
+      "value": ""
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "menuItemId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "orderNumber",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Customer Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5002/health",
+              "host": ["{{baseUrl}}"],
+              "port": "5002",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Menu Service Health", 
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5003/health",
+              "host": ["{{baseUrl}}"],
+              "port": "5003",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Inventory Service Health",
+          "request": {
+            "method": "GET", 
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5004/health",
+              "host": ["{{baseUrl}}"],
+              "port": "5004",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Order Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5005/health", 
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Service",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('customerId', response.customer._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser123\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"Nguyen Van Test\",\n  \"phoneNumber\": \"0123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5002/api/customers/register",
+              "host": ["{{baseUrl}}"],
+              "port": "5002",
+              "path": ["api", "customers", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();", 
+                  "    pm.environment.set('customerToken', response.token);",
+                  "    pm.environment.set('customerId', response.customer._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5002/api/customers/login",
+              "host": ["{{baseUrl}}"],
+              "port": "5002", 
+              "path": ["api", "customers", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:5002/api/customers/profile",
+              "host": ["{{baseUrl}}"],
+              "port": "5002",
+              "path": ["api", "customers", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Add Customer Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"street\": \"123 Nguyen Trai\",\n  \"district\": \"District 1\",\n  \"city\": \"Ho Chi Minh City\",\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5002/api/customers/addresses",
+              "host": ["{{baseUrl}}"],
+              "port": "5002",
+              "path": ["api", "customers", "addresses"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Menu Service",
+      "item": [
+        {
+          "name": "Create Menu Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('menuItemId', response.menuItem._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pho Bo\",\n  \"description\": \"Traditional Vietnamese beef noodle soup\",\n  \"price\": 50000,\n  \"category\": \"noodles\",\n  \"ingredients\": [\"beef\", \"rice noodles\", \"broth\", \"herbs\"],\n  \"isAvailable\": true,\n  \"preparationTime\": 15\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5003/api/menu",
+              "host": ["{{baseUrl}}"],
+              "port": "5003",
+              "path": ["api", "menu"]
+            }
+          }
+        },
+        {
+          "name": "Get All Menu Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5003/api/menu",
+              "host": ["{{baseUrl}}"],
+              "port": "5003",
+              "path": ["api", "menu"]
+            }
+          }
+        },
+        {
+          "name": "Search Menu Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5003/api/menu/search?query=pho",
+              "host": ["{{baseUrl}}"],
+              "port": "5003", 
+              "path": ["api", "menu", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "pho"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Menu by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5003/api/menu/category/noodles",
+              "host": ["{{baseUrl}}"],
+              "port": "5003",
+              "path": ["api", "menu", "category", "noodles"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory Service",
+      "item": [
+        {
+          "name": "Add Inventory Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemName\": \"Pho Bo\",\n  \"currentStock\": 100,\n  \"minStock\": 10,\n  \"maxStock\": 200,\n  \"unit\": \"serving\",\n  \"supplier\": \"Local Kitchen\",\n  \"cost\": 35000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5004/api/inventory",
+              "host": ["{{baseUrl}}"],
+              "port": "5004",
+              "path": ["api", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "Get All Inventory",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5004/api/inventory",
+              "host": ["{{baseUrl}}"],
+              "port": "5004",
+              "path": ["api", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "Get Low Stock Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5004/api/inventory/low-stock",
+              "host": ["{{baseUrl}}"],
+              "port": "5004",
+              "path": ["api", "inventory", "low-stock"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('orderId', response.order._id);",
+                  "    pm.environment.set('orderNumber', response.order.orderNumber);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"menuItem\": \"{{menuItemId}}\",\n      \"quantity\": 2,\n      \"specialInstructions\": \"Extra herbs please\"\n    }\n  ],\n  \"deliveryAddress\": {\n    \"street\": \"123 Nguyen Trai\",\n    \"district\": \"District 1\",\n    \"city\": \"Ho Chi Minh City\",\n    \"phoneNumber\": \"0123456789\"\n  },\n  \"paymentMethod\": \"cash\",\n  \"notes\": \"Call when arrived\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5005/api/orders",
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:5005/api/orders",
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Track Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:5005/api/orders/track/{{orderNumber}}",
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["api", "orders", "track", "{{orderNumber}}"]
+            }
+          }
+        },
+        {
+          "name": "Rate Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Delicious food, fast delivery!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5005/api/orders/{{orderId}}/rate",
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["api", "orders", "{{orderId}}", "rate"]
+            }
+          }
+        },
+        {
+          "name": "Reorder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryAddress\": {\n    \"street\": \"456 Le Loi\",\n    \"district\": \"District 3\",\n    \"city\": \"Ho Chi Minh City\",\n    \"phoneNumber\": \"0987654321\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:5005/api/orders/{{orderId}}/reorder",
+              "host": ["{{baseUrl}}"],
+              "port": "5005",
+              "path": ["api", "orders", "{{orderId}}", "reorder"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

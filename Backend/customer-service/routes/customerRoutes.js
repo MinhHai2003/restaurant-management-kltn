@@ -28,4 +28,7 @@ router.delete(
 // 🏆 Loyalty Program
 router.get("/loyalty", authenticateCustomer, customerController.getLoyaltyInfo);
 
+// 🔗 Inter-Service Communication (for other microservices)
+router.get("/:customerId/info", customerController.getCustomerInfo);
+
 module.exports = router;

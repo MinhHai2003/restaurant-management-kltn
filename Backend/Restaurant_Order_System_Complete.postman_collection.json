@@ -1,0 +1,650 @@
+{
+  "info": {
+    "name": "Restaurant Order System - All Types",
+    "description": "Complete API collection for testing Pickup, Dine-in, and Delivery orders",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost",
+      "type": "string"
+    },
+    {
+      "key": "customerServicePort",
+      "value": "5002",
+      "type": "string"
+    },
+    {
+      "key": "orderServicePort",
+      "value": "5005",
+      "type": "string"
+    },
+    {
+      "key": "tableServicePort",
+      "value": "5006",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservationNumber",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tableId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pickupOrderNumber",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dineInOrderNumber",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    pm.collectionVariables.set('customerId', response.data.customer._id);",
+                  "    console.log('✅ Login successful, token saved');",
+                  "} else {",
+                  "    console.log('❌ Login failed');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{customerServicePort}}/api/customers/login",
+              "host": ["{{baseUrl}}"],
+              "port": "{{customerServicePort}}",
+              "path": ["api", "customers", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{customerServicePort}}/api/customers/profile",
+              "host": ["{{baseUrl}}"],
+              "port": "{{customerServicePort}}",
+              "path": ["api", "customers", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏃 PICKUP/TAKEAWAY Orders",
+      "item": [
+        {
+          "name": "Create Pickup Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('pickupOrderNumber', response.data.order.orderNumber);",
+                  "    console.log('✅ Pickup order created:', response.data.order.orderNumber);",
+                  "} else {",
+                  "    console.log('❌ Pickup order creation failed');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345a\",\n      \"name\": \"Phở Bò Tái\",\n      \"price\": 85000,\n      \"quantity\": 2,\n      \"customizations\": \"Ít hành\",\n      \"notes\": \"Không cần rau thơm\"\n    },\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345b\",\n      \"name\": \"Chả cá Lã Vọng\",\n      \"price\": 120000,\n      \"quantity\": 1\n    }\n  ],\n  \"customerName\": \"Nguyen Van A\",\n  \"phoneNumber\": \"0123456789\",\n  \"scheduledTime\": \"2025-08-09T19:30:00Z\",\n  \"pickupInstructions\": \"Gọi khi đến quầy\",\n  \"specialInstructions\": \"Đóng gói cẩn thận\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/pickup",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "pickup"]
+            }
+          }
+        },
+        {
+          "name": "Get All Pickup Orders (Staff)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/pickup?status=all&date=2025-08-09",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "pickup"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "date",
+                  "value": "2025-08-09"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Pickup Order as Ready",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Order ready for pickup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/pickup/{{pickupOrderNumber}}/ready",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "pickup", "{{pickupOrderNumber}}", "ready"]
+            }
+          }
+        },
+        {
+          "name": "Complete Pickup (Customer Picked Up)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickedUpBy\": \"Nguyen Van A\",\n  \"paymentMethod\": \"cash\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/pickup/{{pickupOrderNumber}}/complete",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "pickup", "{{pickupOrderNumber}}", "complete"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🍽️ DINE-IN Orders",
+      "item": [
+        {
+          "name": "1. Get Available Tables",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data.tables && response.data.tables.length > 0) {",
+                  "        pm.collectionVariables.set('tableId', response.data.tables[0]._id);",
+                  "        console.log('✅ Table selected:', response.data.tables[0].tableNumber);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/tables?capacity=4&location=indoor",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "tables"],
+              "query": [
+                {
+                  "key": "capacity",
+                  "value": "4"
+                },
+                {
+                  "key": "location",
+                  "value": "indoor"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Create Reservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('reservationNumber', response.data.reservation.reservationNumber);",
+                  "    console.log('✅ Reservation created:', response.data.reservation.reservationNumber);",
+                  "} else {",
+                  "    console.log('❌ Reservation creation failed');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tableId\": \"{{tableId}}\",\n  \"reservationDate\": \"2025-08-09\",\n  \"startTime\": \"19:00\",\n  \"endTime\": \"21:00\",\n  \"partySize\": 4,\n  \"occasion\": \"birthday\",\n  \"specialRequests\": \"Window seat preferred, birthday cake setup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations"]
+            }
+          }
+        },
+        {
+          "name": "3. Check-in at Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations/{{reservationNumber}}/checkin",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations", "{{reservationNumber}}", "checkin"]
+            }
+          }
+        },
+        {
+          "name": "4. Order Food at Table",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('dineInOrderNumber', response.data.order.orderNumber);",
+                  "    console.log('✅ Dine-in order created:', response.data.order.orderNumber);",
+                  "} else {",
+                  "    console.log('❌ Dine-in order creation failed');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationId\": \"{{reservationId}}\",\n  \"reservationNumber\": \"{{reservationNumber}}\",\n  \"items\": [\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345c\",\n      \"name\": \"Gỏi cuốn tôm thịt\",\n      \"price\": 45000,\n      \"quantity\": 2\n    },\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345d\",\n      \"name\": \"Bún bò Huế\",\n      \"price\": 95000,\n      \"quantity\": 4,\n      \"customizations\": \"Cay vừa\"\n    },\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345e\",\n      \"name\": \"Bánh flan\",\n      \"price\": 25000,\n      \"quantity\": 2\n    }\n  ],\n  \"specialInstructions\": \"Phục vụ gỏi cuốn trước, bánh flan sau cùng\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/dine-in",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "dine-in"]
+            }
+          }
+        },
+        {
+          "name": "5. Kitchen: Start Cooking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"cooking\",\n  \"note\": \"Started cooking at 19:15\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/dine-in/{{dineInOrderNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "dine-in", "{{dineInOrderNumber}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "6. Waiter: Serve Food",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"servedBy\": \"Waiter John\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/dine-in/{{dineInOrderNumber}}/serve",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "dine-in", "{{dineInOrderNumber}}", "serve"]
+            }
+          }
+        },
+        {
+          "name": "7. Get Orders for Reservation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations/{{reservationNumber}}/orders",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations", "{{reservationNumber}}", "orders"]
+            }
+          }
+        },
+        {
+          "name": "8. Complete Order (Finished Eating)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"note\": \"Customer finished eating\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders/dine-in/{{dineInOrderNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders", "dine-in", "{{dineInOrderNumber}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "9. Check-out from Restaurant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations/{{reservationNumber}}/checkout",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations", "{{reservationNumber}}", "checkout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚚 DELIVERY Orders (Existing)",
+      "item": [
+        {
+          "name": "Create Delivery Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345f\",\n      \"name\": \"Cơm tấm sườn bì chả\",\n      \"price\": 75000,\n      \"quantity\": 1\n    },\n    {\n      \"menuItemId\": \"64a1b2c3d4e5f6789012345g\",\n      \"name\": \"Trà sữa trân châu\",\n      \"price\": 35000,\n      \"quantity\": 2\n    }\n  ],\n  \"delivery\": {\n    \"type\": \"delivery\",\n    \"address\": {\n      \"full\": \"123 Nguyen Van Cu, Quan 5, TP.HCM\",\n      \"district\": \"Quan 5\",\n      \"city\": \"Ho Chi Minh\"\n    },\n    \"instructions\": \"Gọi trước khi đến, để ở bảo vệ\"\n  },\n  \"specialInstructions\": \"Không cay, ít đường\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics & Management",
+      "item": [
+        {
+          "name": "Customer Order History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/api/orders?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Customer Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Table Service Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/api/reservations/stats",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["api", "reservations", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛠️ Health Checks",
+      "item": [
+        {
+          "name": "Customer Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:{{customerServicePort}}/health",
+              "host": ["{{baseUrl}}"],
+              "port": "{{customerServicePort}}",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Order Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:{{orderServicePort}}/health",
+              "host": ["{{baseUrl}}"],
+              "port": "{{orderServicePort}}",
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Table Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}:{{tableServicePort}}/health",
+              "host": ["{{baseUrl}}"],
+              "port": "{{tableServicePort}}",
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

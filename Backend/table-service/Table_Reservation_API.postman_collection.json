@@ -1,0 +1,689 @@
+{
+	"info": {
+		"_postman_id": "table-reservation-api-test",
+		"name": "Table & Reservation API Tests",
+		"description": "Complete test suite for Restaurant Table & Reservation Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🚀 1. Health Checks",
+			"item": [
+				{
+					"name": "Table Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/health",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["health"]
+						}
+					}
+				},
+				{
+					"name": "Customer Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_CUSTOMER}}/health",
+							"host": ["{{BASE_URL_CUSTOMER}}"],
+							"path": ["health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🍽️ 2. Table Management",
+			"item": [
+				{
+					"name": "Get All Tables",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables"]
+						}
+					}
+				},
+				{
+					"name": "Search Tables - Tomorrow Evening",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/search?date=2025-08-09&startTime=19:00&endTime=21:00&partySize=4",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "search"],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-08-09"
+								},
+								{
+									"key": "startTime",
+									"value": "19:00"
+								},
+								{
+									"key": "endTime",
+									"value": "21:00"
+								},
+								{
+									"key": "partySize",
+									"value": "4"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has tables\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.tables).to.be.an('array');",
+									"});",
+									"",
+									"// Save first table ID for reservation",
+									"if (pm.response.json().data.tables.length > 0) {",
+									"    pm.environment.set(\"TABLE_ID\", pm.response.json().data.tables[0]._id);",
+									"    console.log(\"Saved TABLE_ID:\", pm.response.json().data.tables[0]._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Search VIP Tables",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/search?date=2025-08-09&startTime=18:00&endTime=22:00&partySize=8&location=private",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "search"],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-08-09"
+								},
+								{
+									"key": "startTime",
+									"value": "18:00"
+								},
+								{
+									"key": "endTime",
+									"value": "22:00"
+								},
+								{
+									"key": "partySize",
+									"value": "8"
+								},
+								{
+									"key": "location",
+									"value": "private"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Pet-Friendly Tables",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/search?date=2025-08-09&startTime=19:00&endTime=21:00&partySize=4&features=pet_friendly",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "search"],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-08-09"
+								},
+								{
+									"key": "startTime",
+									"value": "19:00"
+								},
+								{
+									"key": "endTime",
+									"value": "21:00"
+								},
+								{
+									"key": "partySize",
+									"value": "4"
+								},
+								{
+									"key": "features",
+									"value": "pet_friendly"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Table Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/stats",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "stats"]
+						}
+					}
+				},
+				{
+					"name": "Get Table Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/{{TABLE_ID}}",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "{{TABLE_ID}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Table Availability Calendar",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/availability?tableId={{TABLE_ID}}&startDate=2025-08-09&endDate=2025-08-15",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "availability"],
+							"query": [
+								{
+									"key": "tableId",
+									"value": "{{TABLE_ID}}"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-08-09"
+								},
+								{
+									"key": "endDate",
+									"value": "2025-08-15"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👤 3. Customer Authentication",
+			"item": [
+				{
+					"name": "Customer Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_CUSTOMER}}/api/customers/login",
+							"host": ["{{BASE_URL_CUSTOMER}}"],
+							"path": ["api", "customers", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.token).to.be.a('string');",
+									"});",
+									"",
+									"// Save token for subsequent requests",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.token) {",
+									"    pm.environment.set(\"CUSTOMER_TOKEN\", jsonData.data.token);",
+									"    console.log(\"Token saved:\", jsonData.data.token.substring(0, 20) + \"...\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Customer Register (Optional)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Customer\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"0123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_CUSTOMER}}/api/customers/register",
+							"host": ["{{BASE_URL_CUSTOMER}}"],
+							"path": ["api", "customers", "register"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📅 4. Reservation Management",
+			"item": [
+				{
+					"name": "Create Reservation - Birthday",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tableId\": \"{{TABLE_ID}}\",\n  \"reservationDate\": \"2025-08-09\",\n  \"startTime\": \"19:00\",\n  \"endTime\": \"21:00\",\n  \"partySize\": 4,\n  \"occasion\": \"birthday\",\n  \"specialRequests\": \"Window seat preferred, birthday cake setup\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Reservation created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.reservation.reservationNumber).to.be.a('string');",
+									"});",
+									"",
+									"// Save reservation number",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data.reservation.reservationNumber) {",
+									"    pm.environment.set(\"RESERVATION_NUMBER\", jsonData.data.reservation.reservationNumber);",
+									"    console.log(\"Reservation Number saved:\", jsonData.data.reservation.reservationNumber);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Create VIP Reservation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tableId\": \"689631c666f40973a42273b2\",\n  \"reservationDate\": \"2025-08-10\",\n  \"startTime\": \"18:00\",\n  \"endTime\": \"22:00\",\n  \"partySize\": 8,\n  \"occasion\": \"business\",\n  \"specialRequests\": \"Business meeting, need projector and private waiter\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Get Customer Reservations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Get Upcoming Reservations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations?upcoming=true",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"],
+							"query": [
+								{
+									"key": "upcoming",
+									"value": "true"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Specific Reservation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations/{{RESERVATION_NUMBER}}",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations", "{{RESERVATION_NUMBER}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Reservation",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"partySize\": 6,\n  \"specialRequests\": \"Need high chair for baby, birthday cake setup, vegetarian options\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations/{{RESERVATION_NUMBER}}",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations", "{{RESERVATION_NUMBER}}"]
+						}
+					}
+				},
+				{
+					"name": "Rate Reservation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"service\": 5,\n  \"ambiance\": 4,\n  \"overall\": 5,\n  \"comment\": \"Excellent service! The birthday setup was perfect and staff was very attentive.\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations/{{RESERVATION_NUMBER}}/rate",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations", "{{RESERVATION_NUMBER}}", "rate"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Reservation",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Family emergency, cannot attend\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations/{{RESERVATION_NUMBER}}",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations", "{{RESERVATION_NUMBER}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Reservation Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations/stats",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations", "stats"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🧪 5. Error Testing",
+			"item": [
+				{
+					"name": "❌ Create Reservation Without Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tableId\": \"{{TABLE_ID}}\",\n  \"reservationDate\": \"2025-08-09\",\n  \"startTime\": \"19:00\",\n  \"endTime\": \"21:00\",\n  \"partySize\": 4\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Error message about authorization\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "❌ Search with Invalid Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/tables/search?date=invalid-date&startTime=19:00&endTime=21:00&partySize=4",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "tables", "search"],
+							"query": [
+								{
+									"key": "date",
+									"value": "invalid-date"
+								},
+								{
+									"key": "startTime",
+									"value": "19:00"
+								},
+								{
+									"key": "endTime",
+									"value": "21:00"
+								},
+								{
+									"key": "partySize",
+									"value": "4"
+								}
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "❌ Reservation with Party Size Too Large",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{CUSTOMER_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tableId\": \"{{TABLE_ID}}\",\n  \"reservationDate\": \"2025-08-09\",\n  \"startTime\": \"19:00\",\n  \"endTime\": \"21:00\",\n  \"partySize\": 25\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL_TABLE}}/api/reservations",
+							"host": ["{{BASE_URL_TABLE}}"],
+							"path": ["api", "reservations"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL_TABLE",
+			"value": "http://localhost:5006",
+			"type": "string"
+		},
+		{
+			"key": "BASE_URL_CUSTOMER",
+			"value": "http://localhost:5002",
+			"type": "string"
+		}
+	]
+}

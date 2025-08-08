@@ -602,6 +602,41 @@ exports.setDefaultAddress = async (req, res) => {
   }
 };
 
+// 🔗 Get Customer Info for Other Services
+exports.getCustomerInfo = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+
+    const customer = await Customer.findById(customerId).select(
+      "name email phone"
+    );
+
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        _id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      },
+    });
+  } catch (error) {
+    console.error("Get customer info error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch customer information",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register: exports.register,
   login: exports.login,
@@ -614,4 +649,5 @@ module.exports = {
   deleteAddress: exports.deleteAddress,
   setDefaultAddress: exports.setDefaultAddress,
   getLoyaltyInfo: exports.getLoyaltyInfo,
+  getCustomerInfo: exports.getCustomerInfo,
 };

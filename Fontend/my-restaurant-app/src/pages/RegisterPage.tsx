@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 
 const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { register, isLoading, error } = useAuth();
+  
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     email: '',
     phone: '',
     password: '',
@@ -13,6 +18,8 @@ const RegisterPage: React.FC = () => {
     showPassword: false,
     showConfirmPassword: false
   });
+
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -30,21 +37,32 @@ const RegisterPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp!');
+      setLocalError('Mật khẩu xác nhận không khớp!');
       return;
     }
     
     if (!formData.acceptTerms) {
-      alert('Vui lòng đồng ý với điều khoản sử dụng!');
+      setLocalError('Vui lòng đồng ý với điều khoản sử dụng!');
       return;
     }
     
-    // Handle registration logic here
-    console.log('Registration data:', formData);
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password
+      });
+      // Redirect to home page after successful registration
+      navigate('/');
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : 'Đăng ký thất bại');
+    }
   };
 
   return (
@@ -79,6 +97,21 @@ const RegisterPage: React.FC = () => {
           </h1>
 
           <form onSubmit={handleSubmit}>
+            {/* Error Display */}
+            {(error || localError) && (
+              <div style={{
+                background: '#fee2e2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {error || localError}
+              </div>
+            )}
+
             {/* Full Name Input */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ 
@@ -91,8 +124,8 @@ const RegisterPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                name="fullName"
-                value={formData.fullName}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Nhập họ và tên đầy đủ"
                 required
@@ -303,23 +336,42 @@ const RegisterPage: React.FC = () => {
             {/* Register Button */}
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
-                background: '#0f766e',
+                background: isLoading ? '#9ca3af' : '#0f766e',
                 color: 'white',
                 padding: '0.75rem',
                 border: 'none',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.3s ease',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#0d9488'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#0f766e'}
+              onMouseOver={(e) => !isLoading && (e.currentTarget.style.background = '#0d9488')}
+              onMouseOut={(e) => !isLoading && (e.currentTarget.style.background = '#0f766e')}
             >
-              Đăng ký
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid #ffffff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Đang đăng ký...
+                </>
+              ) : (
+                'Đăng ký'
+              )}
             </button>
           </form>
 

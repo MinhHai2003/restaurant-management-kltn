@@ -1,13 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { login, isLoading, error } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     showPassword: false
   });
+
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,10 +31,18 @@ const LoginPage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login data:', formData);
+    setLocalError(null);
+    
+    try {
+      await login(formData.email, formData.password);
+      // Redirect to home page after successful login
+      navigate('/');
+    } catch (err) {
+      // Error is handled by AuthContext, but we can show local error too
+      setLocalError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
+    }
   };
 
   return (
@@ -70,6 +85,21 @@ const LoginPage: React.FC = () => {
           </p>
 
           <form onSubmit={handleSubmit}>
+            {/* Error Display */}
+            {(error || localError) && (
+              <div style={{
+                background: '#fee2e2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                padding: '0.75rem',
+                borderRadius: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '0.875rem'
+              }}>
+                {error || localError}
+              </div>
+            )}
+
             {/* Email Input */}
             <div style={{ marginBottom: '1.5rem' }}>
               <input
@@ -151,23 +181,42 @@ const LoginPage: React.FC = () => {
             {/* Login Button */}
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
-                background: '#0f766e',
+                background: isLoading ? '#9ca3af' : '#0f766e',
                 color: 'white',
                 padding: '0.75rem',
                 border: 'none',
                 borderRadius: '0.5rem',
                 fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.3s ease',
-                marginBottom: '1.5rem'
+                marginBottom: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#0d9488'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#0f766e'}
+              onMouseOver={(e) => !isLoading && (e.currentTarget.style.background = '#0d9488')}
+              onMouseOut={(e) => !isLoading && (e.currentTarget.style.background = '#0f766e')}
             >
-              Đăng nhập
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid #ffffff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Đang đăng nhập...
+                </>
+              ) : (
+                'Đăng nhập'
+              )}
             </button>
           </form>
 

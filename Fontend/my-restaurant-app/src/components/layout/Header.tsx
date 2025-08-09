@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import UserProfile from '../auth/UserProfile';
 
 const Header: React.FC = () => {
-  const [cartCount] = useState(3);
+  const [cartCount] = useState(0);
+  const { user } = useAuth();
 
   return (
     <header className="header">
@@ -36,7 +39,7 @@ const Header: React.FC = () => {
                 fontWeight: 'bold',
                 margin: 0,
                 lineHeight: 1,
-                marginLeft: '2rem'
+                
               }}>
                 NHÀ HÀNG
               </h1>
@@ -119,25 +122,29 @@ const Header: React.FC = () => {
               ⚡Giao Hàng 2H
             </div>
 
-            {/* Login/Register */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <a href="/login" style={{ 
-                color: 'white', 
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                textAlign: 'center'
-              }}>
-                Đăng nhập
-              </a>
-              <a href="/register" style={{ 
-                color: 'white', 
-                textDecoration: 'none',
-                fontSize: '0.85rem',
-                textAlign: 'center'
-              }}>
-                Đăng ký
-              </a>
-            </div>
+            {/* Login/Register or User Profile */}
+            {user ? (
+              <UserProfile />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <a href="/login" style={{ 
+                  color: 'white', 
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  textAlign: 'center'
+                }}>
+                  Đăng nhập
+                </a>
+                <a href="/register" style={{ 
+                  color: 'white', 
+                  textDecoration: 'none',
+                  fontSize: '0.85rem',
+                  textAlign: 'center'
+                }}>
+                  Đăng ký
+                </a>
+              </div>
+            )}
 
             {/* Cart */}
             <div style={{ position: 'relative' }}>

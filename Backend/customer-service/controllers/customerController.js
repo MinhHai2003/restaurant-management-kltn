@@ -336,7 +336,7 @@ exports.getAddresses = async (req, res) => {
 // Add new address
 exports.addAddress = async (req, res) => {
   try {
-    const { label, address, district, city, isDefault } = req.body;
+    const { label, address, district, city, phone, isDefault } = req.body;
 
     const customer = await Customer.findById(req.customerId);
     if (!customer) {
@@ -356,6 +356,7 @@ exports.addAddress = async (req, res) => {
       address,
       district,
       city,
+      phone,
       isDefault: isDefault || customer.addresses.length === 0,
     });
 
@@ -477,7 +478,7 @@ exports.refreshAccessToken = async (req, res) => {
 exports.updateAddress = async (req, res) => {
   try {
     const { addressId } = req.params;
-    const { label, address, district, city, isDefault } = req.body;
+    const { label, address, district, city, phone, isDefault } = req.body;
 
     const customer = await Customer.findById(req.customerId);
     const addressIndex = customer.addresses.findIndex(
@@ -498,6 +499,7 @@ exports.updateAddress = async (req, res) => {
       address,
       district,
       city,
+      phone,
       isDefault,
     };
 

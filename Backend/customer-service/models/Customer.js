@@ -37,6 +37,10 @@ const customerSchema = new mongoose.Schema(
         },
         district: String,
         city: String,
+        phone: {
+          type: String,
+          required: true, // Số điện thoại để shipper liên lạc
+        },
         isDefault: {
           type: Boolean,
           default: false,

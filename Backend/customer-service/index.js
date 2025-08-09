@@ -12,9 +12,9 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "http://localhost:5173", 
+      "http://localhost:5173",
       "http://localhost:5174",
-      process.env.FRONTEND_URL
+      process.env.FRONTEND_URL,
     ].filter(Boolean),
     credentials: true,
   })
@@ -75,13 +75,13 @@ app.listen(PORT, () => {
   console.log(`🚀 Customer Service running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`👥 Customer API: http://localhost:${PORT}/api/customers`);
-  
-  console.log('\n🎯 Available endpoints:');
-  console.log('   POST /api/customers/register');
-  console.log('   POST /api/customers/login');
-  console.log('   GET  /api/customers/profile');
-  console.log('   PUT  /api/customers/profile');
-  console.log('   POST /api/customers/addresses');
-  console.log('   GET  /api/customers/loyalty');
-  console.log('\n🚀 Server ready for requests!');
+
+  console.log("\n🎯 Available endpoints:");
+  console.log("   POST /api/customers/register");
+  console.log("   POST /api/customers/login");
+  console.log("   GET  /api/customers/profile");
+  console.log("   PUT  /api/customers/profile");
+  console.log("   POST /api/customers/addresses");
+  console.log("   GET  /api/customers/loyalty");
+  console.log("\n🚀 Server ready for requests!");
 });

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import HeroSlider from '../components/ui/HeroSlider';
 import Categories from '../components/ui/Categories';
 import ProductSection from '../components/ui/ProductSection';
 
@@ -140,8 +139,6 @@ const HomePage: React.FC = () => {
     <div style={{ minHeight: '100vh', background: 'white' }}>
       <Header />
       
-      {/* Hero Section */}
-      <HeroSlider />
 
       {/* Categories Section */}
       <Categories />

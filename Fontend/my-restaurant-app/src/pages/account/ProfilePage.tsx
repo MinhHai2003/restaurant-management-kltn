@@ -1,31 +1,185 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AccountLayout from '../../components/account/AccountLayout';
+
+interface CustomerProfile {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  loyaltyPoints: number;
+  membershipLevel: 'bronze' | 'silver' | 'gold' | 'platinum';
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderDate?: string;
+  preferences?: {
+    dietaryRestrictions?: string[];
+    spiceLevel?: 'mild' | 'medium' | 'hot' | 'very_hot';
+  };
+  allowNotifications: boolean;
+  allowPromotions: boolean;
+}
+
+interface FormData {
+  name: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  allowNotifications: boolean;
+  allowPromotions: boolean;
+}
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [customer, setCustomer] = useState<CustomerProfile | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    phone: '',
     dateOfBirth: '',
-    gender: ''
+    gender: '',
+    allowNotifications: true,
+    allowPromotions: true
   });
 
+  // Load customer profile on mount
+  useEffect(() => {
+    fetchCustomerProfile();
+  }, []);
+
+  const fetchCustomerProfile = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5002/api/customers/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        const customerData = result.data.customer;
+        setCustomer(customerData);
+        
+        // Update form data
+        setFormData({
+          name: customerData.name || '',
+          phone: customerData.phone || '',
+          dateOfBirth: customerData.dateOfBirth ? customerData.dateOfBirth.split('T')[0] : '',
+          gender: customerData.gender || '',
+          allowNotifications: customerData.allowNotifications ?? true,
+          allowPromotions: customerData.allowPromotions ?? true
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching customer profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement API call to update user profile
-    console.log('Saving profile:', formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5002/api/customers/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setCustomer(result.data.customer);
+        setIsEditing(false);
+        alert('Cập nhật thông tin thành công!');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Có lỗi xảy ra khi cập nhật thông tin!');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
+  };
+
+  const getMembershipColor = (level: string) => {
+    switch (level) {
+      case 'bronze': return '#cd7f32';
+      case 'silver': return '#c0c0c0';
+      case 'gold': return '#ffd700';
+      case 'platinum': return '#e5e4e2';
+      default: return '#cd7f32';
+    }
+  };
+
+  const getMembershipLabel = (level: string) => {
+    switch (level) {
+      case 'bronze': return 'ĐỒNG';
+      case 'silver': return 'BạC';
+      case 'gold': return 'VÀNG';
+      case 'platinum': return 'BạCH KIM';
+      default: return 'ĐỒNG';
+    }
+  };
+
+  if (loading) {
+    return (
+      <AccountLayout activeTab="profile">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '200px',
+          fontSize: '1rem',
+          color: '#6b7280'
+        }}>
+          Đang tải thông tin...
+        </div>
+      </AccountLayout>
+    );
+  }
 
   return (
     <AccountLayout activeTab="profile">
@@ -49,19 +203,21 @@ const ProfilePage: React.FC = () => {
           
           <button
             onClick={() => setIsEditing(!isEditing)}
+            disabled={saving}
             style={{
               padding: '0.5rem 1rem',
               background: isEditing ? '#ef4444' : '#0ea5e9',
               color: 'white',
               border: 'none',
               borderRadius: '0.375rem',
-              cursor: 'pointer',
+              cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: '0.875rem',
               fontWeight: '500',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
+              opacity: saving ? 0.7 : 1
             }}
           >
-            {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+            {saving ? 'Đang lưu...' : isEditing ? 'Hủy' : 'Chỉnh sửa'}
           </button>
         </div>
 
@@ -115,7 +271,7 @@ const ProfilePage: React.FC = () => {
                     color: '#1f2937',
                     fontSize: '0.875rem'
                   }}>
-                    {user?.name}
+                    {customer?.name || 'Chưa cập nhật'}
                   </div>
                 )}
               </div>
@@ -139,7 +295,7 @@ const ProfilePage: React.FC = () => {
                   fontSize: '0.875rem',
                   border: '1px solid #e5e7eb'
                 }}>
-                  {user?.email}
+                  {customer?.email || user?.email}
                   <span style={{
                     fontSize: '0.75rem',
                     marginLeft: '0.5rem',
@@ -183,7 +339,7 @@ const ProfilePage: React.FC = () => {
                     color: '#1f2937',
                     fontSize: '0.875rem'
                   }}>
-                    {user?.phone || 'Chưa cập nhật'}
+                    {customer?.phone || 'Chưa cập nhật'}
                   </div>
                 )}
               </div>
@@ -272,22 +428,65 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {isEditing && (
-              <button
-                onClick={handleSave}
-                style={{
-                  marginTop: '2rem',
-                  padding: '0.75rem 2rem',
-                  background: '#059669',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '600'
-                }}
-              >
-                Lưu thay đổi
-              </button>
+              <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Notification Preferences */}
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '0.875rem',
+                    color: '#374151',
+                    gap: '0.5rem',
+                    marginBottom: '0.5rem'
+                  }}>
+                    <input
+                      type="checkbox"
+                      name="allowNotifications"
+                      checked={formData.allowNotifications}
+                      onChange={handleInputChange}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Nhận thông báo về đơn hàng
+                  </label>
+                </div>
+
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '0.875rem',
+                    color: '#374151',
+                    gap: '0.5rem',
+                    marginBottom: '1rem'
+                  }}>
+                    <input
+                      type="checkbox"
+                      name="allowPromotions"
+                      checked={formData.allowPromotions}
+                      onChange={handleInputChange}
+                      style={{ marginRight: '0.5rem' }}
+                    />
+                    Nhận thông báo khuyến mãi
+                  </label>
+                </div>
+
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    background: saving ? '#9ca3af' : '#059669',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+              </div>
             )}
           </div>
 
@@ -306,7 +505,7 @@ const ProfilePage: React.FC = () => {
               {/* Membership Level */}
               <div style={{
                 padding: '1.5rem',
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                background: `linear-gradient(135deg, ${getMembershipColor(customer?.membershipLevel || 'bronze')} 0%, ${getMembershipColor(customer?.membershipLevel || 'bronze')}aa 100%)`,
                 borderRadius: '0.75rem',
                 color: 'white'
               }}>
@@ -314,7 +513,7 @@ const ProfilePage: React.FC = () => {
                   Hạng thành viên
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  {user?.membershipLevel?.toUpperCase() || 'BRONZE'}
+                  {getMembershipLabel(customer?.membershipLevel || 'bronze')}
                 </div>
               </div>
 
@@ -329,7 +528,7 @@ const ProfilePage: React.FC = () => {
                   Điểm tích lũy
                 </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                  {user?.loyaltyPoints || 0} điểm
+                  {customer?.loyaltyPoints || 0} điểm
                 </div>
               </div>
 
@@ -351,15 +550,21 @@ const ProfilePage: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Tổng đơn hàng</span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>0</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>{customer?.totalOrders || 0}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Lần đặt bàn gần nhất</span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>Chưa có</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
+                      {customer?.lastOrderDate 
+                        ? new Date(customer.lastOrderDate).toLocaleDateString('vi-VN')
+                        : 'Chưa có'}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Tổng chi tiêu</span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>0đ</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
+                      {formatCurrency(customer?.totalSpent || 0)}
+                    </span>
                   </div>
                 </div>
               </div>

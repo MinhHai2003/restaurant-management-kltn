@@ -569,6 +569,13 @@ exports.setDefaultAddress = async (req, res) => {
     const { addressId } = req.params;
 
     const customer = await Customer.findById(req.customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
     const addressIndex = customer.addresses.findIndex(
       (addr) => addr._id.toString() === addressId
     );

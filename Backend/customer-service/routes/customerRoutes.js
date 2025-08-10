@@ -19,6 +19,11 @@ router.put(
   authenticateCustomer,
   customerController.updateAddress
 );
+router.put(
+  "/addresses/:addressId/default",
+  authenticateCustomer,
+  customerController.setDefaultAddress
+);
 router.delete(
   "/addresses/:addressId",
   authenticateCustomer,

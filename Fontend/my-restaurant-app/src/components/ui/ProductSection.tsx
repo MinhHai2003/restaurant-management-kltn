@@ -2,6 +2,7 @@ import ProductCard from '../ui/ProductCard';
 
 interface Product {
   id: number;
+  menuItemId?: string; // Original MongoDB ObjectId for cart operations
   name: string;
   price: number;
   unit: string;
@@ -17,13 +18,15 @@ interface ProductSectionProps {
   products: Product[];
   viewAllLink?: string;
   backgroundColor?: string;
+  onCartUpdate?: () => void; // Add callback prop
 }
 
 const ProductSection: React.FC<ProductSectionProps> = ({ 
   title, 
   products, 
   viewAllLink,
-  backgroundColor = "#ffffff"
+  backgroundColor = "#ffffff",
+  onCartUpdate
 }) => {
   return (
     <section style={{ 
@@ -134,7 +137,11 @@ const ProductSection: React.FC<ProductSectionProps> = ({
           marginBottom: '20px'
         }}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              onCartUpdate={onCartUpdate}
+            />
           ))}
         </div>
 

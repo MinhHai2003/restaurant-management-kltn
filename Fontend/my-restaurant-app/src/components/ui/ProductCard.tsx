@@ -1,5 +1,9 @@
+import { useState } from 'react';
+import { cartService } from '../../services/cartService';
+
 interface Product {
   id: number;
+  menuItemId?: string; // Original MongoDB ObjectId for cart operations
   name: string;
   price: number;
   unit: string;
@@ -12,15 +16,56 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  onCartUpdate?: () => void; // Callback to update cart count in header
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   };
 
-  const handleAddToCart = () => {
-    console.log('Added to cart:', product.name);
+  const handleAddToCart = async () => {
+    if (!cartService.isAuthenticated()) {
+      alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+      return;
+    }
+
+    try {
+      setIsAddingToCart(true);
+      
+      const result = await cartService.addToCart({
+        menuItemId: product.menuItemId || product.id.toString(),
+        quantity: 1,
+        customizations: '',
+        notes: '',
+      });
+
+      if (result.success) {
+        setShowSuccess(true);
+        
+        // Call callback to update cart count in header
+        if (onCartUpdate) {
+          onCartUpdate();
+        }
+
+        // Show success message temporarily
+        setTimeout(() => {
+          setShowSuccess(false);
+        }, 2000);
+
+        console.log('✅ Added to cart:', product.name);
+      } else {
+        throw new Error(result.error || 'Failed to add to cart');
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      alert('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -208,33 +253,51 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
+          disabled={isAddingToCart}
           style={{
             width: '100%',
-            background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+            background: showSuccess 
+              ? 'linear-gradient(135deg, #10b981, #059669)' 
+              : isAddingToCart 
+                ? 'linear-gradient(135deg, #6b7280, #4b5563)'
+                : 'linear-gradient(135deg, #0ea5e9, #0284c7)',
             color: 'white',
             border: 'none',
             borderRadius: '12px',
             padding: '12px 16px',
             fontSize: '14px',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: isAddingToCart ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
-            boxShadow: '0 4px 6px -1px rgba(14, 165, 233, 0.3)'
+            boxShadow: showSuccess 
+              ? '0 4px 6px -1px rgba(16, 185, 129, 0.3)'
+              : '0 4px 6px -1px rgba(14, 165, 233, 0.3)',
+            opacity: isAddingToCart ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(14, 165, 233, 0.4)';
+            if (!isAddingToCart && !showSuccess) {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(14, 165, 233, 0.4)';
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #0ea5e9, #0284c7)';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(14, 165, 233, 0.3)';
+            if (!isAddingToCart && !showSuccess) {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #0ea5e9, #0284c7)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(14, 165, 233, 0.3)';
+            }
           }}
         >
-          🛒 Thêm vào giỏ
+          {showSuccess ? (
+            <>✅ Đã thêm vào giỏ</>
+          ) : isAddingToCart ? (
+            <>⏳ Đang thêm...</>
+          ) : (
+            <>🛒 Thêm vào giỏ</>
+          )}
         </button>
       </div>
     </div>

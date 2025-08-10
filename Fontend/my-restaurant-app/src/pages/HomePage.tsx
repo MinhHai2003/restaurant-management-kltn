@@ -3,6 +3,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Categories from '../components/ui/Categories';
 import ProductSection from '../components/ui/ProductSection';
+import { useCart } from '../contexts/CartContext';
 
 interface MenuItem {
   _id: string;
@@ -19,6 +20,7 @@ const HomePage: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { updateCartCount } = useCart();
 
   // Fetch menu data from API
   useEffect(() => {
@@ -48,6 +50,7 @@ const HomePage: React.FC = () => {
   const convertToProducts = (items: MenuItem[]) => {
     return items.map(item => ({
       id: parseInt(item._id.slice(-6), 16), // Convert ObjectId to number for compatibility
+      menuItemId: item._id, // Keep original ObjectId for cart operations
       name: item.name,
       description: item.description,
       price: item.price,
@@ -149,6 +152,7 @@ const HomePage: React.FC = () => {
         products={featuredProducts}
         viewAllLink="/sp/group/san-pham-noi-bat"
         backgroundColor="white"
+        onCartUpdate={updateCartCount}
       />
 
       {/* Fresh Seafood Section */}
@@ -157,6 +161,7 @@ const HomePage: React.FC = () => {
         products={seafoodProducts}
         viewAllLink="/sp/group/hai-san-tuoi-song"
         backgroundColor="#f9fafb"
+        onCartUpdate={updateCartCount}
       />
 
       {/* Processed Seafood Section */}
@@ -165,6 +170,7 @@ const HomePage: React.FC = () => {
         products={processedSeafoodProducts}
         viewAllLink="/sp/group/hai-san-che-bien"
         backgroundColor="white"
+        onCartUpdate={updateCartCount}
       />
 
       {/* Side Dishes Section */}
@@ -173,6 +179,7 @@ const HomePage: React.FC = () => {
         products={sideDisheProducts}
         viewAllLink="/sp/group/mon-an-do-phu"
         backgroundColor="#f9fafb"
+        onCartUpdate={updateCartCount}
       />
 
       <Footer />

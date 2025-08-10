@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../contexts/CartContext';
 import UserProfile from '../auth/UserProfile';
 
 const Header: React.FC = () => {
-  const [cartCount] = useState(0);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { user } = useAuth();
+  const { cartCount } = useCart();
 
   // Categories từ menu data - Simple list như trong hình
   const menuCategories = [

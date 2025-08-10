@@ -51,6 +51,7 @@ app.get("/health", (req, res) => {
 });
 
 // API Routes
+app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/orders/dine-in", require("./routes/dineInRoutes"));
 app.use("/api/orders/pickup", require("./routes/pickupRoutes"));
 app.use("/api/orders", orderRoutes);
@@ -79,8 +80,20 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Order Service running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`📦 Order API: http://localhost:${PORT}/api/orders`);
+  console.log(`� Cart API: http://localhost:${PORT}/api/cart`);
+  console.log(`�📦 Order API: http://localhost:${PORT}/api/orders`);
   console.log(`\n🎯 Available endpoints:`);
+  console.log(`\n🛒 Cart endpoints:`);
+  console.log(`   GET  /api/cart - Get cart`);
+  console.log(`   POST /api/cart/add - Add item to cart`);
+  console.log(`   PUT  /api/cart/items/:id - Update cart item`);
+  console.log(`   DELETE /api/cart/items/:id - Remove cart item`);
+  console.log(`   DELETE /api/cart/clear - Clear cart`);
+  console.log(`   POST /api/cart/coupon - Apply coupon`);
+  console.log(`   DELETE /api/cart/coupon - Remove coupon`);
+  console.log(`   PUT  /api/cart/delivery - Update delivery info`);
+  console.log(`   POST /api/cart/checkout - Checkout cart`);
+  console.log(`\n📦 Order endpoints:`);
   console.log(`   POST /api/orders - Create new order`);
   console.log(`   GET  /api/orders - Get customer orders`);
   console.log(`   GET  /api/orders/stats - Get order statistics`);

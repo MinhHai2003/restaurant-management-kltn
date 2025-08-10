@@ -26,6 +26,11 @@ class MenuApiClient {
     }
   }
 
+  // Alias for getMenuItemById (for cart controller compatibility)
+  async getMenuItem(itemId) {
+    return this.getMenuItemById(itemId);
+  }
+
   // Get multiple menu items
   async getMenuItems(itemIds) {
     try {

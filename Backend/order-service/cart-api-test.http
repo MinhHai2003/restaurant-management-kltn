@@ -1,0 +1,160 @@
+### Cart API Testing
+### Make sure order-service is running on port 5005
+### Replace {{token}} with actual customer authentication token
+### Replace {{customerId}} with actual customer ID
+
+@baseUrl = http://localhost:5005/api/cart
+@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@menuItemId = 676040c2d6ba3f0e83ccdc92
+
+### 1. Get Cart (Create if not exists)
+GET {{baseUrl}}
+Authorization: {{token}}
+
+### 2. Add Item to Cart
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "{{menuItemId}}",
+  "quantity": 2,
+  "customizations": "Không cay",
+  "notes": "Gói riêng"
+}
+
+### 3. Add Another Item
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "676040c2d6ba3f0e83ccdc93",
+  "quantity": 1,
+  "customizations": "Cay vừa",
+  "notes": ""
+}
+
+### 4. Get Cart Summary
+GET {{baseUrl}}/summary
+Authorization: {{token}}
+
+### 5. Update Cart Item Quantity
+PUT {{baseUrl}}/items/CART_ITEM_ID_HERE
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### 6. Apply Coupon
+POST {{baseUrl}}/coupon
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "couponCode": "WELCOME10"
+}
+
+### 7. Update Delivery Info
+PUT {{baseUrl}}/delivery
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "type": "delivery",
+  "address": {
+    "full": "123 Nguyễn Văn A, Phường 1, Quận 1, TP.HCM",
+    "district": "Quận 1",
+    "city": "TP.HCM"
+  },
+  "estimatedTime": 45
+}
+
+### 8. Remove Coupon
+DELETE {{baseUrl}}/coupon
+Authorization: {{token}}
+
+### 9. Remove Item from Cart
+DELETE {{baseUrl}}/items/CART_ITEM_ID_HERE
+Authorization: {{token}}
+
+### 10. Checkout Cart (Convert to Order)
+POST {{baseUrl}}/checkout
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "payment": {
+    "method": "momo"
+  },
+  "notes": {
+    "customer": "Giao hàng trước 6PM",
+    "kitchen": "Không cay",
+    "delivery": "Gọi trước khi giao"
+  }
+}
+
+### 11. Clear Cart
+DELETE {{baseUrl}}/clear
+Authorization: {{token}}
+
+### Quick Test Workflow:
+### 1. Get cart → 2. Add items → 3. Apply coupon → 4. Update delivery → 5. Checkout
+
+### Test with different menu items:
+@crabId = 676040c2d6ba3f0e83ccdc94
+@shrimpId = 676040c2d6ba3f0e83ccdc95
+@fishId = 676040c2d6ba3f0e83ccdc96
+
+### Add Crab
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "{{crabId}}",
+  "quantity": 1
+}
+
+### Add Shrimp
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "{{shrimpId}}",
+  "quantity": 3
+}
+
+### Test Error Cases:
+
+### Invalid menu item ID
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "invalid_id",
+  "quantity": 1
+}
+
+### Quantity too high
+POST {{baseUrl}}/add
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "menuItemId": "{{menuItemId}}",
+  "quantity": 100
+}
+
+### Invalid coupon
+POST {{baseUrl}}/coupon
+Authorization: {{token}}
+Content-Type: application/json
+
+{
+  "couponCode": "INVALID_COUPON"
+}

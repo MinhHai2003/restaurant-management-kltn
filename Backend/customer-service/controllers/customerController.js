@@ -362,10 +362,13 @@ exports.addAddress = async (req, res) => {
 
     await customer.save();
 
+    // Lấy địa chỉ vừa thêm (cuối mảng)
+    const newAddress = customer.addresses[customer.addresses.length - 1];
+
     res.json({
       success: true,
       message: "Address added successfully",
-      data: { customer },
+      data: { address: newAddress },
     });
   } catch (error) {
     console.error("Add address error:", error);

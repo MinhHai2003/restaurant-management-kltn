@@ -33,6 +33,8 @@ exports.createOrder = async (req, res) => {
       validatedItems.items
     );
     if (!stockCheck.allAvailable) {
+      console.log("[ORDER DEBUG] unavailableItems:", JSON.stringify(stockCheck.unavailableItems, null, 2));
+      console.log("[ORDER DEBUG] stockChecks:", JSON.stringify(stockCheck.stockChecks, null, 2));
       return res.status(400).json({
         success: false,
         message: "Some items are not available",

@@ -58,11 +58,7 @@ interface CartResponse {
   };
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+
 
 class CartService {
   private getAuthToken(): string | null {

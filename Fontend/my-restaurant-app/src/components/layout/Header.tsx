@@ -4,7 +4,20 @@ import UserProfile from '../auth/UserProfile';
 
 const Header: React.FC = () => {
   const [cartCount] = useState(0);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { user } = useAuth();
+
+  // Categories từ menu data - Simple list như trong hình
+  const menuCategories = [
+    { name: "HẢI SẢN TƯƠI SỐNG", link: "/menu/hai-san-tuoi-song" },
+    { name: "HẢI SẢN CHẾ BIẾN", link: "/menu/hai-san-che-bien" },
+    { name: "SASHIMI NHẬT BẢN", link: "/menu/sashimi-nhat-ban" },
+    { name: "MÓN ĂN, ĐỒ PHỤ", link: "/menu/mon-an-do-phu" },
+    { name: "SẢN PHẨM KHUYẾN MÃI", link: "/menu/khuyen-mai" },
+    { name: "Liên hệ nhà hàng", link: "/lien-he" },
+    { name: "Đặt bàn", link: "/dat-ban" },
+    { name: "Facebook", link: "https://facebook.com" }
+  ];
 
   return (
     <header className="header">
@@ -195,29 +208,87 @@ const Header: React.FC = () => {
       }}>
         <div className="container">
           <div style={{ display: 'flex', alignItems: 'stretch' }}>
-            {/* DANH MỤC - Special styling */}
-            <div style={{
-              background: '#0284c7',
-              padding: '0 2rem',
-              height: '50px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              cursor: 'pointer',
-              borderRight: '1px solid rgba(255,255,255,0.2)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#0369a1'}
-            onMouseOut={(e) => e.currentTarget.style.background = '#0284c7'}
-            >
-              <span style={{ fontSize: '1.1rem' }}>☰</span>
-              <span style={{ 
-                fontWeight: '600', 
-                fontSize: '0.95rem',
-                color: 'white'
-              }}>
-                DANH MỤC
-              </span>
+            {/* DANH MỤC - Special styling with Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                background: '#0284c7',
+                padding: '0 2rem',
+                height: '50px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                cursor: 'pointer',
+                borderRight: '1px solid rgba(255,255,255,0.2)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={() => setShowCategoryDropdown(true)}
+              onMouseLeave={() => setShowCategoryDropdown(false)}
+              onMouseOver={(e) => e.currentTarget.style.background = '#0369a1'}
+              onMouseOut={(e) => e.currentTarget.style.background = '#0284c7'}
+              >
+                <span style={{ fontSize: '1.1rem' }}>☰</span>
+                <span style={{ 
+                  fontWeight: '600', 
+                  fontSize: '0.95rem',
+                  color: 'white'
+                }}>
+                  DANH MỤC
+                </span>
+              </div>
+
+              {/* Dropdown Menu */}
+              {showCategoryDropdown && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    width: '280px',
+                    background: 'white',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                    borderRadius: '0 0 8px 8px',
+                    zIndex: 1000,
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={() => setShowCategoryDropdown(true)}
+                  onMouseLeave={() => setShowCategoryDropdown(false)}
+                >
+                  {menuCategories.map((category, index) => (
+                    <a
+                      key={index}
+                      href={category.link}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '1rem 1.5rem',
+                        color: '#64748b',
+                        textDecoration: 'none',
+                        fontSize: '0.9rem',
+                        fontWeight: '500',
+                        borderBottom: index < menuCategories.length - 1 ? '1px solid #f1f5f9' : 'none',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#f8fafc';
+                        e.currentTarget.style.color = '#0ea5e9';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#64748b';
+                      }}
+                    >
+                      <span style={{ 
+                        marginRight: '0.75rem',
+                        color: '#94a3b8',
+                        fontSize: '0.8rem'
+                      }}>
+                        —
+                      </span>
+                      {category.name}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Other Navigation Items */}

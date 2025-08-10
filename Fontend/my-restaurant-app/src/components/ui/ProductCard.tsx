@@ -23,6 +23,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     console.log('Added to cart:', product.name);
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&h=300&fit=crop';
+  };
+
   return (
     <div className="product-card">
       {/* Product Image */}
@@ -31,6 +36,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           src={product.image}
           alt={product.name}
           className="product-image"
+          onError={handleImageError}
         />
         
         {/* Badges */}

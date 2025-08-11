@@ -33,8 +33,14 @@ exports.createOrder = async (req, res) => {
       validatedItems.items
     );
     if (!stockCheck.allAvailable) {
-      console.log("[ORDER DEBUG] unavailableItems:", JSON.stringify(stockCheck.unavailableItems, null, 2));
-      console.log("[ORDER DEBUG] stockChecks:", JSON.stringify(stockCheck.stockChecks, null, 2));
+      console.log(
+        "[ORDER DEBUG] unavailableItems:",
+        JSON.stringify(stockCheck.unavailableItems, null, 2)
+      );
+      console.log(
+        "[ORDER DEBUG] stockChecks:",
+        JSON.stringify(stockCheck.stockChecks, null, 2)
+      );
       return res.status(400).json({
         success: false,
         message: "Some items are not available",
@@ -129,6 +135,28 @@ exports.createOrder = async (req, res) => {
 
     const order = new Order(orderData);
     await order.save();
+
+    // Cập nhật thống kê user sau khi order đã lưu thành công
+    try {
+      console.log(
+        "[ORDER DEBUG] Gọi updateLoyaltyPoints cho user:",
+        req.customerId,
+        "với tổng tiền:",
+        pricing.total
+      );
+      const loyaltyResult = await customerApiClient.updateLoyaltyPoints(
+        req.customerId,
+        pricing.total,
+        req.token
+      );
+      console.log("[ORDER DEBUG] Kết quả updateLoyaltyPoints:", loyaltyResult);
+    } catch (err) {
+      console.error(
+        "[ORDER DEBUG] Failed to update customer stats after order:",
+        err.message
+      );
+      // Không trả lỗi cho client, chỉ log
+    }
 
     // 8. Reserve stock
     try {

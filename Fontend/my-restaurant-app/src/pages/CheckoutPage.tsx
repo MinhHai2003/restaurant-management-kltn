@@ -6,6 +6,7 @@ import { cartService } from '../services/cartService';
 import { customerService } from '../services/customerService';
 import type { Address } from '../services/customerService';
 import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../contexts/CartContext';
 import type { Cart } from '../services/cartService';
 
 const CheckoutPage: React.FC = () => {
@@ -30,6 +31,7 @@ const CheckoutPage: React.FC = () => {
 
   // Address selection
   const { user } = useAuth();
+  const { updateCartCount } = useCart();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [addressLoading, setAddressLoading] = useState(false);
@@ -229,11 +231,15 @@ const CheckoutPage: React.FC = () => {
       const result = await response.json();
       console.log('✅ Đặt hàng thành công:', result);
 
-      // Làm trống giỏ hàng
+      // Làm trống giỏ hàng - cập nhật UI ngay lập tức
       setCart(null);
-      // Cập nhật lại cart count trong context hoặc localStorage nếu có
-      // Ví dụ gọi cartService.clearCart() hoặc cập nhật lại state cart count
-      await cartService.clearCart();
+      // Đồng thời cập nhật lại số lượng giỏ hàng trong context hoặc localStorage ngay lập tức
+      await updateCartCount();
+
+      // Gọi API xóa giỏ hàng ở nền, không chờ phản hồi để cải thiện tốc độ UI
+      cartService.clearCart().catch(error => {
+        console.error('Lỗi khi xóa giỏ hàng:', error);
+      });
 
       alert('Đặt hàng thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.');
 

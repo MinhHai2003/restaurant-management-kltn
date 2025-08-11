@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../contexts/CartContext';
 import UserProfile from '../auth/UserProfile';
@@ -6,7 +6,7 @@ import UserProfile from '../auth/UserProfile';
 const Header: React.FC = () => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const { user } = useAuth();
-  const { cartCount } = useCart();
+  const { cartCount, refreshCart } = useCart();
 
   // Categories từ menu data - Simple list như trong hình
   const menuCategories = [
@@ -19,6 +19,11 @@ const Header: React.FC = () => {
     { name: "Đặt bàn", link: "/dat-ban" },
     { name: "Facebook", link: "https://facebook.com" }
   ];
+
+  // Refresh cart count on mount to ensure up-to-date count
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
 
   return (
     <header className="header">

@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { cartService } from '../services/cartService';
 import type { Cart, CartItem } from '../services/cartService';
-
+import { useCart } from '../contexts/CartContext';
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const [cart, setCart] = useState<Cart | null>(null);
@@ -12,6 +12,7 @@ const CartPage: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const { refreshCart } = useCart();
 
   // Load cart data
   useEffect(() => {
@@ -68,6 +69,8 @@ const CartPage: React.FC = () => {
       const result = await cartService.removeFromCart(itemId);
       if (result.success && result.data) {
         setCart(result.data.cart);
+        await refreshCart();
+        
       } else {
         setError(result.error || 'Không thể xóa sản phẩm');
       }
@@ -90,6 +93,7 @@ const CartPage: React.FC = () => {
       const result = await cartService.clearCart();
       if (result.success && result.data) {
         setCart(result.data.cart);
+        await refreshCart();
       }
     } catch {
       setError('Có lỗi xảy ra khi xóa giỏ hàng');

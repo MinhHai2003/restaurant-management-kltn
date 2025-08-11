@@ -255,6 +255,32 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
+    // Xử lý $inc từ order-service (tăng điểm, tổng chi tiêu, số đơn)
+    if (req.body.$inc) {
+      const customer = await Customer.findById(req.customerId);
+      if (!customer) {
+        return res.status(404).json({
+          success: false,
+          message: "Customer not found",
+        });
+      }
+      const {
+        loyaltyPoints = 0,
+        totalSpent = 0,
+        totalOrders = 0,
+      } = req.body.$inc;
+      if (loyaltyPoints) customer.loyaltyPoints += loyaltyPoints;
+      if (totalSpent) customer.totalSpent += totalSpent;
+      if (totalOrders) customer.totalOrders += totalOrders;
+      await customer.save();
+      return res.json({
+        success: true,
+        message: "Profile updated successfully ($inc)",
+        data: { customer },
+      });
+    }
+
+    // Xử lý update thông tin thông thường
     const {
       name,
       phone,

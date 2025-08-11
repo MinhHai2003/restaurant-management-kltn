@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import HomePage from './pages/HomePage'
+import DatBanPage from './pages/DatBanPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import StoreSystem from './pages/StoreSystem'
@@ -32,6 +33,7 @@ function App() {
             <Route path="/gio-hang" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/thanh-toan" element={<CheckoutPage />} />
+            <Route path="/dat-ban" element={<DatBanPage />} />
             
             {/* Account Routes - Protected */}
             <Route path="/profile" element={

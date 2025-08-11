@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { cartService } from '../services/cartService';
@@ -11,6 +11,7 @@ import type { Cart } from '../services/cartService';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -26,7 +27,7 @@ const CheckoutPage: React.FC = () => {
     city: '',
     district: '',
     ward: '',
-    notes: ''
+    notes: (location.state && location.state.notes) ? location.state.notes : ''
   });
 
   // Address selection
@@ -98,10 +99,10 @@ const CheckoutPage: React.FC = () => {
     const loadCustomerInfo = async () => {
       try {
         const customerRes = await customerService.getCustomerInfo();
-        if (customerRes.success && customerRes.data) {
+        if (customerRes.success && customerRes.data && typeof customerRes.data.name !== 'undefined') {
           setCustomerInfo(info => ({
             ...info,
-            name: customerRes.data.name || info.name,
+            name: customerRes.data?.name || info.name,
           }));
         }
       } catch (error) {

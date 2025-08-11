@@ -1,77 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import html2pdf from 'html2pdf.js';
+// import 'public/fonts/NotoSans-Regular.js'; // Nếu đã có font jsPDF unicode, nạp ở đây
+// Hàm sinh PDF từ dữ liệu đơn hàng sẽ nằm trong component
+import { customerService, type Order as ApiOrder } from '../../services/customerService';
 import AccountLayout from '../../components/account/AccountLayout';
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
-  total: number;
-  items: {
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-  deliveryAddress?: string;
-  estimatedTime?: string;
-}
+type Order = ApiOrder;
+
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'pending': return '#f59e0b';
+    case 'confirmed': return '#3b82f6';
+    case 'preparing': return '#8b5cf6';
+    case 'ready': return '#10b981';
+    case 'delivered': return '#059669';
+    case 'cancelled': return '#ef4444';
+    default: return '#6b7280';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'pending': return 'Chờ xác nhận';
+    case 'confirmed': return 'Đã xác nhận';
+    case 'preparing': return 'Đang chuẩn bị';
+    case 'ready': return 'Sẵn sàng giao';
+    case 'delivered': return 'Đã giao';
+    case 'cancelled': return 'Đã hủy';
+    default: return 'Không xác định';
+  }
+};
+
 
 const OrdersPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'delivered' | 'cancelled'>('all');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - sẽ được thay thế bằng API call
-  const orders: Order[] = [
-    {
-      id: '1',
-      orderNumber: 'DH2024001',
-      date: '2024-08-10',
-      status: 'delivered',
-      total: 850000,
-      items: [
-        { name: 'Tôm hùm nướng phô mai', quantity: 1, price: 650000 },
-        { name: 'Cua rang me', quantity: 1, price: 200000 }
-      ],
-      deliveryAddress: '123 Nguyễn Văn Linh, Quận 7, TP.HCM',
-      estimatedTime: '45 phút'
-    },
-    {
-      id: '2',
-      orderNumber: 'DH2024002',
-      date: '2024-08-08',
-      status: 'preparing',
-      total: 420000,
-      items: [
-        { name: 'Cá lăng nướng lá chuối', quantity: 1, price: 320000 },
-        { name: 'Canh chua cá bớp', quantity: 1, price: 100000 }
-      ],
-      deliveryAddress: '456 Lê Văn Việt, Quận 9, TP.HCM',
-      estimatedTime: '30 phút'
-    }
-  ];
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
 
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return '#f59e0b';
-      case 'confirmed': return '#3b82f6';
-      case 'preparing': return '#8b5cf6';
-      case 'ready': return '#10b981';
-      case 'delivered': return '#059669';
-      case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
-    }
+  const handleViewPdf = (order: Order) => {
+    setSelectedOrder(order);
+    setShowInvoice(true);
+    setTimeout(() => {
+      const element = document.getElementById('invoice-html');
+      if (element) {
+        html2pdf().set({
+          margin: 10,
+          filename: `HoaDon_${order.orderNumber}.pdf`,
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(element).save();
+      }
+    }, 300);
   };
 
-  const getStatusText = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return 'Chờ xác nhận';
-      case 'confirmed': return 'Đã xác nhận';
-      case 'preparing': return 'Đang chuẩn bị';
-      case 'ready': return 'Sẵn sàng giao';
-      case 'delivered': return 'Đã giao';
-      case 'cancelled': return 'Đã hủy';
-      default: return 'Không xác định';
-    }
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError(null);
+      const res = await customerService.getOrders();
+      if (res.success && res.data) {
+        setOrders(res.data);
+      } else {
+        setError(res.error || 'Không thể tải danh sách đơn hàng');
+      }
+      setLoading(false);
+    };
+    fetchOrders();
+  }, []);
 
   const filteredOrders = orders.filter(order => {
     if (activeFilter === 'all') return true;
@@ -150,12 +150,16 @@ const OrdersPage: React.FC = () => {
         </div>
 
         {/* Orders List */}
-        {filteredOrders.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '4rem 2rem',
-            color: '#6b7280'
-          }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
+            Đang tải danh sách đơn hàng...
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#ef4444' }}>
+            {error}
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6b7280' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
               Chưa có đơn hàng nào
@@ -168,7 +172,7 @@ const OrdersPage: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {filteredOrders.map((order) => (
               <div
-                key={order.id}
+                key={order._id}
                 style={{
                   border: '1px solid #e5e7eb',
                   borderRadius: '0.75rem',
@@ -200,7 +204,7 @@ const OrdersPage: React.FC = () => {
                       color: '#6b7280',
                       margin: 0
                     }}>
-                      Đặt ngày: {new Date(order.date).toLocaleDateString('vi-VN')}
+                      Đặt ngày: {order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : ''}
                     </p>
                   </div>
                   
@@ -224,7 +228,7 @@ const OrdersPage: React.FC = () => {
                       color: '#1f2937',
                       marginTop: '0.5rem'
                     }}>
-                      {order.total.toLocaleString('vi-VN')}đ
+                      {order.pricing?.total?.toLocaleString('vi-VN') || 0}đ
                     </div>
                   </div>
                 </div>
@@ -239,9 +243,8 @@ const OrdersPage: React.FC = () => {
                   }}>
                     Món ăn đã đặt:
                   </h4>
-                  
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {order.items.map((item, index) => (
+                    {order.items?.map((item, index) => (
                       <div
                         key={index}
                         style={{
@@ -270,7 +273,7 @@ const OrdersPage: React.FC = () => {
                           fontWeight: '600',
                           color: '#1f2937'
                         }}>
-                          {item.price.toLocaleString('vi-VN')}đ
+                          {item.price?.toLocaleString('vi-VN') || 0}đ
                         </span>
                       </div>
                     ))}
@@ -278,7 +281,7 @@ const OrdersPage: React.FC = () => {
                 </div>
 
                 {/* Delivery Info */}
-                {order.deliveryAddress && (
+                {order.delivery?.address?.full && (
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
@@ -296,11 +299,10 @@ const OrdersPage: React.FC = () => {
                         Địa chỉ giao hàng:
                       </div>
                       <div style={{ fontSize: '0.875rem', color: '#1f2937' }}>
-                        {order.deliveryAddress}
+                        {order.delivery.address.full}
                       </div>
                     </div>
-                    
-                    {order.estimatedTime && (
+                    {order.delivery.estimatedTime && (
                       <div>
                         <div style={{
                           fontSize: '0.75rem',
@@ -310,7 +312,7 @@ const OrdersPage: React.FC = () => {
                           Thời gian giao hàng dự kiến:
                         </div>
                         <div style={{ fontSize: '0.875rem', color: '#1f2937' }}>
-                          {order.estimatedTime}
+                          {order.delivery.estimatedTime} phút
                         </div>
                       </div>
                     )}
@@ -336,9 +338,61 @@ const OrdersPage: React.FC = () => {
                       fontSize: '0.875rem',
                       color: '#374151'
                     }}
+                    onClick={() => handleViewPdf(order)}
                   >
                     Xem chi tiết
                   </button>
+      {/* Modal hóa đơn HTML để xuất PDF */}
+      {showInvoice && selectedOrder && (
+        <div style={{ display: 'none' }}>
+          <div id="invoice-html" style={{ fontFamily: 'Noto Sans, Arial, sans-serif', color: '#222', width: 700, padding: 24 }}>
+            <h2 style={{ textAlign: 'center', marginBottom: 16 }}>HÓA ĐƠN ĐƠN HÀNG #{selectedOrder.orderNumber}</h2>
+            <div><b>Ngày đặt:</b> {selectedOrder.orderDate ? new Date(selectedOrder.orderDate).toLocaleString('vi-VN') : ''}</div>
+            <div><b>Trạng thái đơn hàng:</b> {getStatusText(selectedOrder.status)}</div>
+            <div><b>Tên khách:</b> {selectedOrder.customerInfo?.name || '-'}</div>
+            <div><b>SĐT:</b> {selectedOrder.customerInfo?.phone || '-'}</div>
+            <div><b>Email:</b> {selectedOrder.customerInfo?.email || '-'}</div>
+            <div><b>Phương thức thanh toán:</b> {selectedOrder.payment?.method || '-'}</div>
+            <div><b>Trạng thái thanh toán:</b> {selectedOrder.payment?.status || '-'}</div>
+            <div><b>Ghi chú khách:</b> {selectedOrder.notes?.customer || '-'}</div>
+            {selectedOrder.delivery?.address?.full && (
+              <div><b>Địa chỉ giao hàng:</b> {selectedOrder.delivery.address.full}</div>
+            )}
+            {selectedOrder.delivery?.estimatedTime && (
+              <div><b>Thời gian giao dự kiến:</b> {selectedOrder.delivery.estimatedTime} phút</div>
+            )}
+            <div><b>Phí giao hàng:</b> {selectedOrder.pricing?.deliveryFee?.toLocaleString('vi-VN') || 0}đ</div>
+            <div><b>Giảm giá:</b> {selectedOrder.pricing?.discount?.toLocaleString('vi-VN') || 0}đ</div>
+            <div><b>Tổng tiền:</b> <span style={{fontSize: '1.2em', fontWeight: 700}}>{selectedOrder.pricing?.total?.toLocaleString('vi-VN') || 0}đ</span></div>
+            <hr />
+            <div><b>Danh sách món:</b></div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
+              <thead>
+                <tr style={{ background: '#f3f4f6' }}>
+                  <th style={{ border: '1px solid #e5e7eb', padding: 6 }}>#</th>
+                  <th style={{ border: '1px solid #e5e7eb', padding: 6 }}>Tên món</th>
+                  <th style={{ border: '1px solid #e5e7eb', padding: 6 }}>SL</th>
+                  <th style={{ border: '1px solid #e5e7eb', padding: 6 }}>Đơn giá</th>
+                  <th style={{ border: '1px solid #e5e7eb', padding: 6 }}>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedOrder.items?.map((item, idx) => (
+                  <tr key={idx}>
+                    <td style={{ border: '1px solid #e5e7eb', padding: 6 }}>{idx + 1}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: 6 }}>{item.name}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: 6 }}>{item.quantity}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: 6 }}>{item.price?.toLocaleString('vi-VN') || 0}đ</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: 6 }}>{(item.price * item.quantity)?.toLocaleString('vi-VN') || 0}đ</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <hr />
+            <div style={{ textAlign: 'center', marginTop: 24, fontWeight: 600 }}>Cảm ơn quý khách đã sử dụng dịch vụ!</div>
+          </div>
+        </div>
+      )}
                   
                   {order.status === 'delivered' && (
                     <button

@@ -1,3 +1,86 @@
+// Order Service API base URL
+const ORDER_API_BASE_URL = 'http://localhost:5005/api/orders';
+
+export type Order = {
+  _id: string;
+  orderNumber: string;
+  orderDate: string;
+  status: string;
+  pricing: {
+    subtotal?: number;
+    tax?: number;
+    deliveryFee?: number;
+    discount?: number;
+    loyaltyDiscount?: number;
+    total: number;
+  };
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    customizations?: string;
+    notes?: string;
+  }>;
+  customerInfo?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  payment?: {
+    method?: string;
+    status?: string;
+    transactionId?: string;
+    paidAt?: string;
+  };
+  delivery?: {
+    address?: {
+      full?: string;
+      district?: string;
+      city?: string;
+      coordinates?: {
+        lat?: number;
+        lng?: number;
+      };
+    };
+    estimatedTime?: number;
+    type?: string;
+    fee?: number;
+    driverId?: string;
+    instructions?: string;
+    pickupInfo?: any;
+  };
+  notes?: {
+    customer?: string;
+    kitchen?: string;
+    delivery?: string;
+    internal?: string;
+  };
+};
+
+// Lấy danh sách đơn hàng của user
+async function getOrders(): Promise<{ success: boolean; data?: Order[]; error?: string }> {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${ORDER_API_BASE_URL}?limit=100`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to get orders');
+    }
+    // API trả về result.data.orders
+    return { success: true, data: result.data.orders };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get orders',
+    };
+  }
+}
 // Customer Service for API calls
 const API_BASE_URL = 'http://localhost:5002/api/customers';
 
@@ -12,6 +95,7 @@ export type Address = {
 }
 
 class CustomerService {
+  getOrders = getOrders;
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
   }

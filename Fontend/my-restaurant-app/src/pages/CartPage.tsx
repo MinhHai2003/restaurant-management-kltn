@@ -111,7 +111,8 @@ const CartPage: React.FC = () => {
       alert('Giỏ hàng của bạn đang trống!');
       return;
     }
-    navigate('/checkout');
+    // Pass notes to checkout page via navigation state
+    navigate('/checkout', { state: { notes } });
   };
 
   if (loading) {

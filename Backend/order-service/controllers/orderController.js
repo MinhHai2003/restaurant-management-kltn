@@ -287,11 +287,12 @@ exports.getCustomerOrders = async (req, res) => {
 
     const total = await Order.countDocuments(query);
 
+    // Trả về đầy đủ object order (không chỉ các trường cơ bản)
     res.json({
       success: true,
       message: "Orders retrieved successfully",
       data: {
-        orders,
+        orders, // trả về toàn bộ object order (bao gồm notes, delivery, payment, ...)
         pagination: {
           total,
           page: options.page,

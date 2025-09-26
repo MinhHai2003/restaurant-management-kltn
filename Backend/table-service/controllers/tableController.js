@@ -356,6 +356,86 @@ exports.getTableStats = async (req, res) => {
   }
 };
 
+// 🔄 Update table status (for admin)
+exports.updateTableStatus = async (req, res) => {
+  try {
+    const { tableId } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    const validStatuses = [
+      "available",
+      "occupied",
+      "reserved",
+      "maintenance",
+      "cleaning",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Trạng thái bàn không hợp lệ",
+      });
+    }
+
+    const table = await Table.findById(tableId);
+    if (!table) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bàn",
+      });
+    }
+
+    // Update table status
+    table.status = status;
+    await table.save();
+
+    res.json({
+      success: true,
+      message: "Cập nhật trạng thái bàn thành công",
+      data: {
+        table: {
+          _id: table._id,
+          tableNumber: table.tableNumber,
+          status: table.status,
+          capacity: table.capacity,
+          location: table.location,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error updating table status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi cập nhật trạng thái bàn",
+    });
+  }
+};
+
+// 🔄 Reset all maintenance tables to available (for admin)
+exports.resetMaintenanceTables = async (req, res) => {
+  try {
+    const result = await Table.updateMany(
+      { status: "maintenance" },
+      { $set: { status: "available" } }
+    );
+
+    res.json({
+      success: true,
+      message: `Đã chuyển ${result.modifiedCount} bàn từ bảo trì về trạng thái trống`,
+      data: {
+        modifiedCount: result.modifiedCount,
+        matchedCount: result.matchedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error resetting maintenance tables:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi reset trạng thái bàn bảo trì",
+    });
+  }
+};
+
 module.exports = {
   getAllTables: exports.getAllTables,
   getTableById: exports.getTableById,
@@ -363,4 +443,6 @@ module.exports = {
   getTableAvailability: exports.getTableAvailability,
   getTableStats: exports.getTableStats,
   updateTable: exports.updateTable,
+  updateTableStatus: exports.updateTableStatus,
+  resetMaintenanceTables: exports.resetMaintenanceTables,
 };

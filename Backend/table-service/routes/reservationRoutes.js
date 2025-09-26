@@ -137,4 +137,13 @@ router.get(
   reservationController.getReservationOrders
 );
 
+// 📋 Admin Routes
+router.get("/admin/all", reservationController.getAllReservations);
+
+// Update reservation status (Admin)
+router.put(
+  "/admin/:reservationId/status",
+  reservationController.updateReservationStatus
+);
+
 module.exports = router;

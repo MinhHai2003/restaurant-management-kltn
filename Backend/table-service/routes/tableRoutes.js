@@ -55,4 +55,14 @@ router.put(
   tableController.updateTable
 );
 
+// 🔄 Update Table Status (PATCH) - Admin only
+router.patch(
+  "/:tableId/status",
+  param("tableId").isMongoId().withMessage("Valid table ID is required"),
+  tableController.updateTableStatus
+);
+
+// 🔄 Reset all maintenance tables to available (POST) - Admin only
+router.post("/admin/reset-maintenance", tableController.resetMaintenanceTables);
+
 module.exports = router;

@@ -349,13 +349,34 @@ const Header: React.FC = () => {
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
                 flex: 1,
-                justifyContent: 'center'
+                justifyContent: 'center',
+                borderRight: '1px solid rgba(255,255,255,0.1)'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <span style={{ fontSize: '1.1rem' }}>🍽️</span>
                 <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>ĐẶT BÀN NGAY</span>
+              </a>
+
+              <a href="/admin" style={{
+                color: 'white',
+                textDecoration: 'none',
+                padding: '0 1.5rem',
+                height: '50px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'background-color 0.3s ease',
+                flex: 1,
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'}
+              >
+                <span style={{ fontSize: '1.1rem' }}>🏢</span>
+                <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>QUẢN TRỊ</span>
               </a>
             </div>
           </div>

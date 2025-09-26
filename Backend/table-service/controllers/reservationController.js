@@ -783,7 +783,159 @@ const calculateDuration = (startTime, endTime) => {
   return endMinutes - startMinutes;
 };
 
+// Get all reservations for admin
+const getAllReservations = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, status } = req.query;
+
+    // Build filter query
+    const filter = {};
+    if (status) filter.status = status;
+
+    // Get reservations with populated table info
+    const reservations = await Reservation.find(filter)
+      .populate({
+        path: "tableId",
+        select: "tableNumber capacity location description",
+      })
+      .sort({ reservationDate: -1, "timeSlot.startTime": -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    // Format response
+    const formattedReservations = reservations.map((reservation) => ({
+      _id: reservation._id,
+      reservationNumber: reservation.reservationNumber,
+      customerName: reservation.customerInfo?.name || "N/A",
+      table: reservation.tableId
+        ? {
+            tableNumber: reservation.tableId.tableNumber,
+            capacity: reservation.tableId.capacity,
+          }
+        : null,
+      reservationDate: reservation.reservationDate,
+      timeSlot: reservation.timeSlot,
+      partySize: reservation.partySize,
+      status: reservation.status,
+      occasion: reservation.occasion || "",
+      specialRequests: reservation.specialRequests || "",
+      createdAt: reservation.createdAt,
+    }));
+
+    // Get total count for pagination
+    const total = await Reservation.countDocuments(filter);
+
+    res.json({
+      success: true,
+      message: "Lấy danh sách đặt bàn thành công",
+      data: {
+        reservations: formattedReservations,
+        pagination: {
+          current: parseInt(page),
+          total: Math.ceil(total / limit),
+          count: formattedReservations.length,
+          totalItems: total,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error getting all reservations:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy danh sách đặt bàn",
+    });
+  }
+};
+
+// Update reservation status (Admin only)
+const updateReservationStatus = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+    const { status } = req.body;
+
+    // Valid status values
+    const validStatuses = [
+      "pending",
+      "confirmed",
+      "seated",
+      "completed",
+      "cancelled",
+      "no-show",
+    ];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Trạng thái không hợp lệ",
+      });
+    }
+
+    // Find reservation with table info
+    const reservation = await Reservation.findById(reservationId).populate(
+      "tableId"
+    );
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đặt bàn",
+      });
+    }
+
+    const oldStatus = reservation.status;
+    reservation.status = status;
+
+    // Update table status based on reservation status
+    if (reservation.tableId) {
+      const table = reservation.tableId;
+
+      // Logic to update table status
+      switch (status) {
+        case "confirmed":
+          if (table.status === "available") {
+            table.status = "reserved";
+          }
+          break;
+        case "seated":
+          table.status = "occupied";
+          break;
+        case "completed":
+        case "cancelled":
+        case "no-show":
+          // Free up the table
+          if (table.status === "reserved" || table.status === "occupied") {
+            table.status = "available";
+          }
+          break;
+      }
+
+      await table.save();
+    }
+
+    await reservation.save();
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật trạng thái từ "${oldStatus}" sang "${status}"`,
+      data: {
+        reservationId: reservation._id,
+        oldStatus,
+        newStatus: status,
+        tableStatus: reservation.tableId ? reservation.tableId.status : null,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating reservation status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi cập nhật trạng thái đặt bàn",
+    });
+  }
+};
+
 module.exports = {
+  getAllReservations,
+  updateReservationStatus,
   createReservation: exports.createReservation,
   getCustomerReservations: exports.getCustomerReservations,
   getReservationByNumber: exports.getReservationByNumber,

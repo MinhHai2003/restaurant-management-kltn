@@ -12,6 +12,7 @@ import ProfilePage from './pages/account/ProfilePage'
 import OrdersPage from './pages/account/OrdersPage'
 import ReservationsPage from './pages/account/ReservationsPage'
 import AddressesPage from './pages/account/AddressesPage'
+import AdminDashboard from './pages/AdminDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -34,6 +35,11 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/thanh-toan" element={<CheckoutPage />} />
             <Route path="/dat-ban" element={<DatBanPage />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/quan-tri" element={<AdminDashboard />} />
+            <Route path="/AdminDashboard" element={<AdminDashboard />} />
             
             {/* Account Routes - Protected */}
             <Route path="/profile" element={

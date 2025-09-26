@@ -22,7 +22,7 @@ const tableSchema = new mongoose.Schema(
     },
     zone: {
       type: String,
-      required: true,
+      required: false, // Không bắt buộc nữa
       default: "main",
     },
     features: [

@@ -1,3 +1,37 @@
+// 📝 Update table info
+exports.updateTable = async (req, res) => {
+  try {
+    const { tableId } = req.params;
+    const updateData = req.body;
+
+    // Không cho phép update _id
+    if (updateData._id) delete updateData._id;
+
+    const updatedTable = await Table.findByIdAndUpdate(
+      tableId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+    if (!updatedTable) {
+      return res.status(404).json({
+        success: false,
+        message: "Table not found",
+      });
+    }
+    res.json({
+      success: true,
+      message: "Table updated successfully",
+      data: { table: updatedTable },
+    });
+  } catch (error) {
+    console.error("Update table error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update table",
+      error: error.message,
+    });
+  }
+};
 const Table = require("../models/Table");
 const Reservation = require("../models/Reservation");
 
@@ -328,4 +362,5 @@ module.exports = {
   searchAvailableTables: exports.searchAvailableTables,
   getTableAvailability: exports.getTableAvailability,
   getTableStats: exports.getTableStats,
+  updateTable: exports.updateTable,
 };

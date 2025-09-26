@@ -48,4 +48,11 @@ router.get(
   tableController.getTableById
 );
 
+// 📝 Update Table (PUT)
+router.put(
+  "/:tableId",
+  param("tableId").isMongoId().withMessage("Valid table ID is required"),
+  tableController.updateTable
+);
+
 module.exports = router;

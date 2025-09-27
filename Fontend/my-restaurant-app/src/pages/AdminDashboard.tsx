@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import InventoryManagement from '../components/admin/InventoryManagementReal';
+import AdminInventoryManagement from '../components/admin/AdminInventoryManagement';
 
 interface ApiReservation {
   _id: string;
@@ -859,7 +859,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'overview' && renderOverview()}
             {activeTab === 'reservations' && renderReservations()}
             {activeTab === 'tables' && renderTableManagement()}
-            {activeTab === 'inventory' && <InventoryManagement />}
+            {activeTab === 'inventory' && <AdminInventoryManagement />}
             {activeTab === 'orders' && renderPlaceholder(
               'Quản lý đặt món', 
               '🍽️', 

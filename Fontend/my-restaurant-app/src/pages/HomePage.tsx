@@ -65,20 +65,30 @@ const HomePage: React.FC = () => {
   };
 
   // Filter products by categories for different sections
-  const seafoodProducts = convertToProducts(menuItems.filter(item => 
-    item.category === 'Hải sản tươi sống' && item.available
+  const riceAndNoodleProducts = convertToProducts(menuItems.filter(item => 
+    ['Cơm chiên', 'Phở', 'Cơm tấm', 'Bún', 'Mì Quảng'].includes(item.category) && item.available
   ));
   
-  const processedSeafoodProducts = convertToProducts(menuItems.filter(item => 
-    item.category === 'Hải sản chế biến' && item.available
+  const seafoodAndGrillProducts = convertToProducts(menuItems.filter(item => 
+    ['Hải sản nướng', 'Nướng BBQ', 'Hải sản tươi sống'].includes(item.category) && item.available
   ));
   
-  const sideDisheProducts = convertToProducts(menuItems.filter(item => 
-    item.category === 'Món ăn đồ phụ' && item.available
+  const hotpotAndSoupProducts = convertToProducts(menuItems.filter(item => 
+    ['Lẩu', 'Canh'].includes(item.category) && item.available
   ));
 
-  // Featured products (mix of all categories)
-  const featuredProducts = convertToProducts(menuItems.filter(item => item.available).slice(0, 8));
+  const snacksAndRollsProducts = convertToProducts(menuItems.filter(item => 
+    ['Gỏi cuốn', 'Bánh mì', 'Bánh xèo'].includes(item.category) && item.available
+  ));
+
+  const drinksAndDessertProducts = convertToProducts(menuItems.filter(item => 
+    ['Nước uống', 'Tráng miệng'].includes(item.category) && item.available
+  ));
+
+  // Featured products (mix of popular dishes)
+  const featuredProducts = convertToProducts(menuItems.filter(item => 
+    item.available && ['Cơm Chiên Hải Sản', 'Phở Bò Tái', 'Lẩu Cá Khoai', 'Tôm Nướng Muối Ớt', 'Cá Lăng Nướng Giấy Bạc'].includes(item.name)
+  ).slice(0, 8));
 
   if (loading) {
     return (
@@ -142,42 +152,82 @@ const HomePage: React.FC = () => {
     <div style={{ minHeight: '100vh', background: 'white' }}>
       <Header />
       
+      {/* Test Menu Integration Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+        color: 'white',
+        padding: '15px 20px',
+        textAlign: 'center'
+      }}>
+        <p style={{ margin: 0, fontSize: '14px' }}>
+          🚀 <strong>NEW:</strong> Test Menu-Inventory Integration - 
+          <a 
+            href="/menu-inventory-test" 
+            style={{ 
+              color: 'white', 
+              textDecoration: 'underline',
+              marginLeft: '10px',
+              fontWeight: '600'
+            }}
+          >
+            Xem Demo →
+          </a>
+        </p>
+      </div>
 
       {/* Categories Section */}
       <Categories />
 
       {/* Featured Products Section */}
       <ProductSection
-        title="SẢN PHẨM NỔI BẬT"
+        title="MÓN ĂN NỔI BẬT"
         products={featuredProducts}
-        viewAllLink="/sp/group/san-pham-noi-bat"
+        viewAllLink="/sp/group/mon-an-noi-bat"
         backgroundColor="white"
         onCartUpdate={updateCartCount}
       />
 
-      {/* Fresh Seafood Section */}
+      {/* Rice & Noodle Section */}
       <ProductSection
-        title="HẢI SẢN TƯƠI SỐNG"
-        products={seafoodProducts}
-        viewAllLink="/sp/group/hai-san-tuoi-song"
+        title="CƠM CHIÊN & PHỞ"
+        products={riceAndNoodleProducts}
+        viewAllLink="/sp/group/com-chien-pho"
         backgroundColor="#f9fafb"
         onCartUpdate={updateCartCount}
       />
 
-      {/* Processed Seafood Section */}
+      {/* Seafood & Grill Section */}
       <ProductSection
-        title="HẢI SẢN CHẾ BIẾN"
-        products={processedSeafoodProducts}
-        viewAllLink="/sp/group/hai-san-che-bien"
+        title="HẢI SẢN & NƯỚNG"
+        products={seafoodAndGrillProducts}
+        viewAllLink="/sp/group/hai-san-nuong"
         backgroundColor="white"
         onCartUpdate={updateCartCount}
       />
 
-      {/* Side Dishes Section */}
+      {/* Hotpot & Soup Section */}
       <ProductSection
-        title="MÓN ĂN ĐỒ PHỤ"
-        products={sideDisheProducts}
-        viewAllLink="/sp/group/mon-an-do-phu"
+        title="LẨU & CANH"
+        products={hotpotAndSoupProducts}
+        viewAllLink="/sp/group/lau-canh"
+        backgroundColor="#f9fafb"
+        onCartUpdate={updateCartCount}
+      />
+
+      {/* Snacks & Rolls Section */}
+      <ProductSection
+        title="BÁNH & GỎI CUỐN"
+        products={snacksAndRollsProducts}
+        viewAllLink="/sp/group/banh-goi-cuon"
+        backgroundColor="white"
+        onCartUpdate={updateCartCount}
+      />
+
+      {/* Drinks & Dessert Section */}
+      <ProductSection
+        title="NƯỚC UỐNG & TRÁNG MIỆNG"
+        products={drinksAndDessertProducts}
+        viewAllLink="/sp/group/nuoc-uong-trang-mieng"
         backgroundColor="#f9fafb"
         onCartUpdate={updateCartCount}
       />

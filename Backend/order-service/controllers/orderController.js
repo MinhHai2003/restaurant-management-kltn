@@ -28,23 +28,39 @@ exports.createOrder = async (req, res) => {
     // 2. Validate menu items and get pricing
     const validatedItems = await menuApiClient.validateOrderItems(items);
 
-    // 3. Check inventory stock
-    const stockCheck = await inventoryApiClient.checkOrderStock(
-      validatedItems.items
+    // 3. Check inventory stock using recipe-based checking
+    const stockCheck = await inventoryApiClient.checkMenuItemsStock(
+      validatedItems.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+      }))
     );
     if (!stockCheck.allAvailable) {
       console.log(
-        "[ORDER DEBUG] unavailableItems:",
+        "[ORDER DEBUG] unavailable menu items:",
         JSON.stringify(stockCheck.unavailableItems, null, 2)
       );
       console.log(
-        "[ORDER DEBUG] stockChecks:",
-        JSON.stringify(stockCheck.stockChecks, null, 2)
+        "[ORDER DEBUG] stock details:",
+        JSON.stringify(stockCheck.items, null, 2)
       );
+
+      // Convert to format expected by frontend
+      const unavailableItems = stockCheck.unavailableItems.map((item) => ({
+        itemId: null, // Menu item không có ID trong inventory
+        name: item.menuItem,
+        requestedQuantity: item.orderQuantity,
+        availableStock: 0, // Không áp dụng cho recipe-based checking
+        reason: `Missing ingredients: ${item.ingredients
+          .filter((ing) => !ing.available)
+          .map((ing) => `${ing.ingredientName} (${ing.reason})`)
+          .join(", ")}`,
+      }));
+
       return res.status(400).json({
         success: false,
         message: "Some items are not available",
-        unavailableItems: stockCheck.unavailableItems,
+        unavailableItems: unavailableItems,
       });
     }
 
@@ -158,9 +174,19 @@ exports.createOrder = async (req, res) => {
       // Không trả lỗi cho client, chỉ log
     }
 
-    // 8. Reserve stock
+    // 8. Reduce inventory based on recipe ingredients
     try {
-      await inventoryApiClient.reserveStock(validatedItems.items, order._id);
+      const inventoryReduction =
+        await inventoryApiClient.reduceInventoryByMenuItems(
+          validatedItems.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+          }))
+        );
+      console.log(
+        "[ORDER DEBUG] Inventory reduced successfully:",
+        inventoryReduction
+      );
     } catch (stockError) {
       // If stock reservation fails, delete the order
       await Order.findByIdAndDelete(order._id);

@@ -286,6 +286,7 @@ OrderSchema.methods.updateStatus = function (
   note = "",
   updatedBy = "system"
 ) {
+  const oldStatus = this.status;
   this.status = newStatus;
   this.timeline.push({
     status: newStatus,
@@ -300,6 +301,30 @@ OrderSchema.methods.updateStatus = function (
     this.totalTime = Math.round(
       (this.actualCompletionTime - this.orderDate) / (1000 * 60)
     );
+  }
+
+  // 🍽️ Tự động giảm inventory khi order được confirmed hoặc preparing
+  if (newStatus === "confirmed" || newStatus === "preparing") {
+    // Sử dụng setImmediate để không block save operation
+    setImmediate(async () => {
+      try {
+        const inventoryApiClient = require("../services/inventoryApiClient");
+        console.log(
+          `🍽️ Order ${this.orderNumber} status changed to ${newStatus} - reducing inventory`
+        );
+
+        await inventoryApiClient.reduceInventoryByMenuItems(this.items);
+        console.log(
+          `✅ Inventory reduced successfully for order ${this.orderNumber}`
+        );
+      } catch (error) {
+        console.error(
+          `❌ Failed to reduce inventory for order ${this.orderNumber}:`,
+          error.message
+        );
+        // Log error nhưng không fail toàn bộ order update
+      }
+    });
   }
 
   return this.save();

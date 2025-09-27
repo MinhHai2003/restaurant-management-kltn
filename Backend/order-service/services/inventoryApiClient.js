@@ -1,4 +1,5 @@
 const axios = require("axios");
+const menuItemRecipes = require("../config/menuItemRecipes");
 
 class InventoryApiClient {
   constructor() {
@@ -10,6 +11,249 @@ class InventoryApiClient {
         "Content-Type": "application/json",
       },
     });
+  }
+
+  // === MỚI: Giảm inventory dựa trên recipe món ăn ===
+  async reduceInventoryByMenuItems(orderItems) {
+    try {
+      console.log(
+        "🍽️ Processing inventory reduction for order items:",
+        orderItems
+      );
+
+      const inventoryUpdates = [];
+      const reductionResults = [];
+
+      // Lấy toàn bộ inventory hiện tại
+      const inventoryResponse = await this.client.get("/api/inventory");
+      const inventoryItems = Array.isArray(inventoryResponse.data)
+        ? inventoryResponse.data
+        : inventoryResponse.data.data || [];
+
+      for (const item of orderItems) {
+        const { name: itemName, quantity: orderQuantity } = item;
+
+        // Tìm recipe cho món ăn này
+        const recipe = menuItemRecipes[itemName];
+        if (!recipe) {
+          console.warn(`⚠️ No recipe found for menu item: ${itemName}`);
+          reductionResults.push({
+            menuItem: itemName,
+            status: "skipped",
+            message: "No recipe found",
+          });
+          continue;
+        }
+
+        console.log(`📋 Recipe found for ${itemName}:`, recipe);
+
+        // Tính toán và thực hiện giảm từng nguyên liệu
+        const ingredientReductions = [];
+
+        for (const ingredient of recipe.ingredients) {
+          const totalNeeded = ingredient.quantity * orderQuantity;
+
+          // Tìm nguyên liệu trong inventory
+          const inventoryItem = inventoryItems.find(
+            (invItem) =>
+              invItem.name &&
+              invItem.name.toLowerCase() === ingredient.name.toLowerCase()
+          );
+
+          if (!inventoryItem) {
+            console.warn(
+              `⚠️ Ingredient not found in inventory: ${ingredient.name}`
+            );
+            ingredientReductions.push({
+              ingredientName: ingredient.name,
+              status: "not_found",
+              quantityNeeded: totalNeeded,
+              unit: ingredient.unit,
+            });
+            continue;
+          }
+
+          // Kiểm tra có đủ số lượng không
+          if (inventoryItem.quantity < totalNeeded) {
+            console.warn(
+              `⚠️ Insufficient stock for ${ingredient.name}: need ${totalNeeded}, have ${inventoryItem.quantity}`
+            );
+            ingredientReductions.push({
+              ingredientName: ingredient.name,
+              status: "insufficient",
+              quantityNeeded: totalNeeded,
+              quantityAvailable: inventoryItem.quantity,
+              unit: ingredient.unit,
+            });
+            continue;
+          }
+
+          // Thực hiện giảm inventory
+          const newQuantity = inventoryItem.quantity - totalNeeded;
+
+          try {
+            await this.client.put(`/api/inventory/${inventoryItem._id}`, {
+              name: inventoryItem.name,
+              quantity: newQuantity,
+              unit: inventoryItem.unit,
+              minQuantity: inventoryItem.minQuantity,
+              price: inventoryItem.price,
+              supplier: inventoryItem.supplier,
+              category: inventoryItem.category,
+              status:
+                newQuantity <= (inventoryItem.minQuantity || 0)
+                  ? "low-stock"
+                  : inventoryItem.status,
+            });
+
+            console.log(
+              `✅ Reduced ${ingredient.name}: ${inventoryItem.quantity} → ${newQuantity} ${ingredient.unit}`
+            );
+
+            ingredientReductions.push({
+              ingredientName: ingredient.name,
+              status: "reduced",
+              quantityReduced: totalNeeded,
+              oldQuantity: inventoryItem.quantity,
+              newQuantity: newQuantity,
+              unit: ingredient.unit,
+            });
+
+            // Cập nhật local inventory data để các ingredient tiếp theo có dữ liệu chính xác
+            inventoryItem.quantity = newQuantity;
+          } catch (updateError) {
+            console.error(
+              `❌ Failed to reduce ${ingredient.name}:`,
+              updateError.message
+            );
+            ingredientReductions.push({
+              ingredientName: ingredient.name,
+              status: "update_failed",
+              error: updateError.message,
+              quantityNeeded: totalNeeded,
+              unit: ingredient.unit,
+            });
+          }
+        }
+
+        reductionResults.push({
+          menuItem: itemName,
+          orderQuantity: orderQuantity,
+          status: "processed",
+          ingredients: ingredientReductions,
+        });
+      }
+
+      console.log("✅ Inventory reduction completed");
+      return {
+        success: true,
+        results: reductionResults,
+      };
+    } catch (error) {
+      console.error(
+        "❌ Error reducing inventory by menu items:",
+        error.message
+      );
+      throw new Error(`Failed to reduce inventory: ${error.message}`);
+    }
+  }
+
+  // Kiểm tra nguyên liệu có đủ cho món ăn không
+  async checkMenuItemsStock(orderItems) {
+    try {
+      console.log("🔍 Checking stock availability for menu items:", orderItems);
+
+      const stockCheckResults = [];
+      let allAvailable = true;
+
+      // Lấy toàn bộ inventory hiện tại
+      const inventoryResponse = await this.client.get("/api/inventory");
+      const inventoryItems = Array.isArray(inventoryResponse.data)
+        ? inventoryResponse.data
+        : inventoryResponse.data.data || [];
+
+      for (const item of orderItems) {
+        const { name: itemName, quantity: orderQuantity } = item;
+
+        // Tìm recipe cho món ăn này
+        const recipe = menuItemRecipes[itemName];
+        if (!recipe) {
+          console.warn(`⚠️ No recipe found for menu item: ${itemName}`);
+          stockCheckResults.push({
+            menuItem: itemName,
+            available: false,
+            reason: "No recipe found",
+          });
+          allAvailable = false;
+          continue;
+        }
+
+        let itemAvailable = true;
+        const ingredientChecks = [];
+
+        // Kiểm tra từng nguyên liệu
+        for (const ingredient of recipe.ingredients) {
+          const totalNeeded = ingredient.quantity * orderQuantity;
+
+          // Tìm nguyên liệu trong inventory
+          const inventoryItem = inventoryItems.find(
+            (invItem) =>
+              invItem.name &&
+              invItem.name.toLowerCase() === ingredient.name.toLowerCase()
+          );
+
+          if (!inventoryItem) {
+            ingredientChecks.push({
+              ingredientName: ingredient.name,
+              available: false,
+              reason: "Not found in inventory",
+              quantityNeeded: totalNeeded,
+              unit: ingredient.unit,
+            });
+            itemAvailable = false;
+          } else if (inventoryItem.quantity < totalNeeded) {
+            ingredientChecks.push({
+              ingredientName: ingredient.name,
+              available: false,
+              reason: "Insufficient stock",
+              quantityNeeded: totalNeeded,
+              quantityAvailable: inventoryItem.quantity,
+              unit: ingredient.unit,
+            });
+            itemAvailable = false;
+          } else {
+            ingredientChecks.push({
+              ingredientName: ingredient.name,
+              available: true,
+              quantityNeeded: totalNeeded,
+              quantityAvailable: inventoryItem.quantity,
+              unit: ingredient.unit,
+            });
+          }
+        }
+
+        stockCheckResults.push({
+          menuItem: itemName,
+          orderQuantity: orderQuantity,
+          available: itemAvailable,
+          ingredients: ingredientChecks,
+        });
+
+        if (!itemAvailable) {
+          allAvailable = false;
+        }
+      }
+
+      console.log(`🔍 Stock check completed. All available: ${allAvailable}`);
+      return {
+        allAvailable,
+        items: stockCheckResults,
+        unavailableItems: stockCheckResults.filter((item) => !item.available),
+      };
+    } catch (error) {
+      console.error("❌ Error checking menu items stock:", error.message);
+      throw new Error(`Failed to check menu items stock: ${error.message}`);
+    }
   }
 
   // Check stock availability by item name

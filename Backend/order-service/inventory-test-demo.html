@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu-Inventory Integration Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+      .test-section h3 {
+        margin-top: 0;
+        color: #3498db;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      button:disabled {
+        background-color: #95a5a6;
+        cursor: not-allowed;
+      }
+      .result {
+        background-color: #ecf0f1;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .success {
+        color: #27ae60;
+      }
+      .error {
+        color: #e74c3c;
+      }
+      .warning {
+        color: #f39c12;
+      }
+      .menu-item {
+        display: inline-block;
+        background: #3498db;
+        color: white;
+        padding: 5px 10px;
+        margin: 2px;
+        border-radius: 3px;
+        font-size: 12px;
+      }
+      .ingredient {
+        display: inline-block;
+        background: #95a5a6;
+        color: white;
+        padding: 2px 6px;
+        margin: 1px;
+        border-radius: 2px;
+        font-size: 11px;
+      }
+      .order-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🍽️ Menu-Inventory Integration Test</h1>
+        <p>Kiểm tra hệ thống kết nối giữa menu và inventory</p>
+      </div>
+
+      <div class="test-section">
+        <h3>📋 1. Recipe Information</h3>
+        <button onclick="loadRecipes()">Load All Recipes</button>
+        <div id="recipesResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>📦 2. Inventory Status</h3>
+        <button onclick="loadInventory()">Load Inventory</button>
+        <div id="inventoryResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>🔍 3. Stock Checking</h3>
+        <p>Test với các món ăn mẫu:</p>
+        <div class="order-item">
+          <strong>Test Order:</strong><br />
+          <span class="menu-item">Cơm Chiên Hải Sản x2</span>
+          <span class="menu-item">Phở Bò Tái x1</span>
+          <span class="menu-item">Tôm Nướng Muối Ớt x1</span>
+        </div>
+        <button onclick="checkStock()">Check Stock Availability</button>
+        <div id="stockResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>⚠️ 4. Inventory Reduction Test</h3>
+        <p><strong>WARNING:</strong> Thao tác này sẽ thực sự giảm inventory!</p>
+        <div class="order-item">
+          <strong>Safe Test Order (Small quantity):</strong><br />
+          <span class="menu-item">Trà Đá x1</span>
+        </div>
+        <button onclick="testReduction()" style="background-color: #e67e22">
+          Test Reduction (CAREFUL!)
+        </button>
+        <div id="reductionResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>🎯 5. Custom Order Test</h3>
+        <p>Test với order tùy chỉnh:</p>
+        <select
+          id="menuSelect"
+          multiple
+          style="width: 100%; height: 100px; margin-bottom: 10px"
+        >
+          <!-- Will be populated by JavaScript -->
+        </select>
+        <br />
+        <label>Quantity: </label>
+        <input type="number" id="customQuantity" value="1" min="1" max="10" />
+        <br /><br />
+        <button onclick="testCustomOrder()">Test Custom Order</button>
+        <div id="customResult" class="result" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      const ORDER_SERVICE_URL = "http://localhost:5005";
+      const INVENTORY_SERVICE_URL = "http://localhost:5004";
+
+      let availableMenuItems = [];
+
+      async function makeRequest(url, options = {}) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              "Content-Type": "application/json",
+              ...options.headers,
+            },
+            ...options,
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          return await response.json();
+        } catch (error) {
+          throw new Error(`Request failed: ${error.message}`);
+        }
+      }
+
+      async function loadRecipes() {
+        const resultDiv = document.getElementById("recipesResult");
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "Loading recipes...";
+
+        try {
+          const data = await makeRequest(
+            `${ORDER_SERVICE_URL}/api/inventory-test/recipes`
+          );
+
+          let html = `<span class="success">✅ Found ${data.totalMenuItems} recipes:</span>\n\n`;
+
+          for (const [menuItem, recipe] of Object.entries(data.recipes)) {
+            html += `🍽️ <strong>${menuItem}</strong>\n`;
+            html += `   Ingredients (${recipe.ingredients.length}):\n`;
+            for (const ing of recipe.ingredients) {
+              html += `   • ${ing.name}: ${ing.quantity} ${ing.unit}\n`;
+            }
+            html += `\n`;
+          }
+
+          // Populate menu select
+          availableMenuItems = Object.keys(data.recipes);
+          populateMenuSelect();
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        }
+      }
+
+      async function loadInventory() {
+        const resultDiv = document.getElementById("inventoryResult");
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "Loading inventory...";
+
+        try {
+          const data = await makeRequest(
+            `${INVENTORY_SERVICE_URL}/api/inventory`
+          );
+          const items = Array.isArray(data) ? data : data.data || [];
+
+          let html = `<span class="success">✅ Found ${items.length} inventory items:</span>\n\n`;
+
+          // Group by category
+          const categories = {};
+          for (const item of items) {
+            const category = item.category || "Other";
+            if (!categories[category]) categories[category] = [];
+            categories[category].push(item);
+          }
+
+          for (const [category, categoryItems] of Object.entries(categories)) {
+            html += `📁 <strong>${category}</strong>\n`;
+            for (const item of categoryItems.slice(0, 10)) {
+              // Limit to 10 per category
+              const status =
+                item.quantity <= (item.minQuantity || 0) ? "⚠️" : "✅";
+              html += `   ${status} ${item.name}: ${item.quantity} ${item.unit}`;
+              if (item.price) html += ` - ${item.price.toLocaleString()} VNĐ`;
+              html += `\n`;
+            }
+            if (categoryItems.length > 10) {
+              html += `   ... and ${categoryItems.length - 10} more items\n`;
+            }
+            html += `\n`;
+          }
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        }
+      }
+
+      async function checkStock() {
+        const resultDiv = document.getElementById("stockResult");
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "Checking stock...";
+
+        const testOrder = [
+          { name: "Cơm Chiên Hải Sản", quantity: 2 },
+          { name: "Phở Bò Tái", quantity: 1 },
+          { name: "Tôm Nướng Muối Ớt", quantity: 1 },
+        ];
+
+        try {
+          const data = await makeRequest(
+            `${ORDER_SERVICE_URL}/api/inventory-test/check-menu-stock`,
+            {
+              method: "POST",
+              body: JSON.stringify({ orderItems: testOrder }),
+            }
+          );
+
+          let html = `<span class="${
+            data.data.allAvailable ? "success" : "warning"
+          }">Stock Check Result: ${
+            data.data.allAvailable
+              ? "✅ All Available"
+              : "⚠️ Some Items Unavailable"
+          }</span>\n\n`;
+
+          for (const item of data.data.items) {
+            html += `🍽️ <strong>${item.menuItem}</strong> (${
+              item.orderQuantity
+            }x): ${item.available ? "✅ Available" : "❌ Unavailable"}\n`;
+
+            for (const ing of item.ingredients) {
+              const status = ing.available ? "✅" : "❌";
+              html += `   ${status} ${ing.ingredientName}: need ${ing.quantityNeeded} ${ing.unit}`;
+              if (ing.quantityAvailable !== undefined) {
+                html += ` (have ${ing.quantityAvailable})`;
+              }
+              if (ing.reason && !ing.available) {
+                html += ` - ${ing.reason}`;
+              }
+              html += `\n`;
+            }
+            html += `\n`;
+          }
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        }
+      }
+
+      async function testReduction() {
+        const resultDiv = document.getElementById("reductionResult");
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "Testing inventory reduction...";
+
+        const safeTestOrder = [{ name: "Trà Đá", quantity: 1 }];
+
+        try {
+          const data = await makeRequest(
+            `${ORDER_SERVICE_URL}/api/inventory-test/test-reduce`,
+            {
+              method: "POST",
+              body: JSON.stringify({ orderItems: safeTestOrder }),
+            }
+          );
+
+          let html = `<span class="success">✅ Reduction Test Completed</span>\n\n`;
+
+          html += `<strong>Stock Check Before Reduction:</strong>\n`;
+          for (const item of data.stockCheck.items) {
+            html += `🍽️ ${item.menuItem}: ${
+              item.available ? "✅ Available" : "❌ Unavailable"
+            }\n`;
+          }
+          html += `\n`;
+
+          html += `<strong>Reduction Results:</strong>\n`;
+          for (const result of data.reductionResult.results) {
+            html += `🍽️ <strong>${result.menuItem}</strong> (${result.orderQuantity}x): ${result.status}\n`;
+
+            for (const ing of result.ingredients) {
+              if (ing.status === "reduced") {
+                html += `   ✅ ${ing.ingredientName}: ${ing.oldQuantity} → ${ing.newQuantity} ${ing.unit} (reduced ${ing.quantityReduced})\n`;
+              } else {
+                html += `   ⚠️ ${ing.ingredientName}: ${ing.status}`;
+                if (ing.error) html += ` - ${ing.error}`;
+                html += `\n`;
+              }
+            }
+            html += `\n`;
+          }
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        }
+      }
+
+      function populateMenuSelect() {
+        const select = document.getElementById("menuSelect");
+        select.innerHTML = "";
+
+        for (const menuItem of availableMenuItems) {
+          const option = document.createElement("option");
+          option.value = menuItem;
+          option.textContent = menuItem;
+          select.appendChild(option);
+        }
+      }
+
+      async function testCustomOrder() {
+        const resultDiv = document.getElementById("customResult");
+        const select = document.getElementById("menuSelect");
+        const quantity = document.getElementById("customQuantity").value;
+
+        if (select.selectedOptions.length === 0) {
+          resultDiv.style.display = "block";
+          resultDiv.innerHTML =
+            '<span class="warning">⚠️ Please select at least one menu item</span>';
+          return;
+        }
+
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "Testing custom order...";
+
+        const customOrder = Array.from(select.selectedOptions).map(
+          (option) => ({
+            name: option.value,
+            quantity: parseInt(quantity),
+          })
+        );
+
+        try {
+          const data = await makeRequest(
+            `${ORDER_SERVICE_URL}/api/inventory-test/check-menu-stock`,
+            {
+              method: "POST",
+              body: JSON.stringify({ orderItems: customOrder }),
+            }
+          );
+
+          let html = `<strong>Custom Order Test:</strong>\n`;
+          for (const item of customOrder) {
+            html += `🍽️ ${item.name} x${item.quantity}\n`;
+          }
+          html += `\n`;
+
+          html += `<span class="${
+            data.data.allAvailable ? "success" : "warning"
+          }">Result: ${
+            data.data.allAvailable
+              ? "✅ All Available"
+              : "⚠️ Some Items Unavailable"
+          }</span>\n\n`;
+
+          for (const item of data.data.items) {
+            html += `🍽️ <strong>${item.menuItem}</strong>: ${
+              item.available ? "✅ Available" : "❌ Unavailable"
+            }\n`;
+
+            const unavailableIngredients = item.ingredients.filter(
+              (ing) => !ing.available
+            );
+            if (unavailableIngredients.length > 0) {
+              html += `   Unavailable ingredients:\n`;
+              for (const ing of unavailableIngredients) {
+                html += `   ❌ ${ing.ingredientName}: ${ing.reason}\n`;
+              }
+            }
+            html += `\n`;
+          }
+
+          resultDiv.innerHTML = html;
+        } catch (error) {
+          resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        }
+      }
+
+      // Load recipes on page load
+      window.onload = function () {
+        loadRecipes();
+      };
+    </script>
+  </body>
+</html>

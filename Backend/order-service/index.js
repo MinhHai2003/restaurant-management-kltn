@@ -55,6 +55,7 @@ app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/orders/dine-in", require("./routes/dineInRoutes"));
 app.use("/api/orders/pickup", require("./routes/pickupRoutes"));
 app.use("/api/orders", orderRoutes);
+app.use("/api/inventory-test", require("./routes/inventoryTestRoutes")); // 🍽️ Test inventory integration
 
 // 404 Handler
 app.use("*", (req, res) => {

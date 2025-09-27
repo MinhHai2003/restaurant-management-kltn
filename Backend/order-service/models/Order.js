@@ -257,7 +257,9 @@ const OrderSchema = new mongoose.Schema(
 
 // Virtuals
 OrderSchema.virtual("totalItems").get(function () {
-  return this.items.reduce((total, item) => total + item.quantity, 0);
+  return this.items && Array.isArray(this.items)
+    ? this.items.reduce((total, item) => total + item.quantity, 0)
+    : 0;
 });
 
 OrderSchema.virtual("isDelivered").get(function () {

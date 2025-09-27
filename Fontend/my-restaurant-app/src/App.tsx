@@ -13,7 +13,6 @@ import OrdersPage from './pages/account/OrdersPage'
 import ReservationsPage from './pages/account/ReservationsPage'
 import AddressesPage from './pages/account/AddressesPage'
 import AdminDashboard from './pages/AdminDashboard'
-import MenuInventoryTestPage from './pages/MenuInventoryTestPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -38,8 +37,6 @@ function App() {
             <Route path="/dat-ban" element={<DatBanPage />} />
             
             {/* Menu-Inventory Integration Test */}
-            <Route path="/menu-inventory-test" element={<MenuInventoryTestPage />} />
-            <Route path="/test-menu" element={<MenuInventoryTestPage />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminDashboard />} />

@@ -18,8 +18,8 @@ app.use(cors());
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -54,8 +54,9 @@ app.get("/health", (req, res) => {
 app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/orders/dine-in", require("./routes/dineInRoutes"));
 app.use("/api/orders/pickup", require("./routes/pickupRoutes"));
+app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/orders", orderRoutes);
-app.use("/api/inventory-test", require("./routes/inventoryTestRoutes")); // 🍽️ Test inventory integration
+app.use("/api/inventory-test", require("./routes/inventoryTestRoutes"));
 
 // 404 Handler
 app.use("*", (req, res) => {
@@ -81,8 +82,9 @@ app.use((error, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Order Service running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`� Cart API: http://localhost:${PORT}/api/cart`);
-  console.log(`�📦 Order API: http://localhost:${PORT}/api/orders`);
+  console.log(`📱 Cart API: http://localhost:${PORT}/api/cart`);
+  console.log(`📦 Order API: http://localhost:${PORT}/api/orders`);
+  console.log(`👨‍💼 Admin Orders: http://localhost:${PORT}/api/admin/orders`);
   console.log(`\n🎯 Available endpoints:`);
   console.log(`\n🛒 Cart endpoints:`);
   console.log(`   GET  /api/cart - Get cart`);
@@ -103,6 +105,11 @@ app.listen(PORT, () => {
   console.log(`   POST /api/orders/:id/rate - Rate order`);
   console.log(`   POST /api/orders/:id/reorder - Reorder`);
   console.log(`   GET  /api/orders/track/:orderNumber - Track order`);
+  console.log(`\n👨‍💼 Admin Order endpoints:`);
+  console.log(`   GET  /api/admin/orders/dashboard - Get dashboard stats`);
+  console.log(`   POST /api/admin/orders - Create admin order`);
+  console.log(`   GET  /api/admin/orders - Get all orders (admin)`);
+  console.log(`   PATCH /api/admin/orders/:id/status - Update order status`);
   console.log(`\n🚀 Server ready for requests!`);
 });
 

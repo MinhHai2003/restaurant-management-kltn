@@ -6,7 +6,22 @@ const customerApiClient = require("../services/customerApiClient");
 // 🛒 Get Cart
 exports.getCart = async (req, res) => {
   try {
+    console.log("🛒 [CART DEBUG] Getting cart for customer:", req.customerId);
+
     const cart = await Cart.findOrCreateCart(req.customerId, req.sessionId);
+
+    console.log("🛒 [CART DEBUG] Cart summary:", {
+      subtotal: cart.summary.subtotal,
+      loyaltyDiscount: cart.summary.loyaltyDiscount,
+      couponDiscount: cart.summary.couponDiscount,
+      total: cart.summary.total,
+      deliveryFee: cart.summary.deliveryFee,
+    });
+
+    console.log(
+      "🛒 [CART DEBUG] Customer info in cart:",
+      cart.customerInfo || "No customer info"
+    );
 
     res.json({
       success: true,
@@ -478,6 +493,32 @@ exports.checkoutCart = async (req, res) => {
   }
 };
 
+// 🔄 Force refresh cart summary (when membership changes)
+exports.refreshCart = async (req, res) => {
+  try {
+    const cart = await Cart.findOrCreateCart(req.customerId, req.sessionId);
+
+    // Force update summary with latest customer info
+    await cart.updateSummary();
+    await cart.save();
+
+    console.log("🔄 Cart refreshed with latest membership data");
+
+    res.json({
+      success: true,
+      message: "Cart refreshed successfully",
+      data: { cart },
+    });
+  } catch (error) {
+    console.error("Refresh cart error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to refresh cart",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getCart: exports.getCart,
   addToCart: exports.addToCart,
@@ -489,4 +530,5 @@ module.exports = {
   updateDelivery: exports.updateDelivery,
   getCartSummary: exports.getCartSummary,
   checkoutCart: exports.checkoutCart,
+  refreshCart: exports.refreshCart,
 };

@@ -61,6 +61,7 @@ const checkoutValidation = [
 // 🛒 Cart Management Routes
 router.get("/", authenticateCustomer, cartController.getCart);
 router.get("/summary", authenticateCustomer, cartController.getCartSummary);
+router.post("/refresh", authenticateCustomer, cartController.refreshCart);
 router.delete("/clear", authenticateCustomer, cartController.clearCart);
 
 // 📦 Item Management Routes

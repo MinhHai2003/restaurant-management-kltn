@@ -18,6 +18,8 @@ interface CartSummary {
   subtotal: number;
   deliveryFee: number;
   discount: number;
+  loyaltyDiscount?: number;
+  couponDiscount?: number;
   tax: number;
   total: number;
 }
@@ -76,6 +78,9 @@ class CartService {
   // Get current cart
   async getCart(): Promise<{ success: boolean; data?: { cart: Cart }; error?: string }> {
     try {
+      console.log('🛒 [CART SERVICE] Getting cart from:', API_BASE_URL);
+      console.log('🛒 [CART SERVICE] Auth headers:', this.getAuthHeaders());
+      
       const response = await fetch(`${API_BASE_URL}`, {
         method: 'GET',
         headers: this.getAuthHeaders(),
@@ -83,13 +88,16 @@ class CartService {
 
       const result = await response.json();
       
+      console.log('🛒 [CART SERVICE] Raw API response:', result);
+      console.log('🛒 [CART SERVICE] Cart summary from API:', result?.data?.cart?.summary);
+      
       if (!response.ok) {
         throw new Error(result.message || 'Failed to get cart');
       }
 
       return { success: true, data: result.data };
     } catch (error) {
-      console.error('Get cart error:', error);
+      console.error('🛒 [CART SERVICE] Get cart error:', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to get cart' 

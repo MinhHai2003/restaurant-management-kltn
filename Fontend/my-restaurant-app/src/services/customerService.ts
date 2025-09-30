@@ -197,7 +197,19 @@ class CustomerService {
   }
 
   // Get customer information
-  async getCustomerInfo(): Promise<{ success: boolean; data?: { name: string }; error?: string }> {
+  async getCustomerInfo(): Promise<{ 
+    success: boolean; 
+    data?: { 
+      name: string;
+      email: string;
+      phone: string;
+      membershipLevel: string;
+      totalSpent: number;
+      loyaltyPoints: number;
+      totalOrders: number;
+    }; 
+    error?: string 
+  }> {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
         method: 'GET',
@@ -207,7 +219,20 @@ class CustomerService {
       if (!response.ok) {
         throw new Error(result.message || `HTTP ${response.status}`);
       }
-      return { success: true, data: { name: result.data.name } };
+      
+      const customer = result.data.customer;
+      return { 
+        success: true, 
+        data: { 
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          membershipLevel: customer.membershipLevel || 'bronze',
+          totalSpent: customer.totalSpent || 0,
+          loyaltyPoints: customer.loyaltyPoints || 0,
+          totalOrders: customer.totalOrders || 0
+        } 
+      };
     } catch (error) {
       console.error('❌ Lỗi trong customerService.getCustomerInfo:', error);
       return {

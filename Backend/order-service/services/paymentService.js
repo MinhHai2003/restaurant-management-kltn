@@ -3,10 +3,10 @@ const axios = require("axios");
 class PaymentService {
   constructor() {
     this.defaultDeliveryFee =
-      parseFloat(process.env.DEFAULT_DELIVERY_FEE) || 20000;
+      parseFloat(process.env.DEFAULT_DELIVERY_FEE) || 30000; // Fixed delivery fee to match cart
     this.freeDeliveryThreshold =
-      parseFloat(process.env.FREE_DELIVERY_THRESHOLD) || 200000;
-    this.taxRate = parseFloat(process.env.TAX_RATE) || 0.1;
+      parseFloat(process.env.FREE_DELIVERY_THRESHOLD) || 500000;
+    this.taxRate = parseFloat(process.env.TAX_RATE) || 0.08; // 8% VAT to match cart
     this.paymentGatewayURL = process.env.PAYMENT_GATEWAY_URL;
   }
 

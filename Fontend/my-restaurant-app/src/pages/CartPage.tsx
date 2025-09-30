@@ -447,13 +447,57 @@ const CartPage: React.FC = () => {
                     <span style={{ fontWeight: '500' }}>{formatPrice(cart.summary.deliveryFee)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#64748b' }}>Thuế VAT:</span>
+                    <span style={{ color: '#64748b' }}>Thuế VAT (8%):</span>
                     <span style={{ fontWeight: '500' }}>{formatPrice(cart.summary.tax)}</span>
                   </div>
+                  
+                  {/* Luôn hiển thị breakdown nếu có discount */}
                   {cart.summary.discount > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#059669' }}>Giảm giá:</span>
-                      <span style={{ color: '#059669', fontWeight: '500' }}>-{formatPrice(cart.summary.discount)}</span>
+                    <div style={{ 
+                      borderTop: '1px dashed #e2e8f0', 
+                      paddingTop: '8px', 
+                      marginTop: '8px' 
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ color: '#22c55e', fontWeight: '500', fontSize: '14px' }}>💰 Các khoản giảm giá</span>
+                      </div>
+                      
+                      {(() => {
+                        const totalDiscount = cart.summary.discount;
+                        const appliedCoupon = cart.appliedCoupon;
+                        
+                        if (appliedCoupon && appliedCoupon.code) {
+                          // Có coupon được áp dụng
+                          return (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                              <span style={{ color: '#64748b' }}>• Mã giảm giá ({appliedCoupon.code}):</span>
+                              <span style={{ color: '#22c55e' }}>-{formatPrice(totalDiscount)}</span>
+                            </div>
+                          );
+                        } else {
+                          // Không có coupon, có thể là membership discount
+                          const subtotal = cart.summary.subtotal;
+                          const discountRate = subtotal > 0 ? (totalDiscount / subtotal) * 100 : 0;
+                          
+                          if (discountRate >= 4 && discountRate <= 16) {
+                            // Có vẻ như membership discount (5%, 10%, 15%)
+                            const roundedRate = Math.round(discountRate);
+                            return (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                <span style={{ color: '#64748b' }}>• Giảm giá thành viên ({roundedRate}%):</span>
+                                <span style={{ color: '#22c55e' }}>-{formatPrice(totalDiscount)}</span>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                <span style={{ color: '#64748b' }}>• Tổng giảm giá:</span>
+                                <span style={{ color: '#22c55e' }}>-{formatPrice(totalDiscount)}</span>
+                              </div>
+                            );
+                          }
+                        }
+                      })()}
                     </div>
                   )}
                 </div>
@@ -473,6 +517,18 @@ const CartPage: React.FC = () => {
                     <span>Tổng tiền:</span>
                     <span style={{ color: '#dc2626' }}>{formatPrice(cart.summary.total)}</span>
                   </div>
+                  
+                  {/* Hiển thị số tiền tiết kiệm */}
+                  {cart.summary.discount > 0 && (
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#059669',
+                      textAlign: 'right',
+                      marginTop: '4px'
+                    }}>
+                      🎉 Bạn đã tiết kiệm được {formatPrice(cart.summary.discount)}!
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes */}

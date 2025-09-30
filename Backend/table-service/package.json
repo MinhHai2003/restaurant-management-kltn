@@ -1,0 +1,35 @@
+{
+  "name": "table-service",
+  "version": "1.0.0",
+  "description": "Table Reservation Service for Restaurant Management System",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "restaurant",
+    "table",
+    "reservation",
+    "booking",
+    "microservice"
+  ],
+  "author": "Restaurant Management Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mongoose": "^8.8.3",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.4.1",
+    "express-validator": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

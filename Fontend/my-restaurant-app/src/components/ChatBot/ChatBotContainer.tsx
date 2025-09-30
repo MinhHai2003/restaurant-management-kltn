@@ -9,9 +9,13 @@ const ChatBotContainer: React.FC = () => {
     setIsOpen(!isOpen);
   };
 
+  const closeChat = () => {
+    setIsOpen(false);
+  };
+
   return (
     <>
-      <ChatBot isOpen={isOpen} onToggle={toggleChat} />
+      <ChatBot isOpen={isOpen} onClose={closeChat} />
       <ChatButton isOpen={isOpen} onClick={toggleChat} />
     </>
   );

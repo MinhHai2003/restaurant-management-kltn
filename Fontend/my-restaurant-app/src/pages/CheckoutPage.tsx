@@ -30,6 +30,14 @@ const CheckoutPage: React.FC = () => {
     notes: (location.state && location.state.notes) ? location.state.notes : ''
   });
 
+  // Customer membership info
+  const [customerMembership, setCustomerMembership] = useState({
+    membershipLevel: 'bronze',
+    totalSpent: 0,
+    loyaltyPoints: 0,
+    totalOrders: 0
+  });
+
   // Address selection
   const { user } = useAuth();
   const { updateCartCount } = useCart();
@@ -51,6 +59,11 @@ const CheckoutPage: React.FC = () => {
 
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  
+  // Coupon
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
 
   // Load cart and addresses
@@ -58,16 +71,34 @@ const CheckoutPage: React.FC = () => {
     const loadCartData = async () => {
       try {
         setLoading(true);
+        console.log('🛒 [FRONTEND DEBUG] Loading cart data...');
+        
         const result = await cartService.getCart();
+        console.log('🛒 [FRONTEND DEBUG] Cart API response:', result);
+        
         if (result.success && result.data) {
           setCart(result.data.cart);
+          
+          console.log('🛒 [FRONTEND DEBUG] Cart summary:', {
+            subtotal: result.data.cart.summary?.subtotal,
+            loyaltyDiscount: result.data.cart.summary?.loyaltyDiscount,
+            couponDiscount: result.data.cart.summary?.couponDiscount,
+            discount: result.data.cart.summary?.discount,
+            total: result.data.cart.summary?.total,
+            deliveryFee: result.data.cart.summary?.deliveryFee
+          });
+          
+          console.log('🛒 [FRONTEND DEBUG] Applied coupon:', result.data.cart.appliedCoupon);
+          
           if (result.data.cart.items.length === 0) {
             navigate('/cart');
           }
         } else {
+          console.error('🛒 [FRONTEND DEBUG] Cart loading failed:', result.error);
           setError(result.error || 'Không thể tải giỏ hàng');
         }
-      } catch {
+      } catch (error) {
+        console.error('🛒 [FRONTEND DEBUG] Cart loading exception:', error);
         setError('Có lỗi xảy ra khi tải giỏ hàng');
       } finally {
         setLoading(false);
@@ -99,11 +130,57 @@ const CheckoutPage: React.FC = () => {
     const loadCustomerInfo = async () => {
       try {
         const customerRes = await customerService.getCustomerInfo();
-        if (customerRes.success && customerRes.data && typeof customerRes.data.name !== 'undefined') {
+        if (customerRes.success && customerRes.data) {
           setCustomerInfo(info => ({
             ...info,
-            name: customerRes.data?.name || info.name,
+            name: customerRes.data!.name,
+            email: customerRes.data!.email,
+            phone: customerRes.data!.phone
           }));
+          
+          setCustomerMembership({
+            membershipLevel: customerRes.data.membershipLevel,
+            totalSpent: customerRes.data.totalSpent,
+            loyaltyPoints: customerRes.data.loyaltyPoints,
+            totalOrders: customerRes.data.totalOrders
+          });
+          
+          console.log('👤 [FRONTEND DEBUG] Customer membership loaded:', {
+            membershipLevel: customerRes.data.membershipLevel,
+            totalSpent: customerRes.data.totalSpent,
+            loyaltyPoints: customerRes.data.loyaltyPoints
+          });
+          
+          // 🔄 Force refresh cart to apply latest membership discounts
+          try {
+            console.log('🔄 [FRONTEND DEBUG] Attempting to refresh cart...');
+            const token = localStorage.getItem('token');
+            console.log('🔑 [FRONTEND DEBUG] Token exists:', !!token);
+            
+            if (token) {
+              const refreshResponse = await fetch('http://localhost:5005/api/cart/refresh', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              console.log('🔄 [FRONTEND DEBUG] Refresh response status:', refreshResponse.status);
+              
+              if (refreshResponse.ok) {
+                const refreshData = await refreshResponse.json();
+                console.log('🔄 [FRONTEND DEBUG] Cart refresh success:', refreshData);
+                // Reload cart data
+                await loadCartData();
+              } else {
+                const errorData = await refreshResponse.text();
+                console.error('🔄 [FRONTEND DEBUG] Cart refresh failed:', errorData);
+              }
+            }
+          } catch (refreshError) {
+            console.error('🔄 [FRONTEND DEBUG] Cart refresh exception:', refreshError);
+          }
         }
       } catch (error) {
         console.error('❌ Lỗi tải thông tin khách hàng:', error);
@@ -162,13 +239,41 @@ const CheckoutPage: React.FC = () => {
     setProcessing(true);
 
     try {
+      // Calculate final pricing with frontend discount
+      const subtotal = cart.summary.subtotal || 0;
+      const tax = cart.summary.tax || 0;
+      const deliveryFee = cart.summary.deliveryFee || 0;
+      const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+      
+      const membershipRates: Record<string, number> = { 
+        bronze: 0, silver: 0.05, gold: 0.1, platinum: 0.15 
+      };
+      const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+      const adjustedDeliveryFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : deliveryFee;
+      
+      // Get coupon discount from cart (if any coupon applied)
+      const couponDiscount = cart.summary.couponDiscount || 0;
+      const totalDiscount = loyaltyDiscount + couponDiscount;
+      const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
+      
+      console.log('💰 [ORDER SUBMIT] Calculated pricing:', {
+        subtotal,
+        tax,
+        originalDeliveryFee: deliveryFee,
+        adjustedDeliveryFee,
+        loyaltyDiscount,
+        couponDiscount,
+        totalDiscount,
+        finalTotal,
+        membershipLevel
+      });
+
       // Gửi thông tin đơn hàng đến API theo format mà controller mong muốn
       const orderData = {
         items: cart.items.map(item => ({
           menuItemId: item.menuItemId || item._id,
           quantity: item.quantity,
           customizations: "",
-
           notes: ''
         })),
         delivery: {
@@ -187,6 +292,20 @@ const CheckoutPage: React.FC = () => {
           customer: customerInfo.notes || '',
           kitchen: '',
           delivery: ''
+        },
+        // Add calculated pricing to ensure consistency
+        frontendPricing: {
+          subtotal,
+          tax,
+          deliveryFee: adjustedDeliveryFee,
+          loyaltyDiscount,
+          couponDiscount,
+          total: finalTotal,
+          membershipLevel,
+          breakdown: {
+            originalDeliveryFee: deliveryFee,
+            freeShipping: ['gold', 'platinum'].includes(membershipLevel)
+          }
         }
       };
 
@@ -256,6 +375,35 @@ const CheckoutPage: React.FC = () => {
       alert(`Có lỗi xảy ra khi đặt hàng: ${errorMessage}. Vui lòng thử lại!`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  // Apply coupon function
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Vui lòng nhập mã giảm giá');
+      return;
+    }
+    
+    try {
+      setCouponLoading(true);
+      setCouponError('');
+      
+      const response = await cartService.applyCoupon(couponCode.trim());
+      
+      if (response.success && response.data) {
+        setCart(response.data.cart);
+        setCouponCode('');
+        setCouponError('');
+        alert(`Áp dụng mã giảm giá thành công! Tiết kiệm ${formatPrice(response.data.appliedDiscount || 0)}`);
+      } else {
+        setCouponError(response.error || 'Mã giảm giá không hợp lệ');
+      }
+    } catch (error) {
+      console.error('Apply coupon error:', error);
+      setCouponError('Có lỗi xảy ra khi áp dụng mã giảm giá');
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -365,6 +513,78 @@ const CheckoutPage: React.FC = () => {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 height: 'fit-content'
               }}>
+                {/* Thông tin thành viên */}
+                <div style={{
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '12px',
+                  marginBottom: '24px',
+                  color: 'white'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '20px' }}>👑</span>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>
+                      Thông tin thành viên
+                    </h3>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
+                    <div>
+                      <span style={{ opacity: 0.9 }}>Hạng thành viên: </span>
+                      <span style={{ 
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        background: 'rgba(255,255,255,0.2)',
+                        padding: '2px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        {(() => {
+                          switch(customerMembership.membershipLevel) {
+                            case 'bronze': return '🥉 Đồng';
+                            case 'silver': return '🥈 Bạc';
+                            case 'gold': return '🥇 Vàng';
+                            case 'platinum': return '💎 Kim cương';
+                            default: return '🥉 Đồng';
+                          }
+                        })()}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ opacity: 0.9 }}>Điểm tích lũy: </span>
+                      <span style={{ fontWeight: '600' }}>{customerMembership.loyaltyPoints.toLocaleString()} điểm</span>
+                    </div>
+                    <div>
+                      <span style={{ opacity: 0.9 }}>Tổng chi tiêu: </span>
+                      <span style={{ fontWeight: '600' }}>{customerMembership.totalSpent.toLocaleString()}đ</span>
+                    </div>
+                    <div>
+                      <span style={{ opacity: 0.9 }}>Số đơn hàng: </span>
+                      <span style={{ fontWeight: '600' }}>{customerMembership.totalOrders} đơn</span>
+                    </div>
+                  </div>
+                  
+                  {/* Membership benefits */}
+                  <div style={{ 
+                    marginTop: '12px', 
+                    padding: '8px 12px', 
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}>
+                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>🎁 Ưu đãi của bạn:</div>
+                    <div style={{ opacity: 0.9 }}>
+                      {(() => {
+                        switch(customerMembership.membershipLevel) {
+                          case 'bronze': return 'Không có giảm giá đặc biệt';
+                          case 'silver': return 'Giảm 5% cho mọi đơn hàng';
+                          case 'gold': return 'Giảm 10% + Miễn phí ship';
+                          case 'platinum': return 'Giảm 15% + Miễn phí ship';
+                          default: return 'Không có giảm giá đặc biệt';
+                        }
+                      })()}
+                    </div>
+                  </div>
+                </div>
+
                 <h2 style={{
                   fontSize: '20px',
                   fontWeight: '600',
@@ -718,22 +938,199 @@ const CheckoutPage: React.FC = () => {
                   gap: '12px',
                   marginBottom: '20px'
                 }}>
+                  {/* Calculate Frontend Discount */}
+                  {(() => {
+                    // Calculate discounts directly in frontend
+                    const subtotal = cart?.summary.subtotal || 0;
+                    const deliveryFee = cart?.summary.deliveryFee || 0;
+                    const tax = cart?.summary.tax || 0;
+                    
+                    // Membership discount rates
+                    const membershipRates: Record<string, number> = {
+                      bronze: 0,      // 0%
+                      silver: 0.05,   // 5%
+                      gold: 0.1,      // 10%
+                      platinum: 0.15  // 15%
+                    };
+                    
+                    const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+                    const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+                    
+                    // Free shipping for Gold/Platinum
+                    const adjustedDeliveryFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : deliveryFee;
+                    const shippingSavings = deliveryFee - adjustedDeliveryFee;
+                    
+                    // Include both loyalty and coupon discounts in final total
+                    const couponDiscount = cart?.summary.couponDiscount || 0;
+                    const totalDiscount = loyaltyDiscount + couponDiscount;
+                    const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
+                    
+                    console.log('💰 [FRONTEND DISCOUNT CALC]:', {
+                      subtotal,
+                      membershipLevel,
+                      loyaltyDiscount,
+                      couponDiscount,
+                      totalDiscount,
+                      originalDeliveryFee: deliveryFee,
+                      adjustedDeliveryFee,
+                      shippingSavings,
+                      finalTotal
+                    });
+                    
+                    return null; // Just for calculation, don't render anything
+                  })()}
+                  
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#64748b' }}>Tạm tính:</span>
                     <span style={{ fontWeight: '500' }}>{formatPrice(cart?.summary.subtotal || 0)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#64748b' }}>Phí giao hàng:</span>
-                    <span style={{ fontWeight: '500' }}>{formatPrice(cart?.summary.deliveryFee || 0)}</span>
+                    <span style={{ fontWeight: '500' }}>
+                      {(() => {
+                        const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+                        const originalFee = cart?.summary.deliveryFee || 0;
+                        const adjustedFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : originalFee;
+                        
+                        if (adjustedFee === 0 && originalFee > 0) {
+                          return (
+                            <span>
+                              <s style={{ color: '#9ca3af' }}>{formatPrice(originalFee)}</s>{' '}
+                              <span style={{ color: '#22c55e' }}>MIỄN PHÍ</span>
+                            </span>
+                          );
+                        }
+                        return formatPrice(adjustedFee);
+                      })()}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#64748b' }}>Thuế VAT:</span>
+                    <span style={{ color: '#64748b' }}>Thuế VAT (8%):</span>
                     <span style={{ fontWeight: '500' }}>{formatPrice(cart?.summary.tax || 0)}</span>
                   </div>
-                  {(cart?.summary.discount || 0) > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#059669' }}>Giảm giá:</span>
-                      <span style={{ color: '#059669', fontWeight: '500' }}>-{formatPrice(cart?.summary.discount || 0)}</span>
+                  
+                  {/* Frontend Discount Section */}
+                  {(() => {
+                    const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+                    const subtotal = cart?.summary.subtotal || 0;
+                    const membershipRates: Record<string, number> = { bronze: 0, silver: 0.05, gold: 0.1, platinum: 0.15 };
+                    const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+                    const deliveryFee = cart?.summary.deliveryFee || 0;
+                    const shippingSavings = ['gold', 'platinum'].includes(membershipLevel) ? deliveryFee : 0;
+                    
+                    return (loyaltyDiscount > 0 || shippingSavings > 0) ? (
+                      <div style={{ 
+                        borderTop: '1px dashed #e2e8f0', 
+                        paddingTop: '8px', 
+                        marginTop: '8px' 
+                      }}>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+
+                {/* Coupon Form */}
+                <div style={{
+                  borderTop: '1px solid #f1f5f9',
+                  paddingTop: '20px',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#1e293b' }}>
+                    🎫 Mã giảm giá
+                  </h4>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Nhập mã giảm giá (VD: WELCOME10)"
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: couponError ? '1px solid #ef4444' : '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontFamily: 'inherit'
+                        }}
+                        disabled={couponLoading}
+                      />
+                      {couponError && (
+                        <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                          {couponError}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      style={{
+                        padding: '12px 20px',
+                        backgroundColor: couponLoading || !couponCode.trim() ? '#f1f5f9' : '#3b82f6',
+                        color: couponLoading || !couponCode.trim() ? '#9ca3af' : 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        cursor: couponLoading || !couponCode.trim() ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {couponLoading ? 'Đang áp dụng...' : 'Áp dụng'}
+                    </button>
+                  </div>
+                  
+                  {/* Hint về mã giảm giá */}
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                    💡 Thử: WELCOME10 (giảm 10%), SAVE50K (giảm 50k), FREESHIP (miễn phí ship)
+                  </div>
+                  
+                  {/* Hiển thị mã giảm giá đã áp dụng */}
+                  {cart?.summary?.couponDiscount && cart.summary.couponDiscount > 0 && (
+                    <div style={{
+                      backgroundColor: '#dcfce7',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      marginTop: '12px',
+                      border: '1px solid #16a34a'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <span style={{
+                            color: '#15803d',
+                            fontWeight: '600',
+                            fontSize: '14px'
+                          }}>
+                            ✅ Mã giảm giá đã áp dụng
+                          </span>
+                          <div style={{
+                            fontSize: '12px',
+                            color: '#166534',
+                            marginTop: '2px'
+                          }}>
+                            {(() => {
+                              // Hiển thị tên mã dựa trên discount amount
+                              const discount = cart.summary.couponDiscount;
+                              if (discount === 50000) return 'Mã: SAVE50K';
+                              if (discount >= 10000 && discount <= 15000) return 'Mã: WELCOME10';
+                              if (discount === 30000) return 'Mã: FREESHIP';
+                              return 'Mã giảm giá';
+                            })()}
+                          </div>
+                        </div>
+                        <span style={{
+                          color: '#15803d',
+                          fontWeight: 'bold',
+                          fontSize: '16px'
+                        }}>
+                          -{formatPrice(cart.summary.couponDiscount)}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -751,18 +1148,125 @@ const CheckoutPage: React.FC = () => {
                     color: '#1e293b'
                   }}>
                     <span>Tổng cộng:</span>
-                    <span style={{ color: '#dc2626' }}>{formatPrice(cart?.summary.total || 0)}</span>
+                    <span style={{ color: '#dc2626' }}>
+                      {(() => {
+                        // Calculate final total with frontend discount
+                        const subtotal = cart?.summary.subtotal || 0;
+                        const tax = cart?.summary.tax || 0;
+                        const deliveryFee = cart?.summary.deliveryFee || 0;
+                        const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+                        
+                        const membershipRates: Record<string, number> = { bronze: 0, silver: 0.05, gold: 0.1, platinum: 0.15 };
+                        const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+                        const adjustedDeliveryFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : deliveryFee;
+                        
+                        // Include both loyalty and coupon discounts
+                        const couponDiscount = cart?.summary.couponDiscount || 0;
+                        const totalDiscount = loyaltyDiscount + couponDiscount;
+                        const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
+                        
+                        return formatPrice(finalTotal);
+                      })()}
+                    </span>
                   </div>
+                  
+                  {/* Hiển thị số tiền tiết kiệm chi tiết */}
+                  {(() => {
+                    const subtotal = cart?.summary.subtotal || 0;
+                    const deliveryFee = cart?.summary.deliveryFee || 0;
+                    const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+                    const membershipRates: Record<string, number> = { bronze: 0, silver: 0.05, gold: 0.1, platinum: 0.15 };
+                    const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+                    const shippingSavings = ['gold', 'platinum'].includes(membershipLevel) ? deliveryFee : 0;
+                    const couponDiscount = cart?.summary.couponDiscount || 0;
+                    const totalSavings = loyaltyDiscount + shippingSavings + couponDiscount;
+                    
+                    return totalSavings > 0 ? (
+                      <div style={{
+                        marginTop: '16px',
+                        padding: '16px',
+                        backgroundColor: '#f0fdf4',
+                        borderRadius: '12px',
+                        border: '2px solid #22c55e'
+                      }}>
+                        <div style={{
+                          fontSize: '16px',
+                          color: '#15803d',
+                          fontWeight: 'bold',
+                          marginBottom: '12px',
+                          textAlign: 'center'
+                        }}>
+                          🎉 Tổng tiết kiệm: {formatPrice(totalSavings)}
+                        </div>
+                        
+                        {/* Breakdown chi tiết */}
+                        <div style={{ 
+                          backgroundColor: 'white', 
+                          padding: '12px', 
+                          borderRadius: '8px',
+                          border: '1px solid #bbf7d0'
+                        }}>
+                          <div style={{ fontSize: '13px', color: '#166534', fontWeight: '500' }}>
+                            <div style={{ marginBottom: '8px', fontWeight: '600', color: '#15803d' }}>
+                              📊 Chi tiết ưu đãi:
+                            </div>
+                            
+                            {loyaltyDiscount > 0 && (
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                marginBottom: '6px',
+                                padding: '4px 0'
+                              }}>
+                                <span>• Ưu đãi thành viên {membershipLevel.toUpperCase()} ({membershipRates[membershipLevel] * 100}%):</span>
+                                <span style={{ fontWeight: '600' }}>{formatPrice(loyaltyDiscount)}</span>
+                              </div>
+                            )}
+                            
+                            {shippingSavings > 0 && (
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                marginBottom: '6px',
+                                padding: '4px 0'
+                              }}>
+                                <span>• Miễn phí giao hàng ({membershipLevel.toUpperCase()}):</span>
+                                <span style={{ fontWeight: '600' }}>{formatPrice(shippingSavings)}</span>
+                              </div>
+                            )}
+                            
+                            {couponDiscount > 0 && (
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                marginBottom: '6px',
+                                padding: '4px 0'
+                              }}>
+                                <span>• Mã giảm giá:</span>
+                                <span style={{ fontWeight: '600' }}>{formatPrice(couponDiscount)}</span>
+                              </div>
+                            )}
+                            
+                            <div style={{
+                              borderTop: '1px solid #bbf7d0',
+                              marginTop: '8px',
+                              paddingTop: '8px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              fontWeight: 'bold',
+                              color: '#15803d'
+                            }}>
+                              <span>Tổng cộng tiết kiệm:</span>
+                              <span>{formatPrice(totalSavings)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
 
-                <p style={{
-                  fontSize: '12px',
-                  color: '#64748b',
-                  marginBottom: '20px',
-                  lineHeight: '1.5'
-                }}>
-                  Bằng việc đặt hàng, bạn đồng ý với điều khoản sử dụng của chúng tôi.
-                </p>
+                
 
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

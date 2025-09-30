@@ -86,13 +86,76 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    // 5. Calculate pricing
-    const pricing = paymentService.calculateOrderPricing(
-      validatedItems.items,
-      delivery.type,
-      customer.membershipLevel,
-      coupon
-    );
+    // 5. Get pricing - prioritize frontend calculation, then cart, then fallback
+    const Cart = require("../models/Cart");
+    let pricing;
+
+    // Check if frontend sent calculated pricing
+    if (req.body.frontendPricing) {
+      console.log(
+        "💰 Using frontend calculated pricing:",
+        req.body.frontendPricing
+      );
+      pricing = {
+        subtotal: req.body.frontendPricing.subtotal,
+        tax: req.body.frontendPricing.tax,
+        deliveryFee: req.body.frontendPricing.deliveryFee,
+        discount:
+          req.body.frontendPricing.loyaltyDiscount +
+          req.body.frontendPricing.couponDiscount,
+        loyaltyDiscount: req.body.frontendPricing.loyaltyDiscount,
+        couponDiscount: req.body.frontendPricing.couponDiscount,
+        total: req.body.frontendPricing.total,
+        breakdown: {
+          membershipDiscount: req.body.frontendPricing.loyaltyDiscount,
+          couponDiscount: req.body.frontendPricing.couponDiscount,
+          membershipLevel: req.body.frontendPricing.membershipLevel,
+          originalDeliveryFee:
+            req.body.frontendPricing.breakdown?.originalDeliveryFee,
+          freeShipping: req.body.frontendPricing.breakdown?.freeShipping,
+        },
+      };
+    } else {
+      // Fallback to cart pricing
+      try {
+        const cart = await Cart.findOne({ customerId: req.customerId });
+        if (cart && cart.summary) {
+          // Use cart pricing for consistency
+          pricing = {
+            subtotal: cart.summary.subtotal,
+            tax: cart.summary.tax,
+            deliveryFee: cart.summary.deliveryFee,
+            discount: cart.summary.discount,
+            loyaltyDiscount: cart.summary.loyaltyDiscount,
+            couponDiscount: cart.summary.couponDiscount,
+            total: cart.summary.total,
+            breakdown: {
+              membershipDiscount: cart.summary.loyaltyDiscount,
+              couponDiscount: cart.summary.couponDiscount,
+              membershipLevel: customer.membershipLevel,
+            },
+          };
+          console.log("🛒 Using cart pricing for order:", pricing);
+        } else {
+          // Fallback to payment service calculation
+          pricing = paymentService.calculateOrderPricing(
+            validatedItems.items,
+            delivery.type,
+            customer.membershipLevel,
+            coupon
+          );
+          console.log("💰 Using payment service pricing as fallback:", pricing);
+        }
+      } catch (error) {
+        console.error("Error getting cart pricing, using fallback:", error);
+        pricing = paymentService.calculateOrderPricing(
+          validatedItems.items,
+          delivery.type,
+          customer.membershipLevel,
+          coupon
+        );
+      }
+    }
 
     // 6. Validate payment method
     if (!paymentService.validatePaymentMethod(payment.method)) {
@@ -359,7 +422,19 @@ exports.createOrder = async (req, res) => {
       }
     }
 
-    // 10. Return success response
+    // 10. Clear cart after successful order creation
+    try {
+      const cart = await Cart.findOne({ customerId: req.customerId });
+      if (cart) {
+        await cart.clearCart();
+        console.log("🛒 Cart cleared after successful order creation");
+      }
+    } catch (error) {
+      console.error("Error clearing cart after order:", error);
+      // Don't fail the order creation if cart clearing fails
+    }
+
+    // 11. Return success response
     res.status(201).json({
       success: true,
       message: "Order created successfully",

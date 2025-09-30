@@ -178,9 +178,9 @@ customerSchema.virtual("isLocked").get(function () {
 
 // Virtual để tính membership level dựa trên total spent
 customerSchema.virtual("calculatedMembershipLevel").get(function () {
-  if (this.totalSpent >= 50000000) return "platinum"; // 50M VNĐ
-  if (this.totalSpent >= 20000000) return "gold"; // 20M VNĐ
-  if (this.totalSpent >= 5000000) return "silver"; // 5M VNĐ
+  if (this.totalSpent >= 30000000) return "platinum"; // 30M VNĐ
+  if (this.totalSpent >= 10000000) return "gold"; // 10M VNĐ (giảm từ 20M)
+  if (this.totalSpent >= 3000000) return "silver"; // 3M VNĐ (giảm từ 5M)
   return "bronze";
 });
 

@@ -157,7 +157,7 @@ const ProfilePage: React.FC = () => {
   const getMembershipLabel = (level: string) => {
     switch (level) {
       case 'bronze': return 'ĐỒNG';
-      case 'silver': return 'BạC';
+      case 'silver': return 'Bạc';
       case 'gold': return 'VÀNG';
       case 'platinum': return 'BạCH KIM';
       default: return 'ĐỒNG';

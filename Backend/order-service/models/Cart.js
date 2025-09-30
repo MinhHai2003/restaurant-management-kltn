@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const customerApiClient = require("../services/customerApiClient");
 
 const CartItemSchema = new mongoose.Schema({
   menuItemId: {
@@ -66,6 +67,14 @@ const CartSchema = new mongoose.Schema(
         default: 0,
       },
       discount: {
+        type: Number,
+        default: 0,
+      },
+      loyaltyDiscount: {
+        type: Number,
+        default: 0,
+      },
+      couponDiscount: {
         type: Number,
         default: 0,
       },
@@ -142,7 +151,7 @@ CartSchema.virtual("itemCount").get(function () {
 });
 
 // Instance methods
-CartSchema.methods.addItem = function (itemData) {
+CartSchema.methods.addItem = async function (itemData) {
   const existingItemIndex = this.items.findIndex(
     (item) =>
       item.menuItemId.toString() === itemData.menuItemId.toString() &&
@@ -170,12 +179,12 @@ CartSchema.methods.addItem = function (itemData) {
     this.items.push(newItem);
   }
 
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.updateItem = function (itemId, quantity) {
+CartSchema.methods.updateItem = async function (itemId, quantity) {
   const item = this.items.id(itemId);
   if (!item) {
     throw new Error("Item not found in cart");
@@ -188,27 +197,27 @@ CartSchema.methods.updateItem = function (itemId, quantity) {
     item.subtotal = item.price * quantity;
   }
 
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.removeItem = function (itemId) {
+CartSchema.methods.removeItem = async function (itemId) {
   this.items.pull(itemId);
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.clearCart = function () {
+CartSchema.methods.clearCart = async function () {
   this.items = [];
   this.appliedCoupon = undefined;
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.updateSummary = function () {
+CartSchema.methods.updateSummary = async function () {
   const subtotal = this.items.reduce(
     (total, item) => total + (item.subtotal || 0),
     0
@@ -221,69 +230,135 @@ CartSchema.methods.updateSummary = function () {
   // Calculate tax (8% VAT)
   const tax = Math.round(subtotal * 0.08) || 0;
 
-  // Calculate delivery fee based on delivery type
-  let deliveryFee = 0;
-  if (this.delivery && this.delivery.type === "delivery") {
-    deliveryFee = subtotal > 500000 ? 0 : 30000; // Free delivery for orders > 500k
+  // 🔍 Get customer info để tính loyalty discount
+  let customerInfo = {
+    membershipLevel: "bronze",
+    totalSpent: 0,
+    loyaltyPoints: 0,
+  };
+  try {
+    customerInfo = await customerApiClient.getCustomerInfo(
+      this.customerId.toString()
+    );
+    console.log("💎 Customer membership level:", customerInfo.membershipLevel);
+  } catch (error) {
+    console.error("Error getting customer info:", error);
   }
 
-  // Apply coupon discount
-  let discount = 0;
+  // 💰 Calculate loyalty discount based on membership level
+  let loyaltyDiscount = 0;
+  const membershipRates = {
+    bronze: 0, // 0%
+    silver: 0.05, // 5%
+    gold: 0.1, // 10%
+    platinum: 0.15, // 15%
+  };
+
+  loyaltyDiscount =
+    Math.round(
+      subtotal * (membershipRates[customerInfo.membershipLevel] || 0)
+    ) || 0;
+
+  console.log(
+    `💰 Loyalty discount: ${loyaltyDiscount}đ (${customerInfo.membershipLevel} level)`
+  );
+
+  // 🚚 Calculate delivery fee based on delivery type and membership
+  let deliveryFee = 0;
+  if (this.delivery && this.delivery.type === "delivery") {
+    // Gold và Platinum được miễn phí ship
+    if (
+      ["gold", "platinum"].includes(customerInfo.membershipLevel) ||
+      subtotal > 500000
+    ) {
+      deliveryFee = 0;
+      console.log(
+        `🚚 Free delivery for ${customerInfo.membershipLevel} member`
+      );
+    } else {
+      deliveryFee = 30000;
+    }
+  }
+
+  // 🎫 Apply coupon discount
+  let couponDiscount = 0;
   if (this.appliedCoupon && this.appliedCoupon.discountValue) {
     if (this.appliedCoupon.discountType === "percentage") {
-      discount =
+      couponDiscount =
         Math.round(
           subtotal * ((this.appliedCoupon.discountValue || 0) / 100)
         ) || 0;
     } else {
-      discount = this.appliedCoupon.discountValue || 0;
+      couponDiscount = this.appliedCoupon.discountValue || 0;
     }
-    // Cap discount at subtotal
-    discount = Math.min(discount, subtotal) || 0;
-    this.appliedCoupon.appliedDiscount = discount;
+    // Cap coupon discount at subtotal
+    couponDiscount = Math.min(couponDiscount, subtotal) || 0;
+    this.appliedCoupon.appliedDiscount = couponDiscount;
+    console.log(
+      `🎫 Coupon discount: ${couponDiscount}đ (${this.appliedCoupon.code})`
+    );
   }
 
+  // Total discount = loyalty + coupon
+  const totalDiscount = loyaltyDiscount + couponDiscount;
+
   const total =
-    (subtotal || 0) + (tax || 0) + (deliveryFee || 0) - (discount || 0);
+    (subtotal || 0) + (tax || 0) + (deliveryFee || 0) - (totalDiscount || 0);
 
   this.summary = {
     totalItems: totalItems || 0,
     subtotal: subtotal || 0,
     deliveryFee: deliveryFee || 0,
-    discount: discount || 0,
+    discount: totalDiscount || 0,
+    loyaltyDiscount: loyaltyDiscount || 0,
+    couponDiscount: couponDiscount || 0,
     tax: tax || 0,
     total: Math.max(0, total) || 0,
+  };
+
+  // Store customer info for reference
+  this.customerInfo = {
+    membershipLevel: customerInfo.membershipLevel,
+    totalSpent: customerInfo.totalSpent,
+    loyaltyPoints: customerInfo.loyaltyPoints,
   };
 
   if (this.delivery) {
     this.delivery.fee = deliveryFee || 0;
   }
+
+  console.log("📊 Cart summary updated:", {
+    subtotal: this.summary.subtotal,
+    loyaltyDiscount: this.summary.loyaltyDiscount,
+    couponDiscount: this.summary.couponDiscount,
+    total: this.summary.total,
+  });
 };
 
-CartSchema.methods.applyCoupon = function (couponData) {
+CartSchema.methods.applyCoupon = async function (couponData) {
   this.appliedCoupon = {
     code: couponData.code,
     discountType: couponData.discountType,
     discountValue: couponData.discountValue,
   };
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.removeCoupon = function () {
+CartSchema.methods.removeCoupon = async function () {
   this.appliedCoupon = undefined;
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
 
-CartSchema.methods.updateDelivery = function (deliveryData) {
+CartSchema.methods.updateDelivery = async function (deliveryData) {
   this.delivery = {
     ...this.delivery.toObject(),
     ...deliveryData,
   };
-  this.updateSummary();
+  await this.updateSummary();
   this.lastUpdated = new Date();
   return this.save();
 };
@@ -310,11 +385,13 @@ CartSchema.statics.findOrCreateCart = async function (
         subtotal: 0,
         deliveryFee: 0,
         discount: 0,
+        loyaltyDiscount: 0,
+        couponDiscount: 0,
         tax: 0,
         total: 0,
       },
     });
-    cart.updateSummary();
+    await cart.updateSummary();
     await cart.save();
   }
 
@@ -326,14 +403,14 @@ CartSchema.statics.getCartSummary = function (customerId) {
 };
 
 // Pre-save middleware
-CartSchema.pre("save", function (next) {
+CartSchema.pre("save", async function (next) {
   // Always update summary before saving
   if (
     this.isModified("items") ||
     this.isModified("appliedCoupon") ||
     this.isModified("delivery")
   ) {
-    this.updateSummary();
+    await this.updateSummary();
   }
 
   // Update lastUpdated

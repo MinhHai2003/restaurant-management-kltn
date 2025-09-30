@@ -12,6 +12,46 @@ class CustomerApiClient {
     });
   }
 
+  // Get customer info for cart (without requiring token)
+  async getCustomerInfo(customerId) {
+    try {
+      console.log(`🔍 Fetching customer info for cart - ID: ${customerId}`);
+
+      // Call customer service to get customer info
+      const response = await this.client.get(
+        `/api/customers/${customerId}/info`
+      );
+
+      if (response.data && response.data.success) {
+        const customer = response.data.data;
+
+        console.log("👤 Customer data received:", {
+          id: customer._id,
+          membershipLevel: customer.membershipLevel,
+          totalSpent: customer.totalSpent,
+          loyaltyPoints: customer.loyaltyPoints,
+        });
+
+        return {
+          membershipLevel: customer.membershipLevel || "bronze",
+          totalSpent: customer.totalSpent || 0,
+          loyaltyPoints: customer.loyaltyPoints || 0,
+        };
+      } else {
+        console.warn(
+          "❌ Invalid response from customer service:",
+          response.data
+        );
+        return { membershipLevel: "bronze", totalSpent: 0, loyaltyPoints: 0 };
+      }
+    } catch (error) {
+      console.error("🚨 Error fetching customer info for cart:", error.message);
+
+      // Fallback: Return bronze level for unknown customers
+      return { membershipLevel: "bronze", totalSpent: 0, loyaltyPoints: 0 };
+    }
+  }
+
   // Get customer by ID
   async getCustomerById(customerId, token) {
     try {

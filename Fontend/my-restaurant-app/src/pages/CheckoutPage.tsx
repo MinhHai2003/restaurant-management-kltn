@@ -473,36 +473,6 @@ const CheckoutPage: React.FC = () => {
             </div>
           )}
 
-          {/* Temporary Clear Cart Button */}
-          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const result = await cartService.clearCart();
-                  if (result.success) {
-                    alert('Giỏ hàng đã được xóa! Vui lòng thêm sản phẩm mới.');
-                    navigate('/menu');
-                  } else {
-                    alert('Lỗi xóa giỏ hàng: ' + result.error);
-                  }
-                } catch (error) {
-                  alert('Lỗi xóa giỏ hàng: ' + error);
-                }
-              }}
-              style={{
-                background: '#dc2626',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              🗑️ Xóa giỏ hàng (để khắc phục lỗi menu ID)
-            </button>
-          </div>
-
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px' }}>
               {/* Customer Information */}
@@ -513,78 +483,6 @@ const CheckoutPage: React.FC = () => {
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 height: 'fit-content'
               }}>
-                {/* Thông tin thành viên */}
-                <div style={{
-                  padding: '16px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '12px',
-                  marginBottom: '24px',
-                  color: 'white'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '20px' }}>👑</span>
-                    <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>
-                      Thông tin thành viên
-                    </h3>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '14px' }}>
-                    <div>
-                      <span style={{ opacity: 0.9 }}>Hạng thành viên: </span>
-                      <span style={{ 
-                        fontWeight: '600',
-                        textTransform: 'uppercase',
-                        background: 'rgba(255,255,255,0.2)',
-                        padding: '2px 8px',
-                        borderRadius: '4px'
-                      }}>
-                        {(() => {
-                          switch(customerMembership.membershipLevel) {
-                            case 'bronze': return '🥉 Đồng';
-                            case 'silver': return '🥈 Bạc';
-                            case 'gold': return '🥇 Vàng';
-                            case 'platinum': return '💎 Kim cương';
-                            default: return '🥉 Đồng';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ opacity: 0.9 }}>Điểm tích lũy: </span>
-                      <span style={{ fontWeight: '600' }}>{customerMembership.loyaltyPoints.toLocaleString()} điểm</span>
-                    </div>
-                    <div>
-                      <span style={{ opacity: 0.9 }}>Tổng chi tiêu: </span>
-                      <span style={{ fontWeight: '600' }}>{customerMembership.totalSpent.toLocaleString()}đ</span>
-                    </div>
-                    <div>
-                      <span style={{ opacity: 0.9 }}>Số đơn hàng: </span>
-                      <span style={{ fontWeight: '600' }}>{customerMembership.totalOrders} đơn</span>
-                    </div>
-                  </div>
-                  
-                  {/* Membership benefits */}
-                  <div style={{ 
-                    marginTop: '12px', 
-                    padding: '8px 12px', 
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: '6px',
-                    fontSize: '13px'
-                  }}>
-                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>🎁 Ưu đãi của bạn:</div>
-                    <div style={{ opacity: 0.9 }}>
-                      {(() => {
-                        switch(customerMembership.membershipLevel) {
-                          case 'bronze': return 'Không có giảm giá đặc biệt';
-                          case 'silver': return 'Giảm 5% cho mọi đơn hàng';
-                          case 'gold': return 'Giảm 10% + Miễn phí ship';
-                          case 'platinum': return 'Giảm 15% + Miễn phí ship';
-                          default: return 'Không có giảm giá đặc biệt';
-                        }
-                      })()}
-                    </div>
-                  </div>
-                </div>
-
                 <h2 style={{
                   fontSize: '20px',
                   fontWeight: '600',

@@ -12,9 +12,10 @@ interface Message {
 interface ChatBotProps {
   isOpen: boolean;
   onClose: () => void;
+  onCartUpdate?: () => void;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ isOpen, onClose, onCartUpdate }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -424,6 +425,19 @@ function Welcome({ name }) {
       };
 
       setMessages(prev => [...prev, botMessage]);
+      
+      // Check if response indicates successful cart addition or removal
+      if (
+        (botResponse.includes('✅ Đã thêm') && botResponse.includes('vào giỏ hàng')) ||
+        (botResponse.includes('✅ Đã xóa') && botResponse.includes('khỏi giỏ hàng')) ||
+        (botResponse.includes('✅ Đã giảm')) ||
+        (botResponse.includes('✅ Đã xóa toàn bộ giỏ hàng'))
+      ) {
+        // Update cart count in header
+        if (onCartUpdate) {
+          onCartUpdate();
+        }
+      }
     } catch (error) {
       console.error('Error processing question:', error);
       const errorMessage: Message = {

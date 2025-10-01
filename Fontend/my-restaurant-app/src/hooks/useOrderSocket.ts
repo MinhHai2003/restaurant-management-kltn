@@ -39,16 +39,30 @@ export const useOrderSocket = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('employeeToken') || localStorage.getItem('customerToken');
+    // Priority: employeeToken first for admin/staff, then customer tokens
+    const token = localStorage.getItem('employeeToken') || localStorage.getItem('token') || localStorage.getItem('customerToken');
+    
+    console.log('🔐 [useOrderSocket] Token selection debug:');
+    console.log('   - employeeToken:', localStorage.getItem('employeeToken') ? 'EXISTS' : 'NULL');
+    console.log('   - token:', localStorage.getItem('token') ? 'EXISTS' : 'NULL');
+    console.log('   - customerToken:', localStorage.getItem('customerToken') ? 'EXISTS' : 'NULL');
+    console.log('   - Selected token:', token ? 'EXISTS' : 'NULL');
     
     if (!token) {
       setError('No authentication token found');
       return;
     }
 
+    // Determine auth type based on which token we're using
+    const isEmployeeToken = localStorage.getItem('employeeToken') === token;
+    const authType = isEmployeeToken ? 'employee' : 'customer';
+    
+    console.log('🔐 [useOrderSocket] Auth type:', authType);
+
     const newSocket = io('http://localhost:5005', {
       auth: {
-        token: token
+        token: token,
+        type: authType
       },
       transports: ['websocket', 'polling']
     });
@@ -159,6 +173,20 @@ export const useOrderSocket = () => {
     newSocket.on('order_created', (order: Order) => {
       console.log('Order created:', order);
       setOrders(prev => [order, ...prev]);
+    });
+
+    // Cart update events
+    newSocket.on('cart_updated', (data: { type: string; itemName: string; quantity: number; cartTotal: number; cartItemCount: number; message: string }) => {
+      console.log('🛒 Cart updated via Socket.io:', data);
+      
+      // Emit custom event for cart components to listen
+      window.dispatchEvent(new CustomEvent('cartUpdated', { detail: data }));
+      
+      setNotifications(prev => [...prev, {
+        type: 'cart_update',
+        message: data.message,
+        timestamp: new Date()
+      }]);
     });
 
     setSocket(newSocket);

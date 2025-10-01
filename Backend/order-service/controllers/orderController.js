@@ -230,6 +230,12 @@ exports.createOrder = async (req, res) => {
         "Order type:",
         order.delivery.type
       );
+      console.log(
+        "🔔 [SOCKET DEBUG] Customer email:",
+        order.customerInfo.email,
+        "Customer name:",
+        order.customerInfo.name
+      );
 
       // Notify customer about order confirmation
       req.io.to(`user_${req.customerId}`).emit("order_created", {
@@ -305,6 +311,13 @@ exports.createOrder = async (req, res) => {
       console.log(
         "🔔 [SOCKET DEBUG] Emitting admin_order_created to all staff roles"
       );
+      console.log("🔔 [SOCKET DEBUG] Order details for admin:", {
+        orderNumber: order.orderNumber,
+        customerId: req.customerId,
+        customerEmail: order.customerInfo.email,
+        customerName: order.customerInfo.name,
+        total: order.pricing.total,
+      });
       req.io
         .to("role_admin")
         .to("role_manager")

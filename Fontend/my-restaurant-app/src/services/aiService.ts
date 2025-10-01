@@ -1,3 +1,5 @@
+import { chatbotCartTools } from './chatbotCartService';
+
 export interface AIResponse {
   text: string;
   confidence?: number;
@@ -197,9 +199,13 @@ async function fetchRestaurantData(): Promise<RestaurantData> {
 export async function processQuestion(question: string): Promise<string> {
   console.log('🤖 Processing question:', question);
   
-  // Step 1: Collect user question (already have it)
+  // Step 1: Check if question is about cart operations
+  const cartResponse = await handleCartOperations(question);
+  if (cartResponse) {
+    return cartResponse;
+  }
   
-  // Step 2: Fetch real data from database
+  // Step 2: Fetch real data from database for menu questions
   const restaurantData = await fetchRestaurantData();
   
   // Step 3: Send question + real data to AI
@@ -210,6 +216,201 @@ export async function processQuestion(question: string): Promise<string> {
   
   // Step 4: Fallback to local AI with real data
   return getLocalAIResponse(question, restaurantData);
+}
+
+// New function to handle cart operations
+async function handleCartOperations(question: string): Promise<string | null> {
+  const lowerQuestion = question.toLowerCase();
+  
+  // 1. Thêm món vào giỏ hàng
+  if (
+    (lowerQuestion.includes('thêm') && !lowerQuestion.includes('thêm nguyên liệu')) ||
+    (lowerQuestion.includes('đặt') && !lowerQuestion.includes('đặt bàn')) ||
+    lowerQuestion.includes('order') ||
+    lowerQuestion.includes('mua')
+  ) {
+    return await handleAddToCart(question);
+  }
+  
+  // 2. Xóa toàn bộ giỏ hàng (kiểm tra trước để tránh xung đột)
+  if (
+    (lowerQuestion.includes('xóa') || lowerQuestion.includes('xoá') || lowerQuestion.includes('clear')) &&
+    (lowerQuestion.includes('tất cả') || lowerQuestion.includes('toàn bộ') || lowerQuestion.includes('hết'))
+  ) {
+    const result = await chatbotCartTools.clearCart();
+    return result.message;
+  }
+  
+  // 3. Xóa món khỏi giỏ hàng (logic đơn giản hơn)
+  if (
+    lowerQuestion.includes('xóa') || lowerQuestion.includes('bỏ') || 
+    lowerQuestion.includes('hủy') || lowerQuestion.includes('xoá') ||
+    lowerQuestion.includes('remove')
+  ) {
+    // Kiểm tra xem có phải xóa bàn/nguyên liệu không
+    if (!lowerQuestion.includes('bàn') && !lowerQuestion.includes('nguyên liệu')) {
+      return await handleRemoveFromCart(question);
+    }
+  }
+  
+  // 4. Xem giỏ hàng
+  if (lowerQuestion.includes('giỏ hàng') || lowerQuestion.includes('đã đặt')) {
+    const result = await chatbotCartTools.getCartStatus();
+    return result.message;
+  }
+  
+  return null; // Không phải câu hỏi về giỏ hàng
+}
+
+// Handle adding items to cart
+async function handleAddToCart(question: string): Promise<string> {
+  try {
+    // Extract dish name từ câu hỏi
+    const dishName = extractDishName(question);
+    
+    if (!dishName) {
+      return '🤔 Bạn muốn thêm món gì? Vui lòng nói rõ tên món, ví dụ: "Thêm cơm chiên hải sản"';
+    }
+    
+    // Extract quantity (mặc định là 1)
+    const quantity = extractQuantity(question);
+    
+    const result = await chatbotCartTools.addItemToCart(dishName, quantity);
+    return result.message;
+    
+  } catch (error) {
+    console.error('Handle add to cart error:', error);
+    return 'Có lỗi khi thêm món vào giỏ hàng. Vui lòng thử lại!';
+  }
+}
+
+// Handle removing items from cart
+async function handleRemoveFromCart(question: string): Promise<string> {
+  try {
+    // Extract dish name từ câu hỏi
+    const dishName = extractDishNameForRemoval(question);
+    
+    if (!dishName) {
+      return '🤔 Bạn muốn xóa món gì khỏi giỏ hàng? Vui lòng nói rõ tên món, ví dụ: "Xóa cơm chiên hải sản" hoặc "Xóa 1 phần phở bò"';
+    }
+    
+    // Extract quantity to remove (nếu có)
+    const quantityToRemove = extractQuantityForRemoval(question);
+    
+    const result = await chatbotCartTools.removeItemFromCart(dishName, quantityToRemove);
+    return result.message;
+    
+  } catch (error) {
+    console.error('Handle remove from cart error:', error);
+    return 'Có lỗi khi xóa món khỏi giỏ hàng. Vui lòng thử lại!';
+  }
+}
+
+// Utility functions to extract information from user input
+function extractDishName(question: string): string {
+  // Remove common words but keep numbers for quantity
+  const cleaned = question.toLowerCase()
+    .replace(/\b(thêm|vào|giỏ|hàng|đặt|món|order|mua|cho|tôi|em|anh|chị)\b/g, '')
+    .replace(/\b(\d+)\s*(phần|suất|đĩa|tô|ly|cái)\b/g, '') // Remove quantity expressions
+    .trim();
+  
+  // If cleaned result is too short, try different approach
+  if (cleaned.length < 3) {
+    // Extract everything after "thêm" or "đặt"
+    const afterThemMatch = question.toLowerCase().match(/(?:thêm|đặt|order|mua)\s+(.+?)(?:\s+vào|$)/);
+    if (afterThemMatch) {
+      return afterThemMatch[1]
+        .replace(/\b(\d+)\s*(phần|suất|đĩa|tô|ly|cái)\b/g, '')
+        .trim();
+    }
+  }
+  
+  // Common dish patterns - expanded
+  const patterns = [
+    /phở\s+[a-zA-ZÀ-ỹ\s]+/,
+    /cơm chiên [a-zA-ZÀ-ỹ\s]+/,
+    /lẩu [a-zA-ZÀ-ỹ\s]+/,
+    /[a-zA-ZÀ-ỹ\s]*hải sản[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*tôm[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*cá[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*gà[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*bò[a-zA-ZÀ-ỹ\s]*/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      return match[0].trim();
+    }
+  }
+  
+  // Fallback: take the remaining text if it's meaningful
+  return cleaned.trim();
+}
+
+function extractQuantity(question: string): number {
+  const match = question.match(/(\d+)\s*(phần|suất|đĩa|tô|ly)?/);
+  return match ? parseInt(match[1]) : 1;
+}
+
+function extractDishNameForRemoval(question: string): string {
+  // Remove common words for removal
+  const cleaned = question.toLowerCase()
+    .replace(/\b(xóa|bỏ|hủy|xoá|remove|delete|khỏi|giỏ|hàng|món)\b/g, '')
+    .replace(/\b(\d+)\s*(phần|suất|đĩa|tô|ly|cái)\b/g, '') // Remove quantity expressions
+    .trim();
+  
+  // If cleaned result is too short, try different approach
+  if (cleaned.length < 3) {
+    // Extract everything after "xóa" or "bỏ"
+    const afterRemoveMatch = question.toLowerCase().match(/(?:xóa|bỏ|hủy|xoá)\s+(.+?)(?:\s+khỏi|$)/);
+    if (afterRemoveMatch) {
+      return afterRemoveMatch[1]
+        .replace(/\b(\d+)\s*(phần|suất|đĩa|tô|ly|cái)\b/g, '')
+        .replace(/\b(món|khỏi|giỏ|hàng)\b/g, '')
+        .trim();
+    }
+  }
+  
+  // Common dish patterns - same as add
+  const patterns = [
+    /phở\s+[a-zA-ZÀ-ỹ\s]+/,
+    /cơm chiên [a-zA-ZÀ-ỹ\s]+/,
+    /lẩu [a-zA-ZÀ-ỹ\s]+/,
+    /[a-zA-ZÀ-ỹ\s]*hải sản[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*tôm[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*cá[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*gà[a-zA-ZÀ-ỹ\s]*/,
+    /[a-zA-ZÀ-ỹ\s]*bò[a-zA-ZÀ-ỹ\s]*/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      return match[0].trim();
+    }
+  }
+  
+  // Fallback: take the remaining text if it's meaningful
+  return cleaned.trim();
+}
+
+function extractQuantityForRemoval(question: string): number | undefined {
+  // Tìm pattern "xóa [số] [đơn vị]" hoặc "bỏ [số] [đơn vị]"
+  const patterns = [
+    /(?:xóa|bỏ|hủy|xoá|remove)\s+(\d+)\s*(?:phần|suất|đĩa|tô|ly|cái)?/,
+    /(\d+)\s*(?:phần|suất|đĩa|tô|ly|cái)?\s+(?:xóa|bỏ|hủy|xoá)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = question.toLowerCase().match(pattern);
+    if (match) {
+      const quantity = parseInt(match[1]);
+      return quantity > 0 ? quantity : undefined;
+    }
+  }
+  
+  return undefined; // Không có số lượng cụ thể = xóa toàn bộ
 }
 
 async function tryFreeAPIs(question: string, restaurantData: RestaurantData): Promise<string | null> {

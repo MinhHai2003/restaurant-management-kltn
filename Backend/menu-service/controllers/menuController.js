@@ -47,6 +47,15 @@ exports.createMenuItem = async (req, res) => {
         itemData.available =
           itemData.available === "true" || itemData.available === true;
       }
+      // Parse ingredients từ JSON string
+      if (itemData.ingredients && typeof itemData.ingredients === "string") {
+        try {
+          itemData.ingredients = JSON.parse(itemData.ingredients);
+        } catch (e) {
+          console.warn("Failed to parse ingredients:", e);
+          itemData.ingredients = [];
+        }
+      }
     }
 
     // Xử lý file upload nếu có
@@ -124,6 +133,16 @@ exports.createMenuItem = async (req, res) => {
 exports.updateMenuItem = async (req, res) => {
   try {
     const updateData = { ...req.body };
+
+    // Parse ingredients từ JSON string nếu cần
+    if (updateData.ingredients && typeof updateData.ingredients === "string") {
+      try {
+        updateData.ingredients = JSON.parse(updateData.ingredients);
+      } catch (e) {
+        console.warn("Failed to parse ingredients:", e);
+        updateData.ingredients = [];
+      }
+    }
 
     // Lấy thông tin món ăn hiện tại để check ảnh cũ
     const existingItem = await MenuItem.findById(req.params.id);

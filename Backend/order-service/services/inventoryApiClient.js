@@ -1,9 +1,10 @@
 const axios = require("axios");
-const menuItemRecipes = require("../config/menuItemRecipes");
 
 class InventoryApiClient {
   constructor() {
     this.baseURL = process.env.INVENTORY_SERVICE_URL || "http://localhost:5004";
+    this.menuServiceURL =
+      process.env.MENU_SERVICE_URL || "http://localhost:5003";
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 5000,
@@ -11,6 +12,40 @@ class InventoryApiClient {
         "Content-Type": "application/json",
       },
     });
+    this.menuClient = axios.create({
+      baseURL: this.menuServiceURL,
+      timeout: 5000,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  // Lấy recipe từ menu service database
+  async getMenuItemRecipe(itemName) {
+    try {
+      // Lấy từ database
+      const response = await this.menuClient.get("/api/menu");
+      const menuItems = response.data;
+      const menuItem = menuItems.find((item) => item.name === itemName);
+
+      if (menuItem && menuItem.ingredients && menuItem.ingredients.length > 0) {
+        console.log(
+          `📋 Found database recipe for ${itemName}:`,
+          menuItem.ingredients
+        );
+        return { ingredients: menuItem.ingredients };
+      }
+
+      console.warn(`⚠️ No recipe found in database for: ${itemName}`);
+      return null;
+    } catch (error) {
+      console.error(
+        `❌ Failed to fetch recipe for ${itemName}:`,
+        error.message
+      );
+      return null;
+    }
   }
 
   // === MỚI: Giảm inventory dựa trên recipe món ăn ===
@@ -33,8 +68,8 @@ class InventoryApiClient {
       for (const item of orderItems) {
         const { name: itemName, quantity: orderQuantity } = item;
 
-        // Tìm recipe cho món ăn này
-        const recipe = menuItemRecipes[itemName];
+        // Tìm recipe cho món ăn này từ database hoặc fallback
+        const recipe = await this.getMenuItemRecipe(itemName);
         if (!recipe) {
           console.warn(`⚠️ No recipe found for menu item: ${itemName}`);
           reductionResults.push({
@@ -175,8 +210,8 @@ class InventoryApiClient {
       for (const item of orderItems) {
         const { name: itemName, quantity: orderQuantity } = item;
 
-        // Tìm recipe cho món ăn này
-        const recipe = menuItemRecipes[itemName];
+        // Tìm recipe cho món ăn này từ database hoặc fallback
+        const recipe = await this.getMenuItemRecipe(itemName);
         if (!recipe) {
           console.warn(`⚠️ No recipe found for menu item: ${itemName}`);
           stockCheckResults.push({

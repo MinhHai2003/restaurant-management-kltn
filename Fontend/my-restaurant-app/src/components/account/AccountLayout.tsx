@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import type { ReactNode } from 'react';
+
+interface CustomerProfile {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  loyaltyPoints: number;
+  membershipLevel: 'bronze' | 'silver' | 'gold' | 'platinum';
+  totalOrders: number;
+  totalSpent: number;
+}
 
 interface AccountLayoutProps {
   children: ReactNode;
@@ -11,6 +22,45 @@ interface AccountLayoutProps {
 const AccountLayout: React.FC<AccountLayoutProps> = ({ children, activeTab }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [customer, setCustomer] = useState<CustomerProfile | null>(null);
+
+  // Fetch customer profile on mount
+  useEffect(() => {
+    fetchCustomerProfile();
+  }, []);
+
+  const fetchCustomerProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5002/api/customers/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setCustomer(result.data.customer);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching customer profile:', error);
+    }
+  };
+
+  const getMembershipLabel = (level: string) => {
+    switch (level) {
+      case 'bronze': return 'ĐỒNG';
+      case 'silver': return 'BẠC';
+      case 'gold': return 'VÀNG';
+      case 'platinum': return 'BẠCH KIM';
+      default: return 'ĐỒNG';
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -185,10 +235,10 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children, activeTab }) =>
                 Thành viên từ
               </div>
               <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1f2937' }}>
-                {user?.membershipLevel?.toUpperCase() || 'BRONZE'}
+                {customer ? getMembershipLabel(customer.membershipLevel) : 'ĐỒNG'}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.25rem' }}>
-                {user?.loyaltyPoints || 0} điểm tích lũy
+                {customer?.loyaltyPoints || 0} điểm tích lũy
               </div>
             </div>
           </div>

@@ -83,6 +83,11 @@ exports.addToCart = async (req, res) => {
     });
 
     // 🔔 Emit real-time notification for cart update
+    console.log("🔔 [CART SOCKET DEBUG] Checking socket emission:");
+    console.log("   - req.customerId:", req.customerId);
+    console.log("   - req.io exists:", !!req.io);
+    console.log("   - Target room:", `user_${req.customerId}`);
+
     if (req.io) {
       req.io.to(`user_${req.customerId}`).emit("cart_updated", {
         type: "item_added",
@@ -92,6 +97,13 @@ exports.addToCart = async (req, res) => {
         cartItemCount: cart.items.length,
         message: `${menuItem.name} đã được thêm vào giỏ hàng`,
       });
+
+      console.log(
+        "🔔 [CART SOCKET DEBUG] Event emitted successfully to room:",
+        `user_${req.customerId}`
+      );
+    } else {
+      console.log("🔔 [CART SOCKET DEBUG] req.io is not available!");
     }
 
     res.json({

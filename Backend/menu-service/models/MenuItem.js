@@ -7,6 +7,13 @@ const menuItemSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     category: String,
     available: { type: Boolean, default: true },
+    ingredients: [
+      {
+        name: { type: String, required: true },
+        quantity: { type: Number, required: true },
+        unit: { type: String, required: true },
+      },
+    ],
     image: {
       type: String,
       default: null,

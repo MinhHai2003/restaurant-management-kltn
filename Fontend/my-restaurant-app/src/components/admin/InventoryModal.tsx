@@ -136,10 +136,12 @@ export const InventoryModal: React.FC<{
               </label>
               <input
                 type="number"
-                value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
+                value={formData.quantity === 0 ? '' : formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
                 required
                 min="0"
+                step="0.01"
+                placeholder="Nhập số lượng"
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -166,13 +168,9 @@ export const InventoryModal: React.FC<{
                 }}
               >
                 <option value="kg">kg</option>
-                <option value="g">g</option>
                 <option value="lít">lít</option>
-                <option value="ml">ml</option>
                 <option value="cái">cái</option>
-                <option value="gói">gói</option>
                 <option value="hộp">hộp</option>
-                <option value="túi">túi</option>
               </select>
             </div>
           </div>
@@ -183,10 +181,12 @@ export const InventoryModal: React.FC<{
             </label>
             <input
               type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+              value={formData.price === 0 ? '' : formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value === '' ? 0 : Number(e.target.value) })}
               required
               min="0"
+              step="0.01"
+              placeholder="Nhập giá tiền"
               style={{
                 width: '100%',
                 padding: '12px',

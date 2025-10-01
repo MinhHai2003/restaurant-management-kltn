@@ -51,6 +51,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   // Load cart count on component mount
   useEffect(() => {
     updateCartCount();
+
+    // Listen for cart updates from socket
+    const handleCartUpdate = (event: CustomEvent) => {
+      console.log('🛒 CartContext received socket update:', event.detail);
+      // Update cart count immediately
+      updateCartCount();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate as EventListener);
+    };
   }, []);
 
   // Check auth status periodically to update cart count

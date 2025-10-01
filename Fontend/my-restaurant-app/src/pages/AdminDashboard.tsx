@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AdminInventoryManagement from '../components/admin/AdminInventoryManagement';
 import StaffManagement from '../components/admin/StaffManagement';
 import ShiftManagement from '../components/admin/ShiftManagement';
+import MenuManagement from '../components/admin/MenuManagement';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 
 interface ApiReservation {
@@ -1043,6 +1044,7 @@ const AdminDashboard: React.FC = () => {
             {[
               { key: 'dashboard', label: '📊 Dashboard' },
               { key: 'orders', label: '📋 Danh sách đơn hàng' },
+              { key: 'menu', label: '🍽️ Quản lý Menu' },
               { key: 'analytics', label: '📈 Báo cáo' }
             ].map(tab => (
               <button
@@ -1518,6 +1520,10 @@ const AdminDashboard: React.FC = () => {
                 Biểu đồ doanh thu, báo cáo chi tiết sẽ hiển thị ở đây.
               </p>
             </div>
+          )}
+
+          {orderActiveTab === 'menu' && (
+            <MenuManagement />
           )}
         </div>
 

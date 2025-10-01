@@ -24,9 +24,17 @@ const authenticateCustomer = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    console.log("🔐 [AUTH DEBUG] Token decoded successfully:");
+    console.log("   - decoded.customerId:", decoded.customerId);
+    console.log("   - decoded.userId:", decoded.userId);
+    console.log("   - decoded.email:", decoded.email);
+    console.log("   - Full decoded token:", decoded);
+
     // Add customer ID to request
     req.customerId = decoded.customerId;
     req.token = token;
+
+    console.log("🔐 [AUTH DEBUG] Set req.customerId to:", req.customerId);
 
     next();
   } catch (error) {

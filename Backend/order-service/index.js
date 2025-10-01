@@ -65,6 +65,12 @@ io.use((socket, next) => {
     socket.userId = decoded.userId || decoded.customerId;
     socket.userRole = decoded.role || "customer";
 
+    console.log("🔍 [JWT DEBUG] Token decode details:");
+    console.log("   - decoded.userId:", decoded.userId);
+    console.log("   - decoded.customerId:", decoded.customerId);
+    console.log("   - socket.userId (final):", socket.userId);
+    console.log("   - socket.userRole:", socket.userRole);
+
     console.log(
       `🔐 [JWT DEBUG] User ID: ${socket.userId}, Role: ${socket.userRole}`
     );
@@ -75,9 +81,15 @@ io.use((socket, next) => {
     // Join role-specific rooms
     if (socket.userRole === "customer") {
       socket.join("customers");
+      console.log(
+        `🔐 [SOCKET DEBUG] Customer ${socket.userId} joined customers room`
+      );
     } else {
       socket.join("staff");
       socket.join(`role_${socket.userRole}`);
+      console.log(
+        `🔐 [SOCKET DEBUG] Staff ${socket.userId} (${socket.userRole}) joined staff and role_${socket.userRole} rooms`
+      );
     }
 
     console.log(

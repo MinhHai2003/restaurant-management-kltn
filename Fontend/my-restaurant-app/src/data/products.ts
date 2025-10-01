@@ -95,7 +95,7 @@ export const categories = [
     id: 1,
     name: "CƠM CHIÊN & PHỞ",
     slug: "com-chien-pho",
-    image: "https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?w=400",
+    image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332733/restaurant-menu/menu-1759332727925-385629513-comchienhaisan.jpg",
     subcategories: [
       { name: "Cơm chiên", slug: "com-chien" },
       { name: "Phở", slug: "pho" },
@@ -106,7 +106,7 @@ export const categories = [
     id: 2,
     name: "HẢI SẢN & NƯỚNG",
     slug: "hai-san-nuong",
-    image: "https://images.unsplash.com/photo-1574781330855-d0db3225c3f0?w=400",
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&h=300&fit=crop",
     subcategories: [
       { name: "Hải sản nướng", slug: "hai-san-nuong" },
       { name: "Nướng BBQ", slug: "nuong-bbq" },
@@ -117,7 +117,7 @@ export const categories = [
     id: 3,
     name: "LẨU & CANH",
     slug: "lau-canh",
-    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400",
+    image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332847/restaurant-menu/menu-1759332843485-105455699-lau-ca-khoai-quang-binh-01-1632812019.jpg",
     subcategories: [
       { name: "Lẩu", slug: "lau" },
       { name: "Canh", slug: "canh" },
@@ -128,7 +128,7 @@ export const categories = [
     id: 4,
     name: "BÁNH & GỎI CUỐN",
     slug: "banh-goi-cuon",
-    image: "https://images.unsplash.com/photo-1594736797933-d0a9ba96ad2c?w=400",
+    image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332867/restaurant-menu/menu-1759332863100-256812385-goi-cuon-tom-thit-508499.jpg",
     subcategories: [
       { name: "Gỏi cuốn", slug: "goi-cuon" },
       { name: "Bánh mì", slug: "banh-mi" },
@@ -140,7 +140,7 @@ export const categories = [
     id: 5,
     name: "NƯỚC UỐNG & TRÁNG MIỆNG",
     slug: "nuoc-uong-trang-mieng",
-    image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400",
+    image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332938/restaurant-menu/menu-1759332934400-20242317-aquafina-500ml.jpg",
     subcategories: [
       { name: "Nước uống", slug: "nuoc-uong" },
       { name: "Tráng miệng", slug: "trang-mieng" }

@@ -67,23 +67,23 @@ const HomePage: React.FC = () => {
 
   // Filter products by categories for different sections
   const riceAndNoodleProducts = convertToProducts(menuItems.filter(item => 
-    ['Cơm chiên', 'Phở', 'Cơm tấm', 'Bún', 'Mì Quảng'].includes(item.category) && item.available
+    ['com-chien', 'pho', 'com-tam', 'bun', 'mi-quang'].includes(item.category) && item.available
   ));
   
   const seafoodAndGrillProducts = convertToProducts(menuItems.filter(item => 
-    ['Hải sản nướng', 'Nướng BBQ', 'Hải sản tươi sống'].includes(item.category) && item.available
+    ['hai-san', 'thit-nuong'].includes(item.category) && item.available
   ));
   
   const hotpotAndSoupProducts = convertToProducts(menuItems.filter(item => 
-    ['Lẩu', 'Canh'].includes(item.category) && item.available
+    ['lau', 'canh'].includes(item.category) && item.available
   ));
 
   const snacksAndRollsProducts = convertToProducts(menuItems.filter(item => 
-    ['Gỏi cuốn', 'Bánh mì', 'Bánh xèo'].includes(item.category) && item.available
+    ['goi-cuon', 'banh-mi', 'banh-xeo'].includes(item.category) && item.available
   ));
 
   const drinksAndDessertProducts = convertToProducts(menuItems.filter(item => 
-    ['Nước uống', 'Tráng miệng'].includes(item.category) && item.available
+    ['do-uong', 'trang-mieng'].includes(item.category) && item.available
   ));
 
   // Featured products (mix of popular dishes)

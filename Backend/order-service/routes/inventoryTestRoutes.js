@@ -93,13 +93,13 @@ router.post("/test-reduce", async (req, res) => {
   }
 });
 
-// 📋 Lấy recipe information cho menu item
-router.get("/recipe/:menuItemName", (req, res) => {
+// 📋 Lấy recipe information cho menu item từ database
+router.get("/recipe/:menuItemName", async (req, res) => {
   try {
     const { menuItemName } = req.params;
-    const menuItemRecipes = require("../config/menuItemRecipes");
 
-    const recipe = menuItemRecipes[menuItemName];
+    // Sử dụng inventoryApiClient để lấy recipe từ database
+    const recipe = await inventoryApiClient.getMenuItemRecipe(menuItemName);
 
     if (!recipe) {
       return res.status(404).json({
@@ -123,15 +123,30 @@ router.get("/recipe/:menuItemName", (req, res) => {
   }
 });
 
-// 📋 Lấy tất cả recipes
-router.get("/recipes", (req, res) => {
+// 📋 Lấy tất cả recipes từ database
+router.get("/recipes", async (req, res) => {
   try {
-    const menuItemRecipes = require("../config/menuItemRecipes");
+    // Lấy tất cả menu items từ menu service
+    const axios = require("axios");
+    const menuServiceURL =
+      process.env.MENU_SERVICE_URL || "http://localhost:5003";
+    const response = await axios.get(`${menuServiceURL}/api/menu`);
+    const menuItems = response.data;
+
+    // Filter chỉ những items có ingredients
+    const itemsWithRecipes = menuItems.filter(
+      (item) => item.ingredients && item.ingredients.length > 0
+    );
+
+    const recipes = {};
+    itemsWithRecipes.forEach((item) => {
+      recipes[item.name] = { ingredients: item.ingredients };
+    });
 
     res.json({
       success: true,
-      recipes: menuItemRecipes,
-      totalMenuItems: Object.keys(menuItemRecipes).length,
+      recipes: recipes,
+      totalMenuItems: Object.keys(recipes).length,
     });
   } catch (error) {
     console.error("Error getting all recipes:", error.message);

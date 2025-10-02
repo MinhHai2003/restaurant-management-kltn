@@ -28,6 +28,7 @@ const tableAvailabilityValidation = [
 ];
 
 // 📋 Table Management Routes
+router.post("/", tableController.createTable); // Tạo bàn mới
 router.get("/", tableController.getAllTables);
 router.get("/stats", tableController.getTableStats);
 router.get(
@@ -54,6 +55,9 @@ router.put(
   param("tableId").isMongoId().withMessage("Valid table ID is required"),
   tableController.updateTable
 );
+
+// 🆕 Create Table (POST) - Admin only
+router.post("/admin/create", tableController.createTable);
 
 // 🔄 Update Table Status (PATCH) - Admin only
 router.patch(

@@ -1,3 +1,80 @@
+const Table = require("../models/Table");
+const Reservation = require("../models/Reservation");
+
+// 🆕 Tạo bàn mới
+exports.createTable = async (req, res) => {
+  try {
+    console.log("🔥 [CREATE TABLE] Request received:", req.body);
+
+    const { tableNumber, capacity, location, features, pricing, description } =
+      req.body;
+
+    console.log("🔥 [CREATE TABLE] Extracted data:", {
+      tableNumber,
+      capacity,
+      location,
+      features,
+      pricing,
+      description,
+    });
+
+    // Validate required fields
+    if (!tableNumber || !capacity) {
+      console.log("❌ [CREATE TABLE] Missing required fields");
+      return res.status(400).json({
+        success: false,
+        message: "Table number and capacity are required",
+      });
+    }
+
+    // Kiểm tra số bàn đã tồn tại
+    const existingTable = await Table.findOne({ tableNumber });
+    if (existingTable) {
+      console.log(
+        "❌ [CREATE TABLE] Table number already exists:",
+        tableNumber
+      );
+      return res.status(400).json({
+        success: false,
+        message: "Table number already exists",
+      });
+    }
+
+    // Tạo bàn mới
+    const newTableData = {
+      tableNumber,
+      capacity,
+      location: location || "indoor",
+      features: features || [],
+      pricing: pricing || { basePrice: 0 },
+      description: description || "",
+    };
+
+    console.log("🔥 [CREATE TABLE] Creating table with data:", newTableData);
+
+    const newTable = new Table(newTableData);
+
+    console.log("🔥 [CREATE TABLE] Table object created, saving to DB...");
+
+    const savedTable = await newTable.save();
+
+    console.log("✅ [CREATE TABLE] Table saved successfully:", savedTable);
+
+    res.status(201).json({
+      success: true,
+      message: "Table created successfully",
+      data: savedTable,
+    });
+  } catch (error) {
+    console.error("❌ [CREATE TABLE] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create table",
+      error: error.message,
+    });
+  }
+};
+
 // 📝 Update table info
 exports.updateTable = async (req, res) => {
   try {
@@ -32,8 +109,6 @@ exports.updateTable = async (req, res) => {
     });
   }
 };
-const Table = require("../models/Table");
-const Reservation = require("../models/Reservation");
 
 // 📋 Get all tables
 exports.getAllTables = async (req, res) => {
@@ -437,6 +512,7 @@ exports.resetMaintenanceTables = async (req, res) => {
 };
 
 module.exports = {
+  createTable: exports.createTable,
   getAllTables: exports.getAllTables,
   getTableById: exports.getTableById,
   searchAvailableTables: exports.searchAvailableTables,

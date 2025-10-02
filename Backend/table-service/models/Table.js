@@ -29,6 +29,8 @@ const tableSchema = new mongoose.Schema(
       {
         type: String,
         enum: [
+          "wifi",
+          "outlet",
           "air_conditioned",
           "window_view",
           "private_room",
@@ -37,6 +39,9 @@ const tableSchema = new mongoose.Schema(
           "quiet_area",
           "smoking_allowed",
           "pet_friendly",
+          "outdoor_seating",
+          "romantic_lighting",
+          "family_friendly",
         ],
       },
     ],

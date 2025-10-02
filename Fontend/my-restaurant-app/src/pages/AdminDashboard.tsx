@@ -107,6 +107,18 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // Table creation states
+  const [showCreateTableModal, setShowCreateTableModal] = useState(false);
+  const [tableFormData, setTableFormData] = useState({
+    tableNumber: '',
+    capacity: 4,
+    location: 'indoor',
+    features: [] as string[],
+    description: '',
+    pricing: { basePrice: 0 }
+  });
+  const [creatingTable, setCreatingTable] = useState(false);
+  
   // Order management states
   const [orderActiveTab, setOrderActiveTab] = useState('dashboard');
   
@@ -520,6 +532,66 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error loading reservations:', error);
       setReservations([]);
+    }
+  };
+
+  // Hàm tạo bàn mới
+  const handleCreateTable = async () => {
+    if (!tableFormData.tableNumber || !tableFormData.capacity) {
+      alert('Vui lòng nhập số bàn và sức chứa');
+      return;
+    }
+
+    // Kiểm tra số bàn đã tồn tại
+    const existingTable = tables.find(table => table.tableNumber === tableFormData.tableNumber);
+    if (existingTable) {
+      alert('Số bàn này đã tồn tại!');
+      return;
+    }
+
+    setCreatingTable(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      
+      // Debug: Log data được gửi
+      console.log('Creating table with data:', tableFormData);
+      
+      const response = await fetch('http://localhost:5006/api/tables', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(tableFormData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Lỗi tạo bàn');
+      }
+
+      const newTable = await response.json();
+      
+      // Fetch lại danh sách bàn để đảm bảo dữ liệu đồng bộ
+      await loadTables();
+      
+      // Reset form và đóng modal
+      setShowCreateTableModal(false);
+      setTableFormData({
+        tableNumber: '',
+        capacity: 4,
+        location: 'indoor',
+        features: [],
+        description: '',
+        pricing: { basePrice: 0 }
+      });
+      
+      alert('✅ Tạo bàn thành công!');
+    } catch (error) {
+      console.error('Error creating table:', error);
+      alert('❌ Lỗi tạo bàn: ' + error.message);
+    } finally {
+      setCreatingTable(false);
     }
   };
 
@@ -991,6 +1063,21 @@ const AdminDashboard: React.FC = () => {
           </h2>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
+              onClick={() => setShowCreateTableModal(true)}
+              style={{
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}
+            >
+              ➕ Tạo bàn mới
+            </button>
+            <button
               onClick={resetMaintenanceTables}
               style={{
                 background: '#ef4444',
@@ -1068,6 +1155,23 @@ const AdminDashboard: React.FC = () => {
                 <div>👥 Sức chứa: {table.capacity} người</div>
                 <div>📍 Vị trí: {table.location}</div>
                 {table.description && <div>📝 {table.description}</div>}
+                {table.features && table.features.length > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    🔧 Tiện nghi: {table.features.map((feature) => (
+                      <span key={`${table._id}-feature-${feature}`} style={{ 
+                        fontSize: '12px', 
+                        background: '#f3f4f6', 
+                        padding: '2px 6px', 
+                        borderRadius: '4px', 
+                        marginRight: '4px',
+                        display: 'inline-block',
+                        marginTop: '2px'
+                      }}>
+                        {feature.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ 
@@ -1233,7 +1337,7 @@ const AdminDashboard: React.FC = () => {
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {notifications.slice(-3).reverse().map((notification, index) => (
-                      <div key={index} style={{
+                      <div key={`notification-${notification.timestamp || Date.now()}-${index}`} style={{
                         fontSize: '12px',
                         color: '#713f12',
                         padding: '8px',
@@ -1929,6 +2033,221 @@ const AdminDashboard: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Modal tạo bàn mới */}
+      {showCreateTableModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '480px',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>➕ Tạo bàn mới</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Số bàn *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: B01, VIP-A, T12..."
+                  value={tableFormData.tableNumber}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, tableNumber: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Sức chứa *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={tableFormData.capacity}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Vị trí
+                </label>
+                <select
+                  value={tableFormData.location}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, location: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="indoor">Trong nhà</option>
+                  <option value="outdoor">Ngoài trời</option>
+                  <option value="private">Phòng riêng</option>
+                  <option value="vip">VIP</option>
+                  <option value="terrace">Sân thượng</option>
+                  <option value="garden">Vườn</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Tiện nghi
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', maxHeight: '200px', overflow: 'auto' }}>
+                  {[
+                    { key: 'wifi', label: '📶 WiFi' },
+                    { key: 'outlet', label: '🔌 Ổ cắm' },
+                    { key: 'air_conditioned', label: '❄️ Điều hòa' },
+                    { key: 'window_view', label: '🌅 View cửa sổ' },
+                    { key: 'private_room', label: '🚪 Phòng riêng' },
+                    { key: 'wheelchair_accessible', label: '♿ Xe lăn' },
+                    { key: 'near_entrance', label: '🚪 Gần lối vào' },
+                    { key: 'quiet_area', label: '🤫 Khu yên tĩnh' },
+                    { key: 'smoking_allowed', label: '🚬 Cho phép hút thuốc' },
+                    { key: 'pet_friendly', label: '🐕 Thân thiện thú cưng' },
+                    { key: 'outdoor_seating', label: '🌿 Chỗ ngồi ngoài trời' },
+                    { key: 'romantic_lighting', label: '💡 Ánh sáng lãng mạn' },
+                    { key: 'family_friendly', label: '👨‍👩‍👧‍👦 Thân thiện gia đình' }
+                  ].map(feature => (
+                    <label key={feature.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                      <input
+                        type="checkbox"
+                        checked={tableFormData.features.includes(feature.key)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setTableFormData(prev => ({ ...prev, features: [...prev.features, feature.key] }));
+                          } else {
+                            setTableFormData(prev => ({ ...prev, features: prev.features.filter(f => f !== feature.key) }));
+                          }
+                        }}
+                      />
+                      <span>{feature.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Mô tả
+                </label>
+                <textarea
+                  value={tableFormData.description}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Mô tả đặc điểm, vị trí đặc biệt của bàn..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    minHeight: '80px',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Giá mặc định (VNĐ)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tableFormData.pricing.basePrice}
+                  onChange={(e) => setTableFormData(prev => ({ 
+                    ...prev, 
+                    pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
+                  }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowCreateTableModal(false);
+                  setTableFormData({
+                    tableNumber: '',
+                    capacity: 4,
+                    location: 'indoor',
+                    features: [],
+                    description: '',
+                    pricing: { basePrice: 0 }
+                  });
+                }}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: 'white',
+                  color: '#374151',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleCreateTable}
+                disabled={creatingTable || !tableFormData.tableNumber.trim() || !tableFormData.capacity}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  background: (creatingTable || !tableFormData.tableNumber || !tableFormData.capacity) ? '#d1d5db' : '#10b981',
+                  color: 'white',
+                  cursor: (creatingTable || !tableFormData.tableNumber || !tableFormData.capacity) ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                {creatingTable ? '⏳ Đang tạo...' : '✅ Tạo bàn'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

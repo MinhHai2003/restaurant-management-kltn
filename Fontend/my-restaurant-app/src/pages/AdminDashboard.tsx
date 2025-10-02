@@ -1320,7 +1320,7 @@ const AdminDashboard: React.FC = () => {
                   padding: '12px',
                   borderBottom: '1px solid #e5e5e5',
                   display: 'grid',
-                  gridTemplateColumns: '120px 1fr 100px 100px 120px 80px',
+                  gridTemplateColumns: '1fr 1.2fr 1.5fr 0.8fr 1fr 1.2fr 1fr 0.8fr',
                   gap: '12px',
                   fontSize: '12px',
                   fontWeight: '600',
@@ -1328,8 +1328,10 @@ const AdminDashboard: React.FC = () => {
                 }}>
                   <div>Mã đơn</div>
                   <div>Khách hàng</div>
+                  <div>Địa chỉ & SĐT</div>
                   <div>Loại</div>
                   <div>Tổng tiền</div>
+                  <div>Ghi chú</div>
                   <div>Trạng thái</div>
                   <div>Thao tác</div>
                 </div>
@@ -1371,26 +1373,73 @@ const AdminDashboard: React.FC = () => {
                         padding: '12px',
                         borderBottom: '1px solid #f0f0f0',
                         display: 'grid',
-                        gridTemplateColumns: '120px 1fr 100px 100px 120px 80px',
+                        gridTemplateColumns: '1fr 1.2fr 1.5fr 0.8fr 1fr 1.2fr 1fr 0.8fr',
                         gap: '12px',
-                        fontSize: '13px',
+                        fontSize: '12px',
                         alignItems: 'center'
                       }}
                     >
-                      <div style={{ fontWeight: '500', color: '#1890ff' }}>
+                      <div style={{ fontWeight: '500', color: '#1890ff', fontSize: '11px' }}>
                         {order.orderNumber}
                       </div>
                       <div>
-                        <div style={{ fontWeight: '500' }}>{order.customerInfo?.name || 'N/A'}</div>
-                        <div style={{ fontSize: '11px', color: '#666' }}>{order.customerInfo?.email || ''}</div>
+                        <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '2px' }}>{order.customerInfo?.name || 'N/A'}</div>
+                        <div style={{ fontSize: '10px', color: '#666' }}>{order.customerInfo?.email || ''}</div>
                       </div>
-                      <div style={{ fontSize: '11px', textAlign: 'center' }}>
+                      <div style={{ minHeight: '36px' }}>
+                        <div style={{ 
+                          fontSize: '11px', 
+                          color: '#333', 
+                          fontWeight: '500', 
+                          marginBottom: '3px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          📞 <span>{order.customerInfo?.phone || 'N/A'}</span>
+                        </div>
+                        <div style={{ 
+                          fontSize: '10px', 
+                          color: '#666', 
+                          lineHeight: '1.3',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '4px'
+                        }}>
+                          📍 <span style={{ 
+                            flex: 1,
+                            wordBreak: 'break-word',
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {(order.delivery as any)?.address?.full ? 
+                              `${(order.delivery as any).address.full}${(order.delivery as any).address.district ? ', ' + (order.delivery as any).address.district : ''}${(order.delivery as any).address.city ? ', ' + (order.delivery as any).address.city : ''}` : 
+                              'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
                         {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' : 
                          order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' : 
                          '🍽️ Tại bàn'}
                       </div>
                       <div style={{ fontWeight: '600', color: '#16a34a' }}>
                         {order.pricing?.total?.toLocaleString() || 0}đ
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#666' }}>
+                        <div style={{ 
+                          maxHeight: '36px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: '1.2'
+                        }}>
+                          {(order as any)?.notes?.customer || 
+                           (order as any)?.notes?.kitchen || 
+                           (order as any)?.notes?.delivery || 
+                           'Không có ghi chú'}
+                        </div>
                       </div>
                       <div>
                         <span style={{

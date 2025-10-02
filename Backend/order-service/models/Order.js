@@ -43,8 +43,13 @@ const OrderSchema = new mongoose.Schema(
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false, // Not required for guest orders
       ref: "Customer",
+      index: true,
+    },
+    sessionId: {
+      type: String,
+      required: false, // For guest orders
       index: true,
     },
     customerInfo: {
@@ -377,6 +382,11 @@ OrderSchema.statics.getOrderStats = function (customerId, days = 30) {
 
 // Pre-save middleware
 OrderSchema.pre("save", function (next) {
+  // Validate that either customerId or sessionId is provided
+  if (!this.customerId && !this.sessionId) {
+    return next(new Error("Either customerId or sessionId must be provided"));
+  }
+
   if (this.isNew) {
     // Generate order number
     if (!this.orderNumber) {

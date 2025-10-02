@@ -2,7 +2,7 @@ const express = require("express");
 const { body, param, query } = require("express-validator");
 const router = express.Router();
 const cartController = require("../controllers/cartController");
-const authenticateCustomer = require("../middleware/authenticateCustomer");
+const sessionAuth = require("../middleware/sessionAuth"); // Updated to use session auth
 
 // Validation rules
 const addToCartValidation = [
@@ -59,43 +59,34 @@ const checkoutValidation = [
 ];
 
 // 🛒 Cart Management Routes
-router.get("/", authenticateCustomer, cartController.getCart);
-router.get("/summary", authenticateCustomer, cartController.getCartSummary);
-router.post("/refresh", authenticateCustomer, cartController.refreshCart);
-router.delete("/clear", authenticateCustomer, cartController.clearCart);
+router.get("/", sessionAuth, cartController.getCart);
+router.get("/summary", sessionAuth, cartController.getCartSummary);
+router.post("/refresh", sessionAuth, cartController.refreshCart);
+router.delete("/clear", sessionAuth, cartController.clearCart);
 
 // 📦 Item Management Routes
-router.post(
-  "/add",
-  authenticateCustomer,
-  addToCartValidation,
-  cartController.addToCart
-);
+router.post("/add", sessionAuth, addToCartValidation, cartController.addToCart);
 router.put(
   "/items/:itemId",
-  authenticateCustomer,
+  sessionAuth,
   updateCartItemValidation,
   cartController.updateCartItem
 );
-router.delete(
-  "/items/:itemId",
-  authenticateCustomer,
-  cartController.removeFromCart
-);
+router.delete("/items/:itemId", sessionAuth, cartController.removeFromCart);
 
 // 🎫 Coupon Routes
 router.post(
   "/coupon",
-  authenticateCustomer,
+  sessionAuth,
   applyCouponValidation,
   cartController.applyCoupon
 );
-router.delete("/coupon", authenticateCustomer, cartController.removeCoupon);
+router.delete("/coupon", sessionAuth, cartController.removeCoupon);
 
 // 🚚 Delivery Routes
 router.put(
   "/delivery",
-  authenticateCustomer,
+  sessionAuth,
   updateDeliveryValidation,
   cartController.updateDelivery
 );
@@ -103,7 +94,7 @@ router.put(
 // 💳 Checkout Route
 router.post(
   "/checkout",
-  authenticateCustomer,
+  sessionAuth,
   checkoutValidation,
   cartController.checkoutCart
 );

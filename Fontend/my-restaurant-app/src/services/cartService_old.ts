@@ -1,4 +1,4 @@
-// Cart Service for API calls with Session-based Guest Support
+// Cart Service for API calls
 const API_BASE_URL = 'http://localhost:5005/api/cart';
 
 interface CartItem {
@@ -60,23 +60,74 @@ interface CartResponse {
   };
 }
 
+
+
 class CartService {
+  private getSessionId(): string {
+    let sessionId = localStorage.getItem('guestSessionId');
+    if (!sessionId) {
+      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('guestSessionId', sessionId);
+      console.log('🆔 [SESSION] Generated new session ID:', sessionId);
+    }
+    return sessionId;
+  }
+
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
   }
 
-  private getSessionId(): string {
-    return getSessionId(); // Use the exported utility function
+  // Auto login with guest account if user not logged in
+  private async ensureAuthentication(): Promise<string | null> {
+    const userToken = this.getAuthToken();
+    
+    // If user has their own token, use it
+    if (userToken) {
+      return userToken;
+    }
+
+    // If no user token, use guest account
+    if (!this.guestToken) {
+      try {
+        console.log('🤖 [GUEST AUTH] Auto-logging in with guest account...');
+        
+        const response = await fetch('http://localhost:5002/api/customers/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: 'nguoidung@gmail.com',
+            password: '602057Aa'
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (response.ok && result.success && result.data?.accessToken) {
+          this.guestToken = result.data.accessToken;
+          console.log('🤖 [GUEST AUTH] Guest login successful, token:', result.data.accessToken.substring(0, 20) + '...');
+          return this.guestToken;
+        } else {
+          console.error('🤖 [GUEST AUTH] Guest login failed:', result.message || 'Unknown error');
+          console.error('🤖 [GUEST AUTH] Response:', result);
+          return null;
+        }
+      } catch (error) {
+        console.error('🤖 [GUEST AUTH] Guest login error:', error);
+        return null;
+      }
+    }
+
+    return this.guestToken;
   }
 
-  private getAuthHeaders() {
-    const token = this.getAuthToken();
-    const sessionId = this.getSessionId();
-    
+  private async getAuthHeaders() {
+    const token = await this.ensureAuthentication();
+    console.log('🔐 [AUTH HEADERS] Using token:', token ? 'Token exists' : 'No token');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
-      'X-Session-ID': sessionId, // Always include session ID for guest support
     };
   }
 
@@ -84,8 +135,8 @@ class CartService {
   async getCart(): Promise<{ success: boolean; data?: { cart: Cart }; error?: string }> {
     try {
       console.log('🛒 [CART SERVICE] Getting cart from:', API_BASE_URL);
-      const headers = this.getAuthHeaders();
-      console.log('🛒 [CART SERVICE] Headers:', headers);
+      const headers = await this.getAuthHeaders();
+      console.log('🛒 [CART SERVICE] Auth headers:', headers);
       
       const response = await fetch(`${API_BASE_URL}`, {
         method: 'GET',
@@ -95,6 +146,7 @@ class CartService {
       const result = await response.json();
       
       console.log('🛒 [CART SERVICE] Raw API response:', result);
+      console.log('🛒 [CART SERVICE] Cart summary from API:', result?.data?.cart?.summary);
       
       if (!response.ok) {
         throw new Error(result.message || 'Failed to get cart');
@@ -113,7 +165,7 @@ class CartService {
   // Add item to cart
   async addToCart(data: AddToCartData): Promise<{ success: boolean; data?: CartResponse; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/add`, {
         method: 'POST',
         headers,
@@ -139,7 +191,7 @@ class CartService {
   // Update cart item quantity
   async updateCartItem(itemId: string, quantity: number): Promise<{ success: boolean; data?: { cart: Cart }; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/items/${itemId}`, {
         method: 'PUT',
         headers,
@@ -165,7 +217,7 @@ class CartService {
   // Remove item from cart
   async removeFromCart(itemId: string): Promise<{ success: boolean; data?: { cart: Cart }; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/items/${itemId}`, {
         method: 'DELETE',
         headers,
@@ -190,7 +242,7 @@ class CartService {
   // Get cart summary (for header badge)
   async getCartSummary(): Promise<{ success: boolean; data?: { summary: CartSummary; itemCount: number }; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/summary`, {
         method: 'GET',
         headers,
@@ -215,7 +267,7 @@ class CartService {
   // Clear cart
   async clearCart(): Promise<{ success: boolean; data?: { cart: Cart }; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/clear`, {
         method: 'DELETE',
         headers,
@@ -240,7 +292,7 @@ class CartService {
   // Apply coupon
   async applyCoupon(couponCode: string): Promise<{ success: boolean; data?: { cart: Cart; appliedDiscount: number }; error?: string }> {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeaders();
       const response = await fetch(`${API_BASE_URL}/coupon`, {
         method: 'POST',
         headers,
@@ -271,21 +323,10 @@ class CartService {
     }).format(price);
   }
 
-  // Check if user is authenticated (always true now with session fallback)
+  // Check if user is authenticated (always true now with guest fallback)
   isAuthenticated(): boolean {
-    return true; // Always true since we have session fallback
+    return true; // Always true since we have guest fallback
   }
-}
-
-// Utility function to get session ID (can be used by other services)
-export function getSessionId(): string {
-  let sessionId = localStorage.getItem('guestSessionId');
-  if (!sessionId) {
-    sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('guestSessionId', sessionId);
-    console.log('🆔 [SESSION] Generated new session ID:', sessionId);
-  }
-  return sessionId;
 }
 
 // Export singleton instance

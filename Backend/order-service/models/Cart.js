@@ -48,8 +48,13 @@ const CartSchema = new mongoose.Schema(
   {
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false, // Allow null for session-based carts
       ref: "Customer",
+      index: true,
+    },
+    sessionId: {
+      type: String,
+      required: false, // For guest sessions
       index: true,
     },
     items: [CartItemSchema],
@@ -236,13 +241,22 @@ CartSchema.methods.updateSummary = async function () {
     totalSpent: 0,
     loyaltyPoints: 0,
   };
-  try {
-    customerInfo = await customerApiClient.getCustomerInfo(
-      this.customerId.toString()
-    );
-    console.log("💎 Customer membership level:", customerInfo.membershipLevel);
-  } catch (error) {
-    console.error("Error getting customer info:", error);
+
+  // Only get customer info if customerId exists (authenticated user)
+  if (this.customerId) {
+    try {
+      customerInfo = await customerApiClient.getCustomerInfo(
+        this.customerId.toString()
+      );
+      console.log(
+        "💎 Customer membership level:",
+        customerInfo.membershipLevel
+      );
+    } catch (error) {
+      console.error("Error getting customer info:", error);
+    }
+  } else {
+    console.log("💎 Guest user - using default bronze level");
   }
 
   // 💰 Calculate loyalty discount based on membership level
@@ -368,7 +382,15 @@ CartSchema.statics.findOrCreateCart = async function (
   customerId,
   sessionId = null
 ) {
-  let cart = await this.findOne({ customerId });
+  let cart;
+
+  if (customerId) {
+    // Authenticated user - find by customerId
+    cart = await this.findOne({ customerId });
+  } else if (sessionId) {
+    // Guest user - find by sessionId
+    cart = await this.findOne({ sessionId, customerId: null });
+  }
 
   if (!cart) {
     cart = new this({

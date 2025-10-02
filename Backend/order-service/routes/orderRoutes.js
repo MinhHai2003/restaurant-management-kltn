@@ -2,7 +2,7 @@ const express = require("express");
 const { body, param, query } = require("express-validator");
 const router = express.Router();
 const orderController = require("../controllers/orderController");
-const authenticateCustomer = require("../middleware/authenticateCustomer");
+const sessionAuth = require("../middleware/sessionAuth");
 
 // Validation rules
 const createOrderValidation = [
@@ -43,27 +43,23 @@ const rateOrderValidation = [
 // 📝 Order Management Routes
 router.post(
   "/",
-  authenticateCustomer,
+  sessionAuth,
   createOrderValidation,
   orderController.createOrder
 );
-router.get("/", authenticateCustomer, orderController.getCustomerOrders);
-router.get("/stats", authenticateCustomer, orderController.getOrderStats);
+router.get("/", sessionAuth, orderController.getCustomerOrders);
+router.get("/stats", sessionAuth, orderController.getOrderStats);
 
 // 🔍 Individual Order Routes
-router.get("/:orderId", authenticateCustomer, orderController.getOrderById);
-router.delete("/:orderId", authenticateCustomer, orderController.cancelOrder);
+router.get("/:orderId", sessionAuth, orderController.getOrderById);
+router.delete("/:orderId", sessionAuth, orderController.cancelOrder);
 router.post(
   "/:orderNumber/rate",
-  authenticateCustomer,
+  sessionAuth,
   rateOrderValidation,
   orderController.rateOrder
 );
-router.post(
-  "/:orderNumber/reorder",
-  authenticateCustomer,
-  orderController.reorder
-);
+router.post("/:orderNumber/reorder", sessionAuth, orderController.reorder);
 
 // 🔄 Tracking Routes
 router.get("/track/:orderNumber", orderController.trackOrder);

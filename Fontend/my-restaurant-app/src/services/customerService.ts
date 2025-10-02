@@ -96,15 +96,28 @@ export type Address = {
 
 class CustomerService {
   getOrders = getOrders;
+  
   private getAuthToken(): string | null {
     return localStorage.getItem('token');
   }
 
+  private getSessionId(): string {
+    let sessionId = localStorage.getItem('guestSessionId');
+    if (!sessionId) {
+      sessionId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('guestSessionId', sessionId);
+    }
+    return sessionId;
+  }
+
   private getAuthHeaders() {
     const token = this.getAuthToken();
+    const sessionId = this.getSessionId();
+    
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
+      'X-Session-ID': sessionId, // Always include session ID for guest support
     };
   }
 

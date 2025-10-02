@@ -17,13 +17,43 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    const { items, delivery, payment, notes, coupon } = req.body;
+    const { items, delivery, payment, notes, coupon, customerInfo } = req.body;
 
-    // 1. Validate customer
-    const customer = await customerApiClient.validateCustomer(
-      req.customerId,
-      req.token
-    );
+    // 1. Validate customer (skip for guest users)
+    let customer;
+    if (req.customerId) {
+      // Authenticated user - validate via API (req.token should exist)
+      const token = req.headers.authorization?.split(" ")[1];
+      customer = await customerApiClient.validateCustomer(
+        req.customerId,
+        token
+      );
+    } else if (req.sessionId) {
+      // Guest user - use customer info from request body
+      if (
+        !customerInfo ||
+        !customerInfo.name ||
+        !customerInfo.email ||
+        !customerInfo.phone
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Customer information (name, email, phone) is required for guest orders",
+        });
+      }
+      customer = {
+        name: customerInfo.name,
+        email: customerInfo.email,
+        phone: customerInfo.phone,
+        membershipLevel: "bronze", // Default membership level for guests (lowercase)
+      };
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
 
     // 2. Validate menu items and get pricing
     const validatedItems = await menuApiClient.validateOrderItems(items);
@@ -70,13 +100,16 @@ exports.createOrder = async (req, res) => {
     // 4. Validate delivery address if delivery
     let deliveryAddress = null;
     if (delivery.type === "delivery") {
-      if (delivery.addressId) {
+      if (delivery.addressId && req.customerId) {
+        // Authenticated user with saved address
+        const token = req.headers.authorization?.split(" ")[1];
         deliveryAddress = await customerApiClient.validateAddress(
           req.customerId,
           delivery.addressId,
-          req.token
+          token
         );
       } else if (delivery.address) {
+        // Guest user or authenticated user with new address
         deliveryAddress = delivery.address;
       } else {
         return res.status(400).json({
@@ -118,7 +151,16 @@ exports.createOrder = async (req, res) => {
     } else {
       // Fallback to cart pricing
       try {
-        const cart = await Cart.findOne({ customerId: req.customerId });
+        let cart;
+        if (req.customerId) {
+          // Authenticated user cart
+          cart = await Cart.findOne({ customerId: req.customerId });
+        } else if (req.sessionId) {
+          // Guest user session cart
+          const SessionCart = require("../models/SessionCart");
+          cart = await SessionCart.findOne({ sessionId: req.sessionId });
+        }
+
         if (cart && cart.summary) {
           // Use cart pricing for consistency
           pricing = {
@@ -168,7 +210,8 @@ exports.createOrder = async (req, res) => {
     // 7. Create order
     const orderData = {
       orderNumber: Order.generateOrderNumber(), // Generate order number
-      customerId: req.customerId,
+      customerId: req.customerId || null, // null for guest users
+      sessionId: req.sessionId || null, // session ID for guest users
       customerInfo: {
         name: customer.name,
         email: customer.email,
@@ -226,7 +269,9 @@ exports.createOrder = async (req, res) => {
       );
       console.log(
         "🔔 [SOCKET DEBUG] Customer ID:",
-        req.customerId,
+        req.customerId || "Guest",
+        "Session ID:",
+        req.sessionId || "None",
         "Order type:",
         order.delivery.type
       );
@@ -237,16 +282,20 @@ exports.createOrder = async (req, res) => {
         order.customerInfo.name
       );
 
-      // Notify customer about order confirmation
-      req.io.to(`user_${req.customerId}`).emit("order_created", {
-        type: "order_confirmed",
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        total: order.pricing.total,
-        estimatedTime: order.delivery.estimatedTime,
-        message: `Đơn hàng ${order.orderNumber} đã được tạo thành công!`,
-      });
+      // Notify customer about order confirmation (only for authenticated users)
+      if (req.customerId) {
+        req.io.to(`user_${req.customerId}`).emit("order_created", {
+          type: "order_confirmed",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          total: order.pricing.total,
+          estimatedTime: order.delivery.estimatedTime,
+          message: `Đơn hàng ${order.orderNumber} đã được tạo thành công!`,
+        });
+      }
+      // Note: Guest users won't receive real-time notifications
+      // They can check order status via order tracking page
 
       // Notify kitchen staff about new order
       req.io.to("role_chef").emit("new_order_kitchen", {

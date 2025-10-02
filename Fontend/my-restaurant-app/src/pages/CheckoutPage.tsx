@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { cartService } from '../services/cartService';
 import { customerService } from '../services/customerService';
+import orderService from '../services/orderService';
 import type { Address } from '../services/customerService';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../contexts/CartContext';
@@ -309,9 +310,29 @@ const CheckoutPage: React.FC = () => {
         }
       };
 
+      // Add customer info for guest users
+      if (!user) {
+        console.log('👤 Guest user - Customer info state:', customerInfo);
+        
+        // Validate required customer info for guest users
+        if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
+          setError('Vui lòng điền đầy đủ thông tin khách hàng (họ tên, email, số điện thoại)');
+          setProcessing(false);
+          return;
+        }
+        
+        (orderData as any).customerInfo = {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone
+        };
+        console.log('✅ Added customerInfo to orderData:', (orderData as any).customerInfo);
+      }
+
       // Lấy token từ localStorage
       const token = localStorage.getItem('token');
       console.log('🔑 Token từ localStorage:', token ? 'Có token' : 'Không có token');
+      console.log('👤 User state:', user ? 'Authenticated' : 'Guest');
       console.log('📦 Dữ liệu gửi đi:', orderData);
       console.log('🍽️ Menu items trong cart:', cart.items.map(item => ({ 
         cartItemId: item._id, 
@@ -332,23 +353,8 @@ const CheckoutPage: React.FC = () => {
         console.error('🧪 Menu API test failed:', testError);
       }
       
-      const response = await fetch('http://localhost:5005/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!response.ok) {
-        // Lấy chi tiết lỗi từ server
-        const errorData = await response.json();
-        console.error('❌ Chi tiết lỗi từ server:', errorData);
-        throw new Error(errorData.message || `Lỗi ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      // Use orderService for API call
+      const result = await orderService.createOrder(orderData);
       console.log('✅ Đặt hàng thành công:', result);
 
       // Làm trống giỏ hàng - cập nhật UI ngay lập tức
@@ -628,16 +634,20 @@ const CheckoutPage: React.FC = () => {
                                 setNewAddressError('');
                                 console.log('🔍 Thêm địa chỉ mới:', newAddressForm);
                                 try {
-                                  const res = await customerService.addAddress(newAddressForm);
-                                  console.log('📨 API response:', res);
-                                  if (res.success && res.data && res.data._id) {
-                                    // Reload addresses, chọn địa chỉ mới
-                                    const addrRes = await customerService.getAddresses();
-                                    if (addrRes.success && addrRes.data) {
-                                      setAddresses(addrRes.data);
-                                      setSelectedAddressId(res.data._id);
-                                      setCustomerInfo(info => ({
-                                        ...info,
+                                  const userToken = localStorage.getItem('token');
+                                  
+                                  if (userToken) {
+                                    // User đã đăng nhập - lưu địa chỉ vào database
+                                    const res = await customerService.addAddress(newAddressForm);
+                                    console.log('📨 API response:', res);
+                                    if (res.success && res.data && res.data._id) {
+                                      // Reload addresses, chọn địa chỉ mới
+                                      const addrRes = await customerService.getAddresses();
+                                      if (addrRes.success && addrRes.data) {
+                                        setAddresses(addrRes.data);
+                                        setSelectedAddressId(res.data._id);
+                                        setCustomerInfo(info => ({
+                                          ...info,
                                         address: res.data?.address || '',
                                         city: res.data?.city || '',
                                         district: res.data?.district || '',
@@ -648,6 +658,26 @@ const CheckoutPage: React.FC = () => {
                                   } else {
                                     setNewAddressError(res.error || 'Có lỗi xảy ra khi thêm địa chỉ');
                                   }
+                                } else {
+                                  // Guest user - lưu địa chỉ vào local state
+                                  console.log('👤 Guest user - lưu địa chỉ local');
+                                  const newAddress = {
+                                    _id: `guest_${Date.now()}`,
+                                    ...newAddressForm
+                                  };
+                                  
+                                  // Thêm vào danh sách địa chỉ local
+                                  setAddresses(prev => [...prev, newAddress]);
+                                  setSelectedAddressId(newAddress._id);
+                                  setCustomerInfo(info => ({
+                                    ...info,
+                                    address: newAddressForm.address || '',
+                                    city: newAddressForm.city || '',
+                                    district: newAddressForm.district || '',
+                                    phone: newAddressForm.phone || ''
+                                  }));
+                                  setShowNewAddressModal(false);
+                                }
                                 } catch (error) {
                                   console.error('❌ Lỗi thêm địa chỉ:', error);
                                   setNewAddressError('Có lỗi xảy ra khi thêm địa chỉ');
@@ -691,7 +721,18 @@ const CheckoutPage: React.FC = () => {
                   </div>
 
                   {/* Email */}
-                  
+                  <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={customerInfo.email}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                      required
+                      style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '16px' }}
+                    />
+                  </div>
 
                   {/* Địa chỉ cụ thể */}
                   <div>

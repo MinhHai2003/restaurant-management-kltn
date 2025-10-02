@@ -920,6 +920,7 @@ const getAllReservations = async (req, res) => {
       _id: reservation._id,
       reservationNumber: reservation.reservationNumber,
       customerName: reservation.customerInfo?.name || "N/A",
+      customerPhone: reservation.customerInfo?.phone || "N/A",
       table: reservation.tableId
         ? {
             tableNumber: reservation.tableId.tableNumber,
@@ -1025,6 +1026,45 @@ const updateReservationStatus = async (req, res) => {
     }
 
     await reservation.save();
+
+    // 🔔 Emit real-time notifications via Socket.io
+    if (req.io) {
+      console.log("🔔 [SOCKET DEBUG] Emitting reservation status update:", {
+        reservationId: reservation._id,
+        oldStatus,
+        newStatus: status,
+      });
+
+      // Notify customer about status change
+      if (reservation.customerId) {
+        req.io
+          .to(`customer_${reservation.customerId}`)
+          .emit("reservation_status_updated", {
+            type: "reservation_status_changed",
+            reservationId: reservation._id,
+            reservationNumber: reservation.reservationNumber,
+            oldStatus,
+            newStatus: status,
+            message: `Trạng thái đặt bàn ${reservation.reservationNumber} đã được cập nhật thành "${status}"`,
+          });
+        console.log(
+          "🔔 [SOCKET DEBUG] Sent status update to customer:",
+          reservation.customerId
+        );
+      }
+
+      // Notify admins about status change
+      req.io.emit("reservation_status_updated", {
+        reservationId: reservation._id,
+        reservationNumber: reservation.reservationNumber,
+        oldStatus,
+        newStatus: status,
+        customerId: reservation.customerId,
+      });
+      console.log("🔔 [SOCKET DEBUG] Sent status update to admins");
+    } else {
+      console.log("🔔 [SOCKET DEBUG] Socket.io not available in request");
+    }
 
     res.json({
       success: true,

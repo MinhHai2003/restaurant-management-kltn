@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AccountLayout from '../../components/account/AccountLayout';
+import { useTableSocket } from '../../hooks/useTableSocket';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Reservation {
   id: string;
@@ -7,43 +9,113 @@ interface Reservation {
   date: string;
   time: string;
   guests: number;
-  status: 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no-show';
   restaurantBranch: string;
   specialRequests?: string;
   customerNote?: string;
 }
 
 const ReservationsPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<'all' | 'upcoming' | 'completed' | 'cancelled'>('all');
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const { socket, isConnected } = useTableSocket();
 
-  // Mock data
-  const reservations: Reservation[] = [
-    {
-      id: '1',
-      reservationNumber: 'DB2024001',
-      date: '2024-08-15',
-      time: '19:00',
-      guests: 4,
-      status: 'confirmed',
-      restaurantBranch: 'Chi nhánh Quận 1',
-      specialRequests: 'Bàn gần cửa sổ, không khói thuốc',
-      customerNote: 'Sinh nhật bạn gái'
-    },
-    {
-      id: '2',
-      reservationNumber: 'DB2024002',
-      date: '2024-08-10',
-      time: '12:30',
-      guests: 2,
-      status: 'completed',
-      restaurantBranch: 'Chi nhánh Quận 7',
-      specialRequests: 'Bàn riêng tư'
-    }
-  ];
+  // Debug logs
+  useEffect(() => {
+    console.log('🔍 [RESERVATIONS] Socket status changed:', { socket: !!socket, isConnected });
+  }, [socket, isConnected]);
+
+  // Fetch reservations from backend
+  useEffect(() => {
+    if (!user) return;
+    const fetchReservations = async () => {
+      try {
+        // Get user token for authentication
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5006/api/reservations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await res.json();
+        if (data.success && data.data && data.data.reservations) {
+          // Map backend data to Reservation type
+          const mapped = data.data.reservations.map((r: unknown) => {
+            const reservation = r as any; // Type assertion for now
+            return {
+              id: reservation._id,
+              reservationNumber: reservation.reservationNumber,
+              date: reservation.reservationDate.split('T')[0],
+              time: reservation.timeSlot.startTime + ' - ' + reservation.timeSlot.endTime,
+              guests: reservation.partySize,
+              status: reservation.status,
+              restaurantBranch: reservation.tableInfo?.branch || 'Main Branch',
+              specialRequests: reservation.specialRequests,
+              customerNote: reservation.customerNote
+            };
+          });
+          setReservations(mapped);
+        }
+      } catch (err) {
+        console.error('Error fetching reservations:', err);
+      }
+    };
+    fetchReservations();
+  }, [user]);
+
+  // Socket realtime update
+  useEffect(() => {
+    if (!socket || !user) return;
+    const handleReservationUpdate = (data: unknown) => {
+      // Optionally refetch or update local state
+      // For demo, just refetch
+      console.log('🔄 [SOCKET] Reservation update:', data);
+      // You can optimize by updating only the changed reservation
+      // For now, refetch all
+      const token = localStorage.getItem('token');
+      fetch(`http://localhost:5006/api/reservations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.reservations) {
+            const mapped = data.data.reservations.map((r: unknown) => {
+              const reservation = r as any; // Type assertion for now
+              return {
+                id: reservation._id,
+                reservationNumber: reservation.reservationNumber,
+                date: reservation.reservationDate.split('T')[0],
+                time: reservation.timeSlot.startTime + ' - ' + reservation.timeSlot.endTime,
+                guests: reservation.partySize,
+                status: reservation.status,
+                restaurantBranch: reservation.tableInfo?.branch || 'Main Branch',
+                specialRequests: reservation.specialRequests,
+                customerNote: reservation.customerNote
+              };
+            });
+            setReservations(mapped);
+          }
+        })
+        .catch(err => console.error('Error refetching reservations:', err));
+    };
+    socket.on('reservation_created', handleReservationUpdate);
+    socket.on('reservation_status_updated', handleReservationUpdate);
+    return () => {
+      socket.off('reservation_created', handleReservationUpdate);
+      socket.off('reservation_status_updated', handleReservationUpdate);
+    };
+  }, [socket, user]);
 
   const getStatusColor = (status: Reservation['status']) => {
     switch (status) {
+      case 'pending': return '#d97706';
       case 'confirmed': return '#3b82f6';
+      case 'seated': return '#2563eb';
       case 'completed': return '#059669';
       case 'cancelled': return '#ef4444';
       case 'no-show': return '#6b7280';
@@ -53,27 +125,29 @@ const ReservationsPage: React.FC = () => {
 
   const getStatusText = (status: Reservation['status']) => {
     switch (status) {
+      case 'pending': return 'Chờ xác nhận';
       case 'confirmed': return 'Đã xác nhận';
-      case 'completed': return 'Đã hoàn thành';
+      case 'seated': return 'Đã nhận bàn';
+      case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       case 'no-show': return 'Không đến';
-      default: return 'Không xác định';
+      default: return status;
     }
   };
 
   const filteredReservations = reservations.filter(reservation => {
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'upcoming') return reservation.status === 'confirmed';
+    if (activeFilter === 'upcoming') return ['pending', 'confirmed', 'seated'].includes(reservation.status);
     if (activeFilter === 'completed') return reservation.status === 'completed';
-    if (activeFilter === 'cancelled') return reservation.status === 'cancelled';
+    if (activeFilter === 'cancelled') return ['cancelled', 'no-show'].includes(reservation.status);
     return true;
   });
 
   const filters = [
     { id: 'all', label: 'Tất cả', count: reservations.length },
-    { id: 'upcoming', label: 'Sắp tới', count: reservations.filter(r => r.status === 'confirmed').length },
+    { id: 'upcoming', label: 'Sắp tới', count: reservations.filter(r => ['pending', 'confirmed', 'seated'].includes(r.status)).length },
     { id: 'completed', label: 'Đã hoàn thành', count: reservations.filter(r => r.status === 'completed').length },
-    { id: 'cancelled', label: 'Đã hủy', count: reservations.filter(r => r.status === 'cancelled').length }
+    { id: 'cancelled', label: 'Đã hủy', count: reservations.filter(r => ['cancelled', 'no-show'].includes(r.status)).length }
   ];
 
   return (
@@ -87,14 +161,33 @@ const ReservationsPage: React.FC = () => {
           paddingBottom: '1rem',
           borderBottom: '1px solid #e5e7eb'
         }}>
-          <h2 style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            color: '#1f2937',
-            margin: 0
-          }}>
-            Lịch sử đặt bàn
-          </h2>
+          <div>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#1f2937',
+              margin: 0,
+              marginBottom: '0.5rem'
+            }}>
+              📋 Lịch sử đặt bàn
+            </h2>
+            {/* Socket status indicator */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.875rem',
+              color: isConnected ? '#059669' : '#dc2626'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: isConnected ? '#10b981' : '#ef4444'
+              }}></div>
+              {isConnected ? 'Real-time ON' : 'Disconnected'}
+            </div>
+          </div>
           
           <button
             style={{

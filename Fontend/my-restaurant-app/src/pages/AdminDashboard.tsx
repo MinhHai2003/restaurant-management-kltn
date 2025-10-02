@@ -11,6 +11,7 @@ interface ApiReservation {
   _id: string;
   reservationNumber: string;
   customerName?: string;
+  customerPhone?: string;
   table?: {
     tableNumber: string;
     capacity: number;
@@ -43,6 +44,7 @@ interface Stats {
 interface Reservation {
   _id: string;
   customerName: string;
+  customerPhone?: string;
   tableNumber: string;
   reservationDate: string;
   timeSlot: {
@@ -491,6 +493,7 @@ const AdminDashboard: React.FC = () => {
           const realReservations: Reservation[] = data.data.reservations.map((res: ApiReservation) => ({
             _id: res._id,
             customerName: res.customerName || 'Khách hàng ẩn danh',
+            customerPhone: res.customerPhone || 'N/A',
             tableNumber: res.table?.tableNumber || 'N/A',
             reservationDate: res.reservationDate.split('T')[0], // Get date only
             timeSlot: res.timeSlot,
@@ -795,7 +798,7 @@ const AdminDashboard: React.FC = () => {
         
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '150px 100px 120px 150px 100px 150px 120px 200px 120px',
+          gridTemplateColumns: '150px 100px 120px 150px 100px 120px 150px 120px 200px 120px',
           gap: '12px',
           padding: '12px 20px',
           background: '#f9fafb',
@@ -808,6 +811,7 @@ const AdminDashboard: React.FC = () => {
           <span>Ngày đặt</span>
           <span>Thời gian</span>
           <span>Số người</span>
+          <span>SĐT</span>
           <span>Dịp</span>
           <span>Trạng thái</span>
           <span>Yêu cầu đặc biệt</span>
@@ -829,7 +833,7 @@ const AdminDashboard: React.FC = () => {
             return (
               <div key={reservation._id} style={{
                 display: 'grid',
-                gridTemplateColumns: '150px 100px 120px 150px 100px 150px 120px 200px 120px',
+                gridTemplateColumns: '150px 100px 120px 150px 100px 120px 150px 120px 200px 120px',
                 gap: '12px',
                 padding: '12px 20px',
                 borderBottom: '1px solid #f1f5f9',
@@ -853,6 +857,9 @@ const AdminDashboard: React.FC = () => {
                   {reservation.timeSlot.startTime} - {reservation.timeSlot.endTime}
                 </span>
                 <span style={{ textAlign: 'center' }}>{reservation.partySize} người</span>
+                <span style={{ fontSize: '12px', color: '#4b5563' }}>
+                  {reservation.customerPhone || 'N/A'}
+                </span>
                 <span style={{ 
                   fontSize: '12px',
                   color: '#4b5563'

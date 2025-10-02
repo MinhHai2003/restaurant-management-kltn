@@ -498,7 +498,6 @@ const DatBanPage: React.FC = () => {
                 borderRadius: '50%',
                 backgroundColor: isConnected ? '#10b981' : '#ef4444'
               }}></div>
-              {isConnected ? 'Kết nối thời gian thực' : 'Mất kết nối'}
             </div>
             <p style={{ 
               color: 'rgba(255,255,255,0.9)', 
@@ -879,23 +878,7 @@ const DatBanPage: React.FC = () => {
             )}
           </div>
 
-          {/* Search Info */}
-          <div style={{ 
-            background: 'rgba(59, 130, 246, 0.1)', 
-            border: '1px solid rgba(59, 130, 246, 0.3)', 
-            borderRadius: '12px', 
-            padding: '16px', 
-            marginBottom: '24px',
-            fontSize: '14px',
-            color: '#1e40af'
-          }}>
-            ℹ️ <strong>Hướng dẫn tìm kiếm:</strong>
-            <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
-              <li>🔎 <strong>"Tìm bàn phù hợp"</strong>: Tìm theo ngày giờ cụ thể → chỉ hiện bàn còn trống khả dụng</li>
-              <li>📋 <strong>"Xem tất cả bàn"</strong>: Xem tất cả bàn → có thể lọc theo trạng thái (đang sử dụng, bảo trì, v.v.)</li>
-              <li>⚠️ <strong>Lưu ý:</strong> Khi tìm kiếm theo thời gian + trạng thái khác "còn trống", hệ thống sẽ ưu tiên lọc theo trạng thái</li>
-            </ul>
-          </div>
+          
 
           {/* Sorting Controls */}
           <div style={{ 

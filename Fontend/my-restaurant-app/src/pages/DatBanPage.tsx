@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import { useAuth } from '../hooks/useAuth';
+import { getSessionId } from '../services/cartService';
+import { useTableSocket } from '../hooks/useTableSocket';
+
+
 
 interface Table {
   _id: string;
@@ -33,9 +37,19 @@ interface ReservationFormData {
   partySize: number;
   occasion: string;
   specialRequests: string;
+  phoneNumber: string;
+  // Guest user info (for non-authenticated users)
+  guestName?: string;
+  guestEmail?: string;
 }
 
 const DatBanPage: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Socket connection for real-time updates
+  // Use table socket for real-time updates
+  const { isConnected } = useTableSocket();
+  
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +63,10 @@ const DatBanPage: React.FC = () => {
     endTime: '20:00',
     partySize: 2,
     occasion: 'other',
-    specialRequests: ''
+    specialRequests: '',
+    phoneNumber: '',
+    guestName: '',
+    guestEmail: ''
   });
   
   // Search/Filter states - Trạng thái tìm kiếm/lọc
@@ -114,31 +131,61 @@ const DatBanPage: React.FC = () => {
     '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'
   ];
 
-  const navigate = useNavigate();
 
-  // Initialize form with today's date
+
+  // Initialize form with today's date and auto-fill user info if logged in
   useEffect(() => {
+    console.log('🚀 [INIT] Initializing DatBanPage...');
+    console.log('👤 [INIT] User state:', user);
+    
     const today = new Date().toISOString().split('T')[0];
-    setFormData(prev => ({ ...prev, reservationDate: today }));
+    console.log('📅 [INIT] Today date:', today);
+    
+    setFormData(prev => {
+      const newFormData = { 
+        ...prev, 
+        reservationDate: today,
+        phoneNumber: user?.phone || prev.phoneNumber, // Auto-fill phone number if user is logged in
+        guestName: user?.name || prev.guestName, // Auto-fill name if user is logged in
+        guestEmail: user?.email || prev.guestEmail // Auto-fill email if user is logged in
+      };
+      console.log('📋 [INIT] Updated form data:', newFormData);
+      return newFormData;
+    });
+    
+    console.log('🔄 [INIT] Loading initial tables...');
     loadInitialTables();
-  }, []);
+  }, [user]); // Add user as dependency
+
+
+
+
 
   // Load all tables initially
   const loadInitialTables = async () => {
+    console.log('📋 [TABLES] Loading initial tables...');
     setLoading(true);
     setError('');
     try {
       const res = await fetch('http://localhost:5006/api/tables?limit=100');
+      console.log('📥 [TABLES] API response status:', res.status);
+      
       const data = await res.json();
+      console.log('📥 [TABLES] API response data:', data);
+      
       if (data.success) {
+        console.log('✅ [TABLES] Tables loaded successfully:', data.data.tables.length, 'tables');
         setTables(data.data.tables);
       } else {
+        console.log('❌ [TABLES] Failed to load tables:', data.message);
         setError(data.message || 'Không thể tải danh sách bàn');
       }
-    } catch {
+    } catch (error) {
+      console.error('💥 [TABLES] Exception loading tables:', error);
       setError('Lỗi khi tải danh sách bàn');
     } finally {
       setLoading(false);
+      console.log('🏁 [TABLES] Table loading completed');
     }
   };
 
@@ -220,63 +267,158 @@ const DatBanPage: React.FC = () => {
 
   // Open reservation modal
   const openReservationModal = (table: Table) => {
+    console.log('🎯 [MODAL] Opening reservation modal for table:', table.tableNumber);
+    console.log('🪑 [MODAL] Table details:', table);
+    
     setSelectedTable(table);
-    setFormData(prev => ({ ...prev, tableId: table._id }));
+    setFormData(prev => {
+      const updated = { ...prev, tableId: table._id };
+      console.log('📋 [MODAL] Updated form data with table ID:', updated);
+      return updated;
+    });
     setShowReservationModal(true);
+    console.log('✅ [MODAL] Reservation modal opened');
   };
 
   // Create reservation
   const createReservation = async () => {
+    console.log('🎯 [RESERVATION] Starting reservation creation...');
+    console.log('👤 [RESERVATION] User state:', user ? 'Authenticated' : 'Guest');
+    console.log('📋 [RESERVATION] Form data:', formData);
+    
     setError('');
     setSuccess('');
     setLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Vui lòng đăng nhập để đặt bàn');
-        navigate('/login');
+      // Validate phone number
+      if (!formData.phoneNumber || formData.phoneNumber.trim() === '') {
+        console.log('❌ [VALIDATION] Phone number missing');
+        setError('Vui lòng nhập số điện thoại');
+        setLoading(false);
         return;
       }
 
-      const reservationData = {
+      // Updated phone number validation (Vietnamese format - support both 10 and 11 digits)
+      const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8,9})$/;
+      if (!phoneRegex.test(formData.phoneNumber.trim())) {
+        console.log('❌ [VALIDATION] Phone number invalid:', formData.phoneNumber);
+        setError('Số điện thoại không hợp lệ (VD: 0912345678 hoặc 03430985081)');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ [VALIDATION] Phone number valid:', formData.phoneNumber);
+
+      // For guest users, validate required fields
+      if (!user) {
+        console.log('🔍 [VALIDATION] Validating guest user fields...');
+        if (!formData.guestName || formData.guestName.trim() === '') {
+          console.log('❌ [VALIDATION] Guest name missing');
+          setError('Vui lòng nhập họ tên');
+          setLoading(false);
+          return;
+        }
+        if (!formData.guestEmail || formData.guestEmail.trim() === '') {
+          console.log('❌ [VALIDATION] Guest email missing');
+          setError('Vui lòng nhập email');
+          setLoading(false);
+          return;
+        }
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.guestEmail.trim())) {
+          console.log('❌ [VALIDATION] Guest email invalid:', formData.guestEmail);
+          setError('Email không hợp lệ');
+          setLoading(false);
+          return;
+        }
+        console.log('✅ [VALIDATION] Guest fields validated successfully');
+      }
+
+      // Prepare headers and reservation data
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      const reservationData: Record<string, unknown> = {
         tableId: formData.tableId,
         reservationDate: formData.reservationDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
         partySize: formData.partySize,
         occasion: formData.occasion,
-        specialRequests: formData.specialRequests.trim() || undefined
+        specialRequests: formData.specialRequests.trim() || undefined,
+        phoneNumber: formData.phoneNumber.trim()
       };
+
+      // Handle authentication
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        // Authenticated user
+        console.log('🔐 [AUTH] Using authenticated user with token');
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        // Guest user - use session ID and include guest info
+        console.log('👤 [AUTH] Using guest user with session');
+        const sessionId = getSessionId();
+        console.log('🆔 [SESSION] Session ID:', sessionId);
+        if (sessionId) {
+          headers['X-Session-ID'] = sessionId;
+        }
+        reservationData.guestInfo = {
+          name: formData.guestName!.trim(),
+          email: formData.guestEmail!.trim(),
+          phone: formData.phoneNumber.trim()
+        };
+        console.log('📝 [GUEST] Guest info added to reservation:', reservationData.guestInfo);
+      }
+
+      console.log('📤 [API] Sending reservation request...');
+      console.log('🔗 [API] Headers:', headers);
+      console.log('📋 [API] Reservation data:', reservationData);
 
       const res = await fetch('http://localhost:5006/api/reservations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify(reservationData),
       });
 
+      console.log('📥 [API] Response status:', res.status);
+      
       const data = await res.json();
+      console.log('📥 [API] Response data:', data);
+      
       if (res.ok && data.success) {
+        console.log('✅ [SUCCESS] Reservation created successfully');
+        console.log('🚀 [SOCKET] Should receive real-time update shortly...');
+        
         setSuccess(`Đặt bàn thành công! Mã đặt bàn: ${data.data.reservation.reservationNumber}`);
         setShowReservationModal(false);
         setSelectedTable(null);
+        
+        // Reset form but keep user info if logged in
         setFormData(prev => ({ 
           ...prev, 
           tableId: '', 
           specialRequests: '', 
-          occasion: 'other' 
+          occasion: 'other',
+          phoneNumber: user?.phone || '',
+          guestName: user?.name || '',
+          guestEmail: user?.email || ''
         }));
+        console.log('🔄 [REFRESH] Reloading tables...');
         searchTables(); // Reload tables
       } else {
+        console.log('❌ [ERROR] Reservation failed:', data.message);
         setError(data.message || 'Đặt bàn thất bại');
       }
-    } catch {
+    } catch (error) {
+      console.error('💥 [ERROR] Exception during reservation:', error);
       setError('Lỗi khi đặt bàn');
     } finally {
       setLoading(false);
+      console.log('🏁 [RESERVATION] Reservation process completed');
     }
   };
 
@@ -341,6 +483,23 @@ const DatBanPage: React.FC = () => {
             }}>
               🍽️ ĐẶT BÀN NHÀ HÀNG
             </h1>
+            {/* Socket connection status */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: 'white',
+              fontSize: '14px',
+              opacity: 0.8
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: isConnected ? '#10b981' : '#ef4444'
+              }}></div>
+              {isConnected ? 'Kết nối thời gian thực' : 'Mất kết nối'}
+            </div>
             <p style={{ 
               color: 'rgba(255,255,255,0.9)', 
               fontSize: '18px',
@@ -1149,6 +1308,61 @@ const DatBanPage: React.FC = () => {
                     <p><strong>💰 Giá ước tính:</strong> {calculateEstimatedPrice(selectedTable).toLocaleString('vi-VN')}đ</p>
                   </div>
 
+                  {/* Guest Information Fields (only show for non-authenticated users) */}
+                  {!user && (
+                    <>
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ 
+                          display: 'block', 
+                          fontWeight: '600', 
+                          color: '#374151', 
+                          marginBottom: '8px' 
+                        }}>
+                          👤 Họ và tên: *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.guestName || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, guestName: e.target.value }))}
+                          placeholder="Nhập họ và tên"
+                          required
+                          style={{ 
+                            width: '100%',
+                            padding: '12px 16px', 
+                            borderRadius: '12px', 
+                            border: '2px solid #e5e7eb',
+                            fontSize: '16px'
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ 
+                          display: 'block', 
+                          fontWeight: '600', 
+                          color: '#374151', 
+                          marginBottom: '8px' 
+                        }}>
+                          📧 Email: *
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.guestEmail || ''}
+                          onChange={e => setFormData(prev => ({ ...prev, guestEmail: e.target.value }))}
+                          placeholder="Nhập địa chỉ email"
+                          required
+                          style={{ 
+                            width: '100%',
+                            padding: '12px 16px', 
+                            borderRadius: '12px', 
+                            border: '2px solid #e5e7eb',
+                            fontSize: '16px'
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ 
                       display: 'block', 
@@ -1182,7 +1396,32 @@ const DatBanPage: React.FC = () => {
                       color: '#374151', 
                       marginBottom: '8px' 
                     }}>
-                      📝 Yêu cầu đặc biệt:
+                      � Số điện thoại: *
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={e => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                      placeholder="VD: 0912345678"
+                      required
+                      style={{ 
+                        width: '100%',
+                        padding: '12px 16px', 
+                        borderRadius: '12px', 
+                        border: '2px solid #e5e7eb',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ 
+                      display: 'block', 
+                      fontWeight: '600', 
+                      color: '#374151', 
+                      marginBottom: '8px' 
+                    }}>
+                      �📝 Yêu cầu đặc biệt:
                     </label>
                     <textarea
                       value={formData.specialRequests}

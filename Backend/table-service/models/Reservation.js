@@ -8,8 +8,13 @@ const reservationSchema = new mongoose.Schema(
     },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false, // Not required for guest reservations
       ref: "Customer",
+    },
+    sessionId: {
+      type: String,
+      required: false, // For guest reservations
+      index: true,
     },
     customerInfo: {
       name: {
@@ -260,5 +265,22 @@ reservationSchema.methods.calculatePricing = function (tablePrice) {
   this.pricing.total = this.pricing.tablePrice + this.pricing.serviceCharge;
   return this.pricing.total;
 };
+
+// Pre-save middleware
+reservationSchema.pre("save", function (next) {
+  // Validate that either customerId or sessionId is provided
+  if (!this.customerId && !this.sessionId) {
+    return next(new Error("Either customerId or sessionId must be provided"));
+  }
+
+  // Generate reservation number if not exists
+  if (!this.reservationNumber) {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
+    const timeStr = Date.now().toString().slice(-6);
+    this.reservationNumber = `RES-${dateStr}-${timeStr}`;
+  }
+  next();
+});
 
 module.exports = mongoose.model("Reservation", reservationSchema);

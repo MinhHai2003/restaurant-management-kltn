@@ -5,6 +5,7 @@ import StaffManagement from '../components/admin/StaffManagement';
 import ShiftManagement from '../components/admin/ShiftManagement';
 import MenuManagement from '../components/admin/MenuManagement';
 import { useOrderSocket } from '../hooks/useOrderSocket';
+import { useTableSocket } from '../hooks/useTableSocket';
 
 interface ApiReservation {
   _id: string;
@@ -135,6 +136,7 @@ const AdminDashboard: React.FC = () => {
   
   // Socket.io for real-time updates
   const { notifications, isConnected, socket } = useOrderSocket();
+  const { isConnected: tableSocketConnected, socket: tableSocket } = useTableSocket();
   
   const navigate = useNavigate();
 
@@ -241,6 +243,76 @@ const AdminDashboard: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, isConnected, orderActiveTab]);
+
+  // Listen to Table Socket events for real-time table and reservation updates  
+  useEffect(() => {
+    if (tableSocket && tableSocketConnected) {
+      console.log('🪑 AdminDashboard: Table socket connected, setting up event listeners...');
+      
+      // Handle new reservations
+      const handleNewReservation = (data: unknown) => {
+        console.log('🎉 AdminDashboard: New reservation received:', data);
+        // Reload reservations and stats
+        Promise.all([
+          loadReservations(),
+          loadTableStats()
+        ]).catch(error => {
+          console.error('❌ AdminDashboard: Error reloading after new reservation:', error);
+        });
+      };
+
+      // Handle reservation status updates
+      const handleReservationStatusUpdate = (data: unknown) => {
+        console.log('🔄 AdminDashboard: Reservation status updated:', data);
+        // Reload reservations and stats
+        Promise.all([
+          loadReservations(),
+          loadTableStats()
+        ]).catch(error => {
+          console.error('❌ AdminDashboard: Error reloading after status update:', error);
+        });
+      };
+
+      // Handle table status updates
+      const handleTableStatusUpdate = (data: unknown) => {
+        console.log('🪑 AdminDashboard: Table status updated:', data);
+        // Reload tables and stats
+        Promise.all([
+          loadTables(),
+          loadTableStats()
+        ]).catch(error => {
+          console.error('❌ AdminDashboard: Error reloading after table update:', error);
+        });
+      };
+
+      // Register event listeners
+      tableSocket.on('new_reservation', handleNewReservation);
+      tableSocket.on('reservation_status_updated', handleReservationStatusUpdate);
+      tableSocket.on('table_status_updated', handleTableStatusUpdate);
+
+      // Initial load when socket connects
+      const loadInitialData = () => {
+        console.log('🔄 AdminDashboard: Loading initial reservation data...');
+        Promise.all([
+          loadReservations(),
+          loadTableStats(),
+          loadTables()
+        ]).catch(error => {
+          console.error('❌ AdminDashboard: Error loading initial data:', error);
+        });
+      };
+
+      loadInitialData();
+
+      // Cleanup event listeners
+      return () => {
+        console.log('🪑 AdminDashboard: Cleaning up table socket event listeners...');
+        tableSocket.off('new_reservation', handleNewReservation);
+        tableSocket.off('reservation_status_updated', handleReservationStatusUpdate);
+        tableSocket.off('table_status_updated', handleTableStatusUpdate);
+      };
+    }
+  }, [tableSocket, tableSocketConnected]);
 
   const checkServices = async () => {
     const services = [
@@ -648,17 +720,60 @@ const AdminDashboard: React.FC = () => {
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>
           📝 Quản lý đặt bàn & Trạng thái bàn
         </h2>
-        <button style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '12px',
-          padding: '12px 24px',
-          cursor: 'pointer',
-          fontWeight: '600'
-        }}>
-          📊 Xuất báo cáo
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Socket status indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: tableSocketConnected ? '#dcfce7' : '#fee2e2',
+            color: tableSocketConnected ? '#059669' : '#dc2626',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: tableSocketConnected ? '#10b981' : '#ef4444'
+            }}></div>
+            {tableSocketConnected ? 'Real-time ON' : 'Disconnected'}
+          </div>
+          
+          {/* Manual refresh button */}
+          <button 
+            onClick={() => {
+              console.log('🔄 Manual refresh triggered');
+              Promise.all([loadReservations(), loadTableStats(), loadTables()]);
+            }}
+            style={{
+              background: '#059669',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              fontSize: '14px'
+            }}
+          >
+            🔄 Refresh
+          </button>
+          
+          <button style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '12px 24px',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}>
+            📊 Xuất báo cáo
+          </button>
+        </div>
       </div>
 
       {/* Reservations Section */}

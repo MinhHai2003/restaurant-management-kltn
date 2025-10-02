@@ -3,6 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const http = require("http");
+const socketIO = require("socket.io");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
@@ -13,6 +15,58 @@ const reservationRoutes = require("./routes/reservationRoutes");
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Socket.IO setup
+const io = socketIO(server, {
+  cors: {
+    origin: ["http://localhost:5173"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// Make io available to routes
+app.set("io", io);
+
+// Socket.IO connection handling
+io.on("connection", (socket) => {
+  console.log("🔗 Client connected to Table Service:", socket.id);
+
+  // Join customer room for personalized notifications
+  socket.on("join_customer", (customerId) => {
+    socket.join(`customer_${customerId}`);
+    console.log(`👤 Customer ${customerId} joined room`);
+  });
+
+  // Join session room for guest users
+  socket.on("join_session", (sessionId) => {
+    socket.join(`session_${sessionId}`);
+    console.log(`🔗 Session ${sessionId} joined room`);
+  });
+
+  // Handle table status changes
+  socket.on("table_status_changed", (data) => {
+    socket.broadcast.emit("table_status_updated", data);
+    console.log("🪑 Table status updated:", data);
+  });
+
+  // Handle reservation events
+  socket.on("reservation_created", (data) => {
+    socket.broadcast.emit("new_reservation", data);
+    console.log("📝 New reservation created:", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔌 Client disconnected:", socket.id);
+  });
+});
+
+// Middleware to attach io to request
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
 // Security middleware
 app.use(helmet());
@@ -112,12 +166,13 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5006;
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Table Service running on port ${PORT}`);
   console.log(`📱 Health check: http://localhost:${PORT}/health`);
   console.log(`🍽️  Tables API: http://localhost:${PORT}/api/tables`);
   console.log(`📅 Reservations API: http://localhost:${PORT}/api/reservations`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`🔗 Socket.IO enabled for real-time updates`);
 });
 
 // Graceful shutdown

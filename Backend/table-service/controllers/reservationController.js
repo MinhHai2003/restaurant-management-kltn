@@ -26,6 +26,8 @@ exports.createReservation = async (req, res) => {
       partySize,
       occasion,
       specialRequests,
+      phoneNumber,
+      guestInfo,
     } = req.body;
 
     // Validate table exists and is available
@@ -78,30 +80,74 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Get customer info
-    const customerInfo = await getCustomerInfo(req.customerId);
-    console.log("Customer info received:", customerInfo); // Debug log
-    if (!customerInfo) {
-      return res.status(400).json({
-        success: false,
-        message: "Unable to fetch customer information",
-      });
-    }
+    // Handle customer info based on authentication type
+    let customerInfo;
+    let reservationData;
 
-    // Validate required customer fields
-    if (!customerInfo.name || !customerInfo.email) {
-      console.log("Missing required customer fields:", {
-        name: customerInfo.name,
-        email: customerInfo.email,
-        phone: customerInfo.phone, // Optional
-      });
-      return res.status(400).json({
-        success: false,
-        message: "Customer information is incomplete - missing required fields",
-        missing: {
-          name: !customerInfo.name,
-          email: !customerInfo.email,
+    if (req.customerId && req.token) {
+      // Authenticated user - get info from Customer Service
+      customerInfo = await getCustomerInfo(req.customerId);
+      console.log("Customer info received:", customerInfo); // Debug log
+      if (!customerInfo) {
+        return res.status(400).json({
+          success: false,
+          message: "Unable to fetch customer information",
+        });
+      }
+
+      // Validate required customer fields
+      if (!customerInfo.name || !customerInfo.email) {
+        console.log("Missing required customer fields:", {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone, // Optional
+        });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Customer information is incomplete - missing required fields",
+          missing: {
+            name: !customerInfo.name,
+            email: !customerInfo.email,
+          },
+        });
+      }
+
+      reservationData = {
+        customerId: req.customerId,
+        customerInfo: {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: phoneNumber || customerInfo.phone || "", // Use provided phone or customer's phone
         },
+      };
+    } else if (req.sessionId) {
+      // Guest user - use provided guest info
+      if (
+        !guestInfo ||
+        !guestInfo.name ||
+        !guestInfo.email ||
+        !guestInfo.phone
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Guest information (name, email, phone) is required for guest reservations",
+        });
+      }
+
+      reservationData = {
+        sessionId: req.sessionId,
+        customerInfo: {
+          name: guestInfo.name,
+          email: guestInfo.email,
+          phone: guestInfo.phone,
+        },
+      };
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
       });
     }
 
@@ -111,14 +157,9 @@ exports.createReservation = async (req, res) => {
     // Calculate pricing
     const tablePrice = table.calculatePrice(reservationDate, startTime);
 
-    // Create reservation
+    // Create reservation with combined data
     const reservation = new Reservation({
-      customerId: req.customerId,
-      customerInfo: {
-        name: customerInfo.name,
-        phone: customerInfo.phone,
-        email: customerInfo.email,
-      },
+      ...reservationData, // Contains customerId/sessionId and customerInfo
       tableId,
       tableInfo: {
         tableNumber: table.tableNumber,
@@ -144,6 +185,77 @@ exports.createReservation = async (req, res) => {
     // Update table status to reserved
     table.status = "reserved";
     await table.save();
+
+    // 🔔 Emit real-time notifications via Socket.io
+    if (req.io) {
+      console.log(
+        "🔔 [SOCKET DEBUG] Starting to emit Socket.io events for reservation:",
+        reservation.reservationNumber
+      );
+
+      // Notify customer about reservation confirmation
+      if (req.customerId) {
+        req.io.to(`customer_${req.customerId}`).emit("reservation_created", {
+          type: "reservation_confirmed",
+          reservationId: reservation._id,
+          reservationNumber: reservation.reservationNumber,
+          tableNumber: table.tableNumber,
+          status: reservation.status,
+          reservationDate: reservation.reservationDate,
+          timeSlot: reservation.timeSlot,
+          message: `Đặt bàn ${reservation.reservationNumber} thành công!`,
+        });
+        console.log(
+          "🔔 [SOCKET DEBUG] Sent reservation notification to customer:",
+          req.customerId
+        );
+      } else if (req.sessionId) {
+        req.io.to(`session_${req.sessionId}`).emit("reservation_created", {
+          type: "reservation_confirmed",
+          reservationId: reservation._id,
+          reservationNumber: reservation.reservationNumber,
+          tableNumber: table.tableNumber,
+          status: reservation.status,
+          reservationDate: reservation.reservationDate,
+          timeSlot: reservation.timeSlot,
+          message: `Đặt bàn ${reservation.reservationNumber} thành công!`,
+        });
+        console.log(
+          "🔔 [SOCKET DEBUG] Sent reservation notification to session:",
+          req.sessionId
+        );
+      }
+
+      // Notify all clients about table status change
+      req.io.emit("table_status_updated", {
+        tableId: table._id,
+        tableNumber: table.tableNumber,
+        status: table.status,
+        reservedBy: reservation.reservationNumber,
+      });
+      console.log(
+        "🔔 [SOCKET DEBUG] Sent table status update for table:",
+        table.tableNumber
+      );
+
+      // Notify admins about new reservation
+      req.io.emit("new_reservation", {
+        reservation: {
+          reservationNumber: reservation.reservationNumber,
+          customerName: reservation.customerInfo.name,
+          tableNumber: table.tableNumber,
+          reservationDate: reservation.reservationDate,
+          timeSlot: reservation.timeSlot,
+          partySize: reservation.partySize,
+          status: reservation.status,
+        },
+      });
+      console.log(
+        "🔔 [SOCKET DEBUG] Sent new reservation notification to admins"
+      );
+    } else {
+      console.log("🔔 [SOCKET DEBUG] Socket.io not available in request");
+    }
 
     res.status(201).json({
       success: true,

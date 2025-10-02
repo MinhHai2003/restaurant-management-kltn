@@ -2,7 +2,7 @@ const express = require("express");
 const { body, param, query } = require("express-validator");
 const router = express.Router();
 const reservationController = require("../controllers/reservationController");
-const authenticateCustomer = require("../middleware/authenticateCustomer");
+const sessionAuth = require("../middleware/sessionAuth");
 
 // Validation rules
 const createReservationValidation = [
@@ -81,41 +81,33 @@ const rateReservationValidation = [
 // 📝 Reservation Management Routes
 router.post(
   "/",
-  authenticateCustomer,
+  sessionAuth,
   createReservationValidation,
   reservationController.createReservation
 );
-router.get(
-  "/",
-  authenticateCustomer,
-  reservationController.getCustomerReservations
-);
-router.get(
-  "/stats",
-  authenticateCustomer,
-  reservationController.getReservationStats
-);
+router.get("/", sessionAuth, reservationController.getCustomerReservations);
+router.get("/stats", sessionAuth, reservationController.getReservationStats);
 
 // 🔍 Individual Reservation Routes
 router.get(
   "/:reservationNumber",
-  authenticateCustomer,
+  sessionAuth,
   reservationController.getReservationByNumber
 );
 router.put(
   "/:reservationNumber",
-  authenticateCustomer,
+  sessionAuth,
   updateReservationValidation,
   reservationController.updateReservation
 );
 router.delete(
   "/:reservationNumber",
-  authenticateCustomer,
+  sessionAuth,
   reservationController.cancelReservation
 );
 router.post(
   "/:reservationNumber/rate",
-  authenticateCustomer,
+  sessionAuth,
   rateReservationValidation,
   reservationController.rateReservation
 );
@@ -123,17 +115,17 @@ router.post(
 // 🚪 Dine-in Management Routes
 router.put(
   "/:reservationNumber/checkin",
-  authenticateCustomer,
+  sessionAuth,
   reservationController.checkinReservation
 );
 router.put(
   "/:reservationNumber/checkout",
-  authenticateCustomer,
+  sessionAuth,
   reservationController.checkoutReservation
 );
 router.get(
   "/:reservationNumber/orders",
-  authenticateCustomer,
+  sessionAuth,
   reservationController.getReservationOrders
 );
 

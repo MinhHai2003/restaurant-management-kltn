@@ -4,6 +4,7 @@ import Footer from '../components/layout/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { getSessionId } from '../services/cartService';
 import { useTableSocket } from '../hooks/useTableSocket';
+import QRPayment from '../components/QRPayment';
 
 
 
@@ -86,6 +87,11 @@ const DatBanPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'tableNumber' | 'capacity' | 'location' | 'price'>('tableNumber');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
+  // Payment states
+  const [showPayment, setShowPayment] = useState(false);
+  const [reservationData, setReservationData] = useState<any>(null);
+  const [totalAmount, setTotalAmount] = useState(0);
+  
   // Constants
   const LOCATIONS = [
     { value: 'indoor', label: 'Trong nhà 🏠' },
@@ -106,6 +112,8 @@ const DatBanPage: React.FC = () => {
   ];
 
   const FEATURES = [
+    { value: 'wifi', label: 'WiFi 📶' },
+    { value: 'outlet', label: 'Ổ cắm điện 🔌' },
     { value: 'air_conditioned', label: 'Điều hòa ❄️' },
     { value: 'window_view', label: 'View cửa sổ 🪟' },
     { value: 'private_room', label: 'Phòng riêng 🚪' },
@@ -114,6 +122,9 @@ const DatBanPage: React.FC = () => {
     { value: 'quiet_area', label: 'Khu vực yên tĩnh 🔇' },
     { value: 'smoking_allowed', label: 'Cho phép hút thuốc 🚬' },
     { value: 'pet_friendly', label: 'Chấp nhận thú cưng 🐕' },
+    { value: 'outdoor_seating', label: 'Chỗ ngồi ngoài trời 🌳' },
+    { value: 'romantic_lighting', label: 'Ánh sáng lãng mạn 💝' },
+    { value: 'family_friendly', label: 'Thân thiện gia đình 👨‍👩‍👧‍👦' }
   ];
 
   const STATUS_OPTIONS = [

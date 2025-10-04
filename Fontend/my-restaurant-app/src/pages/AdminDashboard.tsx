@@ -109,6 +109,8 @@ const AdminDashboard: React.FC = () => {
   
   // Table creation states
   const [showCreateTableModal, setShowCreateTableModal] = useState(false);
+  const [showEditTableModal, setShowEditTableModal] = useState(false);
+  const [editingTable, setEditingTable] = useState<any>(null);
   const [tableFormData, setTableFormData] = useState({
     tableNumber: '',
     capacity: 4,
@@ -118,6 +120,8 @@ const AdminDashboard: React.FC = () => {
     pricing: { basePrice: 0 }
   });
   const [creatingTable, setCreatingTable] = useState(false);
+  const [updatingTable, setUpdatingTable] = useState(false);
+  const [deletingTable, setDeletingTable] = useState('');
   
   // Order management states
   const [orderActiveTab, setOrderActiveTab] = useState('dashboard');
@@ -592,6 +596,110 @@ const AdminDashboard: React.FC = () => {
       alert('❌ Lỗi tạo bàn: ' + error.message);
     } finally {
       setCreatingTable(false);
+    }
+  };
+
+  // Hàm xóa bàn
+  const handleDeleteTable = async (tableId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa bàn này?')) {
+      return;
+    }
+
+    setDeletingTable(tableId);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`http://localhost:5006/api/tables/${tableId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Lỗi xóa bàn');
+      }
+
+      // Cập nhật danh sách bàn
+      setTables(prev => prev.filter(table => table._id !== tableId));
+      alert('✅ Xóa bàn thành công!');
+    } catch (error) {
+      console.error('Error deleting table:', error);
+      alert('❌ Lỗi xóa bàn: ' + (error as Error).message);
+    } finally {
+      setDeletingTable('');
+    }
+  };
+
+  // Hàm mở modal chỉnh sửa
+  const openEditModal = (table: any) => {
+    setEditingTable(table);
+    setTableFormData({
+      tableNumber: table.tableNumber,
+      capacity: table.capacity,
+      location: table.location,
+      features: table.features || [],
+      pricing: { basePrice: table.pricing?.basePrice || 0 },
+      description: table.description || ''
+    });
+    setShowEditTableModal(true);
+  };
+
+  // Hàm cập nhật bàn
+  const handleUpdateTable = async () => {
+    if (!tableFormData.tableNumber.trim() || !tableFormData.capacity) {
+      alert('Vui lòng nhập số bàn và sức chứa');
+      return;
+    }
+
+    // Kiểm tra số bàn đã tồn tại (ngoại trừ bàn đang chỉnh sửa)
+    const existingTable = tables.find(table => 
+      table.tableNumber === tableFormData.tableNumber && 
+      table._id !== editingTable._id
+    );
+    if (existingTable) {
+      alert('Số bàn này đã tồn tại!');
+      return;
+    }
+
+    setUpdatingTable(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`http://localhost:5006/api/tables/${editingTable._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(tableFormData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Lỗi cập nhật bàn');
+      }
+
+      // Reload tables list để cập nhật UI
+      await loadTables();
+      
+      // Reset form và đóng modal
+      setShowEditTableModal(false);
+      setEditingTable(null);
+      setTableFormData({
+        tableNumber: '',
+        capacity: 4,
+        location: 'indoor',
+        features: [],
+        pricing: { basePrice: 0 },
+        description: ''
+      });
+      
+      alert('✅ Cập nhật bàn thành công!');
+    } catch (error) {
+      console.error('Error updating table:', error);
+      alert('❌ Lỗi cập nhật bàn: ' + (error as Error).message);
+    } finally {
+      setUpdatingTable(false);
     }
   };
 
@@ -1200,6 +1308,50 @@ const AdminDashboard: React.FC = () => {
                     {getTableStatusColor(status).label}
                   </button>
                 ))}
+              </div>
+
+              {/* Edit và Delete buttons */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '8px', 
+                marginTop: '12px',
+                paddingTop: '12px',
+                borderTop: '1px solid #e5e7eb'
+              }}>
+                <button
+                  onClick={() => openEditModal(table)}
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    flex: 1
+                  }}
+                >
+                  ✏️ Chỉnh sửa
+                </button>
+                <button
+                  onClick={() => handleDeleteTable(table._id)}
+                  disabled={deletingTable === table._id}
+                  style={{
+                    background: deletingTable === table._id ? '#9ca3af' : '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '6px 12px',
+                    cursor: deletingTable === table._id ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    flex: 1,
+                    opacity: deletingTable === table._id ? 0.6 : 1
+                  }}
+                >
+                  {deletingTable === table._id ? '⏳ Đang xóa...' : '🗑️ Xóa'}
+                </button>
               </div>
             </div>
           ))}
@@ -2243,6 +2395,220 @@ const AdminDashboard: React.FC = () => {
                 }}
               >
                 {creatingTable ? '⏳ Đang tạo...' : '✅ Tạo bàn'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal chỉnh sửa bàn */}
+      {showEditTableModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '480px',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>✏️ Chỉnh sửa bàn {editingTable?.tableNumber}</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Số bàn *
+                </label>
+                <input
+                  type="text"
+                  value={tableFormData.tableNumber}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, tableNumber: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Sức chứa *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={tableFormData.capacity}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) || 0 }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Vị trí
+                </label>
+                <select
+                  value={tableFormData.location}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, location: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="indoor">Trong nhà</option>
+                  <option value="outdoor">Ngoài trời</option>
+                  <option value="private">Phòng riêng</option>
+                  <option value="vip">VIP</option>
+                  <option value="terrace">Sân thượng</option>
+                  <option value="garden">Vườn</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Tiện nghi
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {[
+                    { key: 'air_conditioned', label: '❄️ Điều hòa' },
+                    { key: 'window_view', label: '🌅 View cửa sổ' },
+                    { key: 'private_room', label: '🚪 Phòng riêng' },
+                    { key: 'wheelchair_accessible', label: '♿ Xe lăn' },
+                    { key: 'near_entrance', label: '🚪 Gần lối vào' },
+                    { key: 'quiet_area', label: '🤫 Khu yên tĩnh' },
+                    { key: 'smoking_allowed', label: '🚬 Cho phép hút thuốc' },
+                    { key: 'pet_friendly', label: '🐕 Thân thiện thú cưng' },
+                    { key: 'outdoor_seating', label: '🪑 Chỗ ngồi ngoài trời' },
+                    { key: 'romantic_lighting', label: '💡 Ánh sáng lãng mạn' },
+                    { key: 'wifi', label: '📶 WiFi' },
+                    { key: 'family_friendly', label: '👨‍👩‍👧‍👦 Thân thiện gia đình' }
+                  ].map(feature => (
+                    <label key={feature.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                      <input
+                        type="checkbox"
+                        checked={tableFormData.features.includes(feature.key)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setTableFormData(prev => ({ ...prev, features: [...prev.features, feature.key] }));
+                          } else {
+                            setTableFormData(prev => ({ ...prev, features: prev.features.filter(f => f !== feature.key) }));
+                          }
+                        }}
+                      />
+                      <span>{feature.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Mô tả
+                </label>
+                <textarea
+                  value={tableFormData.description}
+                  onChange={(e) => setTableFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Mô tả chi tiết về bàn..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    minHeight: '80px'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
+                  Giá mặc định (VNĐ)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tableFormData.pricing.basePrice}
+                  onChange={(e) => setTableFormData(prev => ({ 
+                    ...prev, 
+                    pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
+                  }))}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowEditTableModal(false);
+                  setEditingTable(null);
+                  setTableFormData({
+                    tableNumber: '',
+                    capacity: 4,
+                    location: 'indoor',
+                    features: [],
+                    description: '',
+                    pricing: { basePrice: 0 }
+                  });
+                }}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  background: 'white',
+                  color: '#374151',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUpdateTable}
+                disabled={updatingTable || !tableFormData.tableNumber.trim() || !tableFormData.capacity}
+                style={{
+                  padding: '8px 16px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  background: (updatingTable || !tableFormData.tableNumber.trim() || !tableFormData.capacity) ? '#d1d5db' : '#3b82f6',
+                  color: 'white',
+                  cursor: (updatingTable || !tableFormData.tableNumber.trim() || !tableFormData.capacity) ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600'
+                }}
+              >
+                {updatingTable ? '⏳ Đang cập nhật...' : '✅ Cập nhật'}
               </button>
             </div>
           </div>

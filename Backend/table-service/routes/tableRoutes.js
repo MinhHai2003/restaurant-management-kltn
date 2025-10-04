@@ -48,6 +48,11 @@ router.get(
   param("tableId").isMongoId().withMessage("Valid table ID is required"),
   tableController.getTableById
 );
+router.delete(
+  "/:tableId",
+  param("tableId").isMongoId().withMessage("Valid table ID is required"),
+  tableController.deleteTable
+);
 
 // 📝 Update Table (PUT)
 router.put(

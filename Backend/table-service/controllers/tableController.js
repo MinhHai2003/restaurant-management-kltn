@@ -75,7 +75,51 @@ exports.createTable = async (req, res) => {
   }
 };
 
-// 📝 Update table info
+// �️ Xóa bàn
+exports.deleteTable = async (req, res) => {
+  try {
+    const { tableId } = req.params;
+
+    // Kiểm tra bàn có tồn tại không
+    const table = await Table.findById(tableId);
+    if (!table) {
+      return res.status(404).json({
+        success: false,
+        message: "Table not found",
+      });
+    }
+
+    // Kiểm tra bàn có đang được đặt không
+    const activeReservations = await Reservation.find({
+      tableId: tableId,
+      status: { $in: ["confirmed", "checked_in"] },
+    });
+
+    if (activeReservations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete table with active reservations",
+      });
+    }
+
+    // Xóa bàn
+    await Table.findByIdAndDelete(tableId);
+
+    res.json({
+      success: true,
+      message: "Table deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete table error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete table",
+      error: error.message,
+    });
+  }
+};
+
+// �📝 Update table info
 exports.updateTable = async (req, res) => {
   try {
     const { tableId } = req.params;
@@ -513,6 +557,7 @@ exports.resetMaintenanceTables = async (req, res) => {
 
 module.exports = {
   createTable: exports.createTable,
+  deleteTable: exports.deleteTable,
   getAllTables: exports.getAllTables,
   getTableById: exports.getTableById,
   searchAvailableTables: exports.searchAvailableTables,

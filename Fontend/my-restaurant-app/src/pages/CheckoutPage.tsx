@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import QRPayment from '../components/QRPayment';
 import { cartService } from '../services/cartService';
 import { customerService } from '../services/customerService';
 import orderService from '../services/orderService';
@@ -60,6 +61,9 @@ const CheckoutPage: React.FC = () => {
 
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  
+  // QR Payment state
+  const [showQRPayment, setShowQRPayment] = useState(false);
   
   // Coupon
   const [couponCode, setCouponCode] = useState('');
@@ -237,6 +241,17 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    // Nếu chọn chuyển khoản thì hiển thị QR payment
+    if (paymentMethod === 'transfer') {
+      setShowQRPayment(true);
+      return;
+    }
+
+    // Chỉ xử lý đặt hàng cho COD
+    await processOrder();
+  };
+
+  const processOrder = async () => {
     setProcessing(true);
 
     try {
@@ -371,9 +386,6 @@ const CheckoutPage: React.FC = () => {
 
       // Chuyển hướng về trang chủ
       navigate('/');
-
-
-
 
     } catch (error) {
       console.error('❌ Lỗi đặt hàng:', error);
@@ -1227,7 +1239,12 @@ const CheckoutPage: React.FC = () => {
                       transition: 'all 0.3s ease'
                     }}
                   >
-                    {processing ? 'Đang xử lý...' : 'ĐẶT HÀNG NGAY'}
+                    {processing 
+                      ? 'Đang xử lý...' 
+                      : paymentMethod === 'transfer' 
+                        ? 'THANH TOÁN QR CODE' 
+                        : 'ĐẶT HÀNG NGAY'
+                    }
                   </button>
 
                   <button
@@ -1262,6 +1279,52 @@ const CheckoutPage: React.FC = () => {
           </form>
         </div>
       </main>
+
+      {/* QR Payment Modal */}
+      {showQRPayment && (
+        <QRPayment 
+          amount={(() => {
+            // Sử dụng cùng logic tính toán như phần hiển thị UI
+            const subtotal = cart?.summary.subtotal || 0;
+            const tax = cart?.summary.tax || 0;
+            const deliveryFee = cart?.summary.deliveryFee || 0;
+            const membershipLevel = customerMembership?.membershipLevel || 'bronze';
+            
+            const membershipRates: Record<string, number> = { 
+              bronze: 0, silver: 0.05, gold: 0.1, platinum: 0.15 
+            };
+            const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
+            const adjustedDeliveryFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : deliveryFee;
+            
+            // Include both loyalty and coupon discounts
+            const couponDiscount = cart?.summary.couponDiscount || 0;
+            const totalDiscount = loyaltyDiscount + couponDiscount;
+            const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
+            
+            console.log('🔍 [QR Payment Amount] Final calculation:', {
+              subtotal,
+              tax,
+              deliveryFee,
+              adjustedDeliveryFee,
+              loyaltyDiscount,
+              couponDiscount,
+              totalDiscount,
+              finalTotal,
+              membershipLevel
+            });
+            
+            return finalTotal;
+          })()}
+          orderInfo={`Thanh toán đơn hàng - ${customerInfo.name || 'GUEST'}`}
+          onPaymentSuccess={async (paymentData: any) => {
+            console.log('Payment success:', paymentData);
+            // Khi thanh toán thành công, xử lý đặt hàng
+            await processOrder();
+            setShowQRPayment(false);
+          }}
+          onClose={() => setShowQRPayment(false)}
+        />
+      )}
 
       <Footer />
     </div>

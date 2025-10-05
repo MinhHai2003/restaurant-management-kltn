@@ -60,6 +60,7 @@ const TableMenuPage: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [tableSession, setTableSession] = useState<TableSession | null>(null);
+  const [sessionPayMethod, setSessionPayMethod] = useState<'cash' | 'banking' | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -244,8 +245,17 @@ const TableMenuPage: React.FC = () => {
       });
     };
     socket.on('table_order_created', handleTableOrderCreated);
+    const handleTableSessionClosed = (data: any) => {
+      // Khi tab khác hoàn tất thanh toán bàn này → đóng phiên và quay về Home
+      setShowPayment(false);
+      setIsSessionPayment(false);
+      setTableSession(null);
+      setTimeout(() => navigate('/'), 500);
+    };
+    socket.on('table_session_closed', handleTableSessionClosed);
     return () => {
       socket.off('table_order_created', handleTableOrderCreated);
+      socket.off('table_session_closed', handleTableSessionClosed);
     };
   }, [socket]);
 
@@ -320,7 +330,7 @@ const TableMenuPage: React.FC = () => {
     }, 0);
   };
 
-  // Handle session payment (pay for all unpaid and non-cancelled orders of this table)
+  // Handle session payment (prepare all unpaid and non-cancelled orders of this table)
   const handleSessionPayment = async () => {
     console.log('🔥 [SESSION PAYMENT] Starting - Table:', tableNumber);
 
@@ -357,9 +367,7 @@ const TableMenuPage: React.FC = () => {
       totalAmount: totalAmount
     }));
 
-    // Show QR payment for all unpaid orders
-    setIsSessionPayment(true);
-    setShowPayment(true);
+    // Chỉ chuẩn bị dữ liệu; hiển thị QR ở handler tuỳ phương thức
   };
 
   // Load all unpaid orders for this table and update session display
@@ -412,7 +420,20 @@ const TableMenuPage: React.FC = () => {
         currentSession.totalAmount = 0;
         setTableSession(currentSession);
       } else {
-        setTableSession(null);
+        // Không có session nhưng vẫn còn unpaid orders từ phiên cũ → tạo phiên tạm để hiển thị và cho phép thanh toán tổng
+        if (unpaidOrders.length > 0) {
+          const recoveredSession = {
+            sessionId: `recovered_${Date.now()}`,
+            tableNumber: String(tableNumber),
+            startTime: new Date().toISOString(),
+            status: 'active' as const,
+            orders: unpaidOrders,
+            totalAmount: unpaidOrders.reduce((total, order) => total + (order.pricing?.total || 0), 0)
+          };
+          setTableSession(recoveredSession as unknown as TableSession);
+        } else {
+          setTableSession(null);
+        }
       }
 
     } catch (error) {
@@ -543,8 +564,8 @@ const TableMenuPage: React.FC = () => {
           estimatedTime: 30
         },
         payment: {
-          // Mặc định thanh toán tiền mặt khi gửi bếp
-          method: 'cash',
+          // Không gán phương thức khi gửi bếp; để pending/none
+          method: 'none',
           status: 'pending'
         },
         notes: {
@@ -728,11 +749,63 @@ const TableMenuPage: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* Chọn phương thức thanh toán tổng */}
+                    <div style={{ display: 'flex', gap: '12px', margin: '8px 0 12px 0' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          checked={sessionPayMethod === 'cash'}
+                          onChange={() => setSessionPayMethod('cash')}
+                        />
+                        <span>💰 Tiền mặt</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input
+                          type="radio"
+                          checked={sessionPayMethod === 'banking'}
+                          onChange={() => setSessionPayMethod('banking')}
+                        />
+                        <span>📱 Chuyển khoản</span>
+                      </label>
+                    </div>
+
                     <button
                       onClick={async () => {
                         console.log('🎯 [BUTTON CLICK] THANH TOÁN TỔNG TẤT CẢ clicked');
-                        // Luôn tải lại toàn bộ đơn chưa thanh toán trước khi hiển thị QR
+                        // Luôn tải lại toàn bộ đơn chưa thanh toán
                         await handleSessionPayment();
+                        // Nhánh xử lý theo phương thức đã chọn
+                        if (!sessionPayMethod) {
+                          alert('Vui lòng chọn phương thức thanh toán (Tiền mặt hoặc Chuyển khoản)!');
+                          return;
+                        }
+                        if (sessionPayMethod === 'cash') {
+                          try {
+                            const res = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                paymentMethod: 'cash',
+                                paymentData: { method: 'cash' },
+                                totalAmount: tableSession?.totalAmount || 0
+                              })
+                            });
+                            if (res.ok) {
+                              alert('Đã xác nhận thanh toán tiền mặt cho tất cả đơn!');
+                              await refreshTableSession();
+                            } else {
+                              const t = await res.text();
+                              console.error('Cash complete error:', t);
+                              alert('Lỗi xác nhận thanh toán tiền mặt');
+                            }
+                          } catch (e) {
+                            console.error('Cash session error:', e);
+                            alert('Lỗi mạng khi thanh toán tiền mặt');
+                          }
+                        } else if (sessionPayMethod === 'banking') {
+                          setIsSessionPayment(true);
+                          setShowPayment(true);
+                        }
                       }}
                       style={{
                         width: '100%',
@@ -1270,6 +1343,7 @@ const TableMenuPage: React.FC = () => {
                     'Content-Type': 'application/json'
                   },
                   body: JSON.stringify({
+                    paymentMethod: 'banking',
                     paymentData: paymentData,
                     totalAmount: tableSession?.totalAmount || 0
                   })

@@ -98,8 +98,8 @@ exports.createDineInOrder = async (req, res) => {
         total,
       },
       payment: {
-        method: payment.method === "banking" ? "banking" : payment.method,
-        status: payment.status || "pending",
+        method: payment?.method === "banking" ? "banking" : payment?.method || "none",
+        status: payment?.status || "pending",
       },
       delivery: {
         type: "dine_in",
@@ -399,7 +399,7 @@ exports.serveOrder = async (req, res) => {
 exports.completeTableOrders = async (req, res) => {
   try {
     const { tableNumber } = req.params;
-    const { paymentData, totalAmount } = req.body;
+    const { paymentData, paymentMethod, totalAmount } = req.body;
 
     console.log(
       `💳 [COMPLETE] Marking all orders of table ${tableNumber} as completed`
@@ -438,7 +438,7 @@ exports.completeTableOrders = async (req, res) => {
         $set: {
           status: "completed",
           "payment.status": "completed",
-          "payment.method": "banking",
+          "payment.method": paymentMethod === "cash" ? "cash" : "banking",
           "payment.completedAt": new Date(),
           "payment.sessionTotal": totalAmount,
           "payment.paymentData": paymentData,
@@ -449,6 +449,21 @@ exports.completeTableOrders = async (req, res) => {
     console.log(
       `✅ [COMPLETE] Updated ${updateResult.modifiedCount} orders for table ${tableNumber}`
     );
+
+    // 🔔 Emit realtime event to all clients in this table room to close session
+    if (req.io) {
+      try {
+        req.io.to(`table_${tableNumber}`).emit("table_session_closed", {
+          tableNumber: String(tableNumber),
+          ordersCompleted: updateResult.modifiedCount,
+          totalAmount,
+          method: paymentMethod === "cash" ? "cash" : "banking",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (emitErr) {
+        console.error("[SOCKET] Emit table_session_closed error:", emitErr.message);
+      }
+    }
 
     res.json({
       success: true,

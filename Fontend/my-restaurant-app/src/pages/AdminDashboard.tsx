@@ -128,7 +128,7 @@ const AdminDashboard: React.FC = () => {
   const [tables, setTables] = useState<AdminTable[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Table creation states
   const [showCreateTableModal, setShowCreateTableModal] = useState(false);
   const [showEditTableModal, setShowEditTableModal] = useState(false);
@@ -144,17 +144,17 @@ const AdminDashboard: React.FC = () => {
   const [creatingTable, setCreatingTable] = useState(false);
   const [updatingTable, setUpdatingTable] = useState(false);
   const [deletingTable, setDeletingTable] = useState('');
-  
+
   // Order management states
   const [orderActiveTab, setOrderActiveTab] = useState('dashboard');
-  
+
   // Service status states
   const [serviceStatus, setServiceStatus] = useState({
     orderService: false,
     menuService: false,
     inventoryService: false
   });
-  
+
   // Order dashboard data
   const [orderStats, setOrderStats] = useState({
     todayOrders: 0,
@@ -162,7 +162,7 @@ const AdminDashboard: React.FC = () => {
     avgOrders: 0,
     pendingOrders: 0
   });
-  
+
   // Orders list data
   const [ordersList, setOrdersList] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -173,11 +173,11 @@ const AdminDashboard: React.FC = () => {
     hasPrev: false
   });
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  
+
   // Socket.io for real-time updates
   const { notifications, isConnected, socket } = useOrderSocket();
   const { isConnected: tableSocketConnected, socket: tableSocket } = useTableSocket();
-  
+
   const navigate = useNavigate();
 
   // Get employee data from localStorage
@@ -203,7 +203,7 @@ const AdminDashboard: React.FC = () => {
   const getOccasionDisplay = (occasion: string): string => {
     const occasionMap: { [key: string]: string } = {
       'birthday': '🎂 Sinh nhật',
-      'anniversary': '💕 Kỷ niệm', 
+      'anniversary': '💕 Kỷ niệm',
       'business': '💼 Công việc',
       'date': '💘 Hẹn hò',
       'family': '👨‍👩‍👧‍👦 Gia đình',
@@ -227,18 +227,18 @@ const AdminDashboard: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     loadData();
     checkServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   // Load orders list when switching to orders tab
   useEffect(() => {
     if (orderActiveTab === 'orders' && serviceStatus.orderService) {
       loadOrdersList(1);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderActiveTab, serviceStatus.orderService]);
 
   // Listen to Socket.io events for real-time updates
@@ -246,7 +246,7 @@ const AdminDashboard: React.FC = () => {
     if (socket && isConnected) {
       console.log('🔌 AdminDashboard: Setting up Socket.io event listeners...');
 
-      const handleOrderStatusUpdate = (data: { orderId: string; status: string; [key: string]: unknown }) => {
+      const handleOrderStatusUpdate = (data: { orderId: string; status: string;[key: string]: unknown }) => {
         console.log('🔄 AdminDashboard: Order status updated via Socket.io:', data);
         // Refresh both dashboard stats and orders list
         loadOrderDashboard();
@@ -255,7 +255,7 @@ const AdminDashboard: React.FC = () => {
         }
       };
 
-      const handleNewOrder = (data: { orderNumber?: string; [key: string]: unknown }) => {
+      const handleNewOrder = (data: { orderNumber?: string;[key: string]: unknown }) => {
         console.log('🆕 AdminDashboard: New order received via Socket.io:', data);
         // Refresh both dashboard stats and orders list
         loadOrderDashboard();
@@ -288,7 +288,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (tableSocket && tableSocketConnected) {
       console.log('🪑 AdminDashboard: Table socket connected, setting up event listeners...');
-      
+
       // Handle new reservations
       const handleNewReservation = (data: unknown) => {
         console.log('🎉 AdminDashboard: New reservation received:', data);
@@ -396,7 +396,7 @@ const AdminDashboard: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Order dashboard data:', data);
-        
+
         if (data.success) {
           setOrderStats({
             todayOrders: data.data.today?.totalOrders || 0,
@@ -413,7 +413,7 @@ const AdminDashboard: React.FC = () => {
 
   const loadOrdersList = async (page = 1, filters = {}) => {
     if (!serviceStatus.orderService) return;
-    
+
     setOrdersLoading(true);
     try {
       const queryParams = new URLSearchParams({
@@ -421,12 +421,12 @@ const AdminDashboard: React.FC = () => {
         limit: '10',
         ...filters
       });
-      
+
       const response = await fetch(`http://localhost:5005/api/admin/orders?${queryParams}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Orders list data:', data);
-        
+
         if (data.success) {
           setOrdersList(data.data.orders || []);
           setOrdersPagination(data.data.pagination || {
@@ -446,7 +446,7 @@ const AdminDashboard: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     if (!serviceStatus.orderService) return;
-    
+
     setUpdatingOrderId(orderId);
     try {
       const response = await fetch(`http://localhost:5005/api/admin/orders/${orderId}/status`, {
@@ -463,17 +463,17 @@ const AdminDashboard: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Order status updated:', data);
-        
+
         if (data.success) {
           // Cập nhật trạng thái trong danh sách local
-          setOrdersList(prevOrders => 
-            prevOrders.map((order: Order) => 
-              order._id === orderId 
+          setOrdersList(prevOrders =>
+            prevOrders.map((order: Order) =>
+              order._id === orderId
                 ? { ...order, status: newStatus }
                 : order
             )
           );
-          
+
           // Reload dashboard stats để cập nhật số liệu
           loadOrderDashboard();
         }
@@ -526,7 +526,7 @@ const AdminDashboard: React.FC = () => {
       const res = await fetch('http://localhost:5006/api/reservations/admin/all?limit=100');
       if (res.ok) {
         const data = await res.json();
-        
+
         if (data.success && data.data && data.data.reservations) {
           const realReservations: Reservation[] = data.data.reservations.map((res: ApiReservation) => ({
             _id: res._id,
@@ -540,7 +540,7 @@ const AdminDashboard: React.FC = () => {
             occasion: res.occasion,
             specialRequests: res.specialRequests || 'Không có yêu cầu đặc biệt'
           }));
-          
+
           setReservations(realReservations);
           setStats(prev => ({
             ...prev,
@@ -578,10 +578,10 @@ const AdminDashboard: React.FC = () => {
     setCreatingTable(true);
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       // Debug: Log data được gửi
       console.log('Creating table with data:', tableFormData);
-      
+
       const response = await fetch('http://localhost:5006/api/tables', {
         method: 'POST',
         headers: {
@@ -597,10 +597,10 @@ const AdminDashboard: React.FC = () => {
       }
 
       const newTable = await response.json();
-      
+
       // Fetch lại danh sách bàn để đảm bảo dữ liệu đồng bộ
       await loadTables();
-      
+
       // Reset form và đóng modal
       setShowCreateTableModal(false);
       setTableFormData({
@@ -611,7 +611,7 @@ const AdminDashboard: React.FC = () => {
         description: '',
         pricing: { basePrice: 0 }
       });
-      
+
       alert('✅ Tạo bàn thành công!');
     } catch (error) {
       console.error('Error creating table:', error);
@@ -675,8 +675,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     // Kiểm tra số bàn đã tồn tại (ngoại trừ bàn đang chỉnh sửa)
-    const existingTable = tables.find(table => 
-      table.tableNumber === tableFormData.tableNumber && 
+    const existingTable = tables.find(table =>
+      table.tableNumber === tableFormData.tableNumber &&
       table._id !== editingTable._id
     );
     if (existingTable) {
@@ -703,7 +703,7 @@ const AdminDashboard: React.FC = () => {
 
       // Reload tables list để cập nhật UI
       await loadTables();
-      
+
       // Reset form và đóng modal
       setShowEditTableModal(false);
       setEditingTable(null);
@@ -715,7 +715,7 @@ const AdminDashboard: React.FC = () => {
         pricing: { basePrice: 0 },
         description: ''
       });
-      
+
       alert('✅ Cập nhật bàn thành công!');
     } catch (error) {
       console.error('Error updating table:', error);
@@ -729,7 +729,7 @@ const AdminDashboard: React.FC = () => {
     if (!confirm('Bạn có chắc chắn muốn chuyển tất cả bàn đang bảo trì về trạng thái trống?')) {
       return;
     }
-    
+
     try {
       const res = await fetch('http://localhost:5006/api/tables/admin/reset-maintenance', {
         method: 'POST',
@@ -737,7 +737,7 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         alert(data.message);
@@ -760,7 +760,7 @@ const AdminDashboard: React.FC = () => {
         },
         body: JSON.stringify({ status: newStatus })
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -787,7 +787,7 @@ const AdminDashboard: React.FC = () => {
         },
         body: JSON.stringify({ status: newStatus })
       });
-      
+
       if (res.ok) {
         // Reload data
         await Promise.all([loadTableStats(), loadReservations(), loadTables()]);
@@ -824,11 +824,11 @@ const AdminDashboard: React.FC = () => {
   const renderOverview = () => (
     <div style={{ padding: '24px' }}>
       {/* Stats Cards */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-        gap: '20px', 
-        marginBottom: '32px' 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '20px',
+        marginBottom: '32px'
       }}>
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -916,11 +916,11 @@ const AdminDashboard: React.FC = () => {
 
   const renderReservations = () => (
     <div style={{ padding: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '24px' 
+        marginBottom: '24px'
       }}>
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>
           📝 Quản lý đặt bàn & Trạng thái bàn
@@ -946,9 +946,9 @@ const AdminDashboard: React.FC = () => {
             }}></div>
             {tableSocketConnected ? 'Real-time ON' : 'Disconnected'}
           </div>
-          
+
           {/* Manual refresh button */}
-          <button 
+          <button
             onClick={() => {
               console.log('🔄 Manual refresh triggered');
               Promise.all([loadReservations(), loadTableStats(), loadTables()]);
@@ -966,7 +966,7 @@ const AdminDashboard: React.FC = () => {
           >
             🔄 Refresh
           </button>
-          
+
           <button style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
@@ -997,7 +997,7 @@ const AdminDashboard: React.FC = () => {
             📝 Danh sách đặt bàn
           </h3>
         </div>
-        
+
         <div style={{
           display: 'grid',
           gridTemplateColumns: '150px 100px 120px 150px 100px 120px 150px 120px 200px 120px',
@@ -1021,9 +1021,9 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {reservations.length === 0 ? (
-          <div style={{ 
-            padding: '40px', 
-            textAlign: 'center', 
+          <div style={{
+            padding: '40px',
+            textAlign: 'center',
             color: '#6b7280',
             fontSize: '14px'
           }}>
@@ -1062,7 +1062,7 @@ const AdminDashboard: React.FC = () => {
                 <span style={{ fontSize: '12px', color: '#4b5563' }}>
                   {reservation.customerPhone || 'N/A'}
                 </span>
-                <span style={{ 
+                <span style={{
                   fontSize: '12px',
                   color: '#4b5563'
                 }}>{getOccasionDisplay(reservation.occasion)}</span>
@@ -1180,8 +1180,8 @@ const AdminDashboard: React.FC = () => {
           alignItems: 'center',
           marginBottom: '24px'
         }}>
-          <h2 style={{ 
-            fontSize: '24px', 
+          <h2 style={{
+            fontSize: '24px',
             fontWeight: 'bold',
             color: '#1f2937',
             margin: 0,
@@ -1288,11 +1288,11 @@ const AdminDashboard: React.FC = () => {
                 {table.features && table.features.length > 0 && (
                   <div style={{ marginTop: '8px' }}>
                     🔧 Tiện nghi: {table.features.map((feature) => (
-                      <span key={`${table._id}-feature-${feature}`} style={{ 
-                        fontSize: '12px', 
-                        background: '#f3f4f6', 
-                        padding: '2px 6px', 
-                        borderRadius: '4px', 
+                      <span key={`${table._id}-feature-${feature}`} style={{
+                        fontSize: '12px',
+                        background: '#f3f4f6',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
                         marginRight: '4px',
                         display: 'inline-block',
                         marginTop: '2px'
@@ -1304,10 +1304,10 @@ const AdminDashboard: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ 
-                display: 'flex', 
-                gap: '8px', 
-                flexWrap: 'wrap' 
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap'
               }}>
                 {['available', 'occupied', 'reserved', 'maintenance', 'cleaning'].map(status => (
                   <button
@@ -1333,9 +1333,9 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Edit và Delete buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '8px', 
+              <div style={{
+                display: 'flex',
+                gap: '8px',
                 marginTop: '12px',
                 paddingTop: '12px',
                 borderTop: '1px solid #e5e7eb'
@@ -1662,11 +1662,11 @@ const AdminDashboard: React.FC = () => {
                   🔄 Tải lại
                 </button>
               </div>
-              
+
               {/* Filters */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '12px', 
+              <div style={{
+                display: 'flex',
+                gap: '12px',
                 marginBottom: '20px',
                 flexWrap: 'wrap'
               }}>
@@ -1683,7 +1683,7 @@ const AdminDashboard: React.FC = () => {
                   <option>ready</option>
                   <option>completed</option>
                 </select>
-                
+
                 <select style={{
                   padding: '6px 10px',
                   border: '1px solid #d9d9d9',
@@ -1695,8 +1695,8 @@ const AdminDashboard: React.FC = () => {
                   <option>delivery</option>
                   <option>dine-in</option>
                 </select>
-                
-                <input 
+
+                <input
                   type="date"
                   style={{
                     padding: '6px 10px',
@@ -1789,10 +1789,10 @@ const AdminDashboard: React.FC = () => {
                         <div style={{ fontSize: '10px', color: '#666' }}>{order.customerInfo?.email || ''}</div>
                       </div>
                       <div style={{ minHeight: '36px' }}>
-                        <div style={{ 
-                          fontSize: '11px', 
-                          color: '#333', 
-                          fontWeight: '500', 
+                        <div style={{
+                          fontSize: '11px',
+                          color: '#333',
+                          fontWeight: '500',
                           marginBottom: '3px',
                           display: 'flex',
                           alignItems: 'center',
@@ -1800,15 +1800,15 @@ const AdminDashboard: React.FC = () => {
                         }}>
                           📞 <span>{order.customerInfo?.phone || 'N/A'}</span>
                         </div>
-                        <div style={{ 
-                          fontSize: '10px', 
-                          color: '#666', 
+                        <div style={{
+                          fontSize: '10px',
+                          color: '#666',
                           lineHeight: '1.3',
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: '4px'
                         }}>
-                          📍 <span style={{ 
+                          📍 <span style={{
                             flex: 1,
                             wordBreak: 'break-word',
                             overflow: 'hidden',
@@ -1816,13 +1816,13 @@ const AdminDashboard: React.FC = () => {
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical'
                           }}>
-                            {order.delivery.address?.full ? 
-                              `${order.delivery.address.full}${order.delivery.address.district ? ', ' + order.delivery.address.district : ''}${order.delivery.address.city ? ', ' + order.delivery.address.city : ''}` : 
+                            {order.delivery.address?.full ?
+                              `${order.delivery.address.full}${order.delivery.address.district ? ', ' + order.delivery.address.district : ''}${order.delivery.address.city ? ', ' + order.delivery.address.city : ''}` :
                               'N/A'}
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Table Number Column */}
                       <div style={{ fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>
                         {order.delivery?.type === 'dine_in' && order.diningInfo?.tableInfo?.tableNumber ? (
@@ -1844,12 +1844,12 @@ const AdminDashboard: React.FC = () => {
                           <span style={{ color: '#ccc', fontSize: '10px' }}>-</span>
                         )}
                       </div>
-                      
+
                       <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
-                        {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' : 
-                         order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' : 
-                         order.delivery?.type === 'dine_in' ? '🍽️ Tại bàn' :
-                         '🍽️ Tại bàn'}
+                        {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' :
+                          order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' :
+                            order.delivery?.type === 'dine_in' ? '🍽️ Tại bàn' :
+                              '🍽️ Tại bàn'}
                       </div>
                       <div style={{ fontWeight: '600', color: '#16a34a' }}>
                         {order.pricing?.total?.toLocaleString() || 0}đ
@@ -1860,36 +1860,38 @@ const AdminDashboard: React.FC = () => {
                           borderRadius: '4px',
                           fontWeight: '500',
                           fontSize: '10px',
-                          backgroundColor: 
-                            order.payment?.method === 'cash' ? '#fef3c7' : 
-                            (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#dbeafe' : 
-                            '#f3f4f6',
-                          color: 
-                            order.payment?.method === 'cash' ? '#92400e' : 
-                            (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#1e40af' : 
-                            '#374151'
+                          backgroundColor:
+                            order.payment?.method === 'cash' ? '#fef3c7' :
+                              (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#dbeafe' :
+                                '#f3f4f6',
+                          color:
+                            order.payment?.method === 'cash' ? '#92400e' :
+                              (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#1e40af' :
+                                '#374151'
                         }}>
                           {(() => {
                             const paymentMethod = order.payment?.method;
                             if (paymentMethod === 'cash') return '💵 Tiền mặt';
                             if (paymentMethod === 'transfer' || paymentMethod === 'banking') return '🏦 Chuyển khoản';
-                            // Nếu không có payment method, đoán dựa trên orderNumber format
+                            // Nếu không có hoặc là 'none' → Chưa thanh toán
+                            if (!paymentMethod || paymentMethod === 'none') return '⏳ Chưa thanh toán';
+                            // Dự phòng theo định dạng mã đơn
                             if (order.orderNumber?.startsWith('ORD-')) return '🏦 Chuyển khoản';
-                            return '💵 Tiền mặt';
+                            return '⏳ Chưa thanh toán';
                           })()}
                         </span>
                       </div>
                       <div style={{ fontSize: '11px', color: '#666' }}>
-                        <div style={{ 
+                        <div style={{
                           maxHeight: '36px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           lineHeight: '1.2'
                         }}>
-                          {order.notes?.customer || 
-                           order.notes?.kitchen || 
-                           order.notes?.delivery || 
-                           'Không có ghi chú'}
+                          {order.notes?.customer ||
+                            order.notes?.kitchen ||
+                            order.notes?.delivery ||
+                            'Không có ghi chú'}
                         </div>
                       </div>
                       <div>
@@ -1898,42 +1900,42 @@ const AdminDashboard: React.FC = () => {
                           borderRadius: '4px',
                           fontSize: '10px',
                           fontWeight: '500',
-                          backgroundColor: 
+                          backgroundColor:
                             order.status === 'completed' ? '#f0fdf4' :
-                            order.status === 'delivered' ? '#f0fdf4' :
-                            order.status === 'picked_up' ? '#ecfdf5' :
-                            order.status === 'ready' ? '#ecfdf5' :
-                            order.status === 'confirmed' ? '#eff6ff' :
-                            order.status === 'preparing' ? '#fef3c7' :
-                            order.status === 'cancelled' ? '#fef2f2' :
-                            '#f8fafc',
+                              order.status === 'delivered' ? '#f0fdf4' :
+                                order.status === 'picked_up' ? '#ecfdf5' :
+                                  order.status === 'ready' ? '#ecfdf5' :
+                                    order.status === 'confirmed' ? '#eff6ff' :
+                                      order.status === 'preparing' ? '#fef3c7' :
+                                        order.status === 'cancelled' ? '#fef2f2' :
+                                          '#f8fafc',
                           color:
                             order.status === 'completed' ? '#166534' :
-                            order.status === 'delivered' ? '#166534' :
-                            order.status === 'picked_up' ? '#15803d' :
-                            order.status === 'ready' ? '#15803d' :
-                            order.status === 'confirmed' ? '#1e40af' :
-                            order.status === 'preparing' ? '#92400e' :
-                            order.status === 'cancelled' ? '#991b1b' :
-                            '#64748b'
+                              order.status === 'delivered' ? '#166534' :
+                                order.status === 'picked_up' ? '#15803d' :
+                                  order.status === 'ready' ? '#15803d' :
+                                    order.status === 'confirmed' ? '#1e40af' :
+                                      order.status === 'preparing' ? '#92400e' :
+                                        order.status === 'cancelled' ? '#991b1b' :
+                                          '#64748b'
                         }}>
                           {
                             order.status === 'pending' ? 'Chờ xử lý' :
-                            order.status === 'confirmed' ? 'Đã xác nhận' :
-                            order.status === 'preparing' ? 'Đang chuẩn bị' :
-                            order.status === 'ready' ? 'Sẵn sàng' :
-                            order.status === 'picked_up' ? 'Đã lấy hàng' :
-                            order.status === 'delivered' ? 'Đã giao' :
-                            order.status === 'completed' ? 'Hoàn thành' :
-                            order.status === 'cancelled' ? 'Đã hủy' :
-                            order.status
+                              order.status === 'confirmed' ? 'Đã xác nhận' :
+                                order.status === 'preparing' ? 'Đang chuẩn bị' :
+                                  order.status === 'ready' ? 'Sẵn sàng' :
+                                    order.status === 'picked_up' ? 'Đã lấy hàng' :
+                                      order.status === 'delivered' ? 'Đã giao' :
+                                        order.status === 'completed' ? 'Hoàn thành' :
+                                          order.status === 'cancelled' ? 'Đã hủy' :
+                                            order.status
                           }
                         </span>
                       </div>
                       <div>
                         {updatingOrderId === order._id ? (
-                          <div style={{ 
-                            fontSize: '10px', 
+                          <div style={{
+                            fontSize: '10px',
                             color: '#666',
                             textAlign: 'center',
                             padding: '6px'
@@ -1954,14 +1956,14 @@ const AdminDashboard: React.FC = () => {
                               width: '100%'
                             }}
                           >
-                          <option value="pending">Chờ xử lý</option>
-                          <option value="confirmed">Đã xác nhận</option>
-                          <option value="preparing">Đang chuẩn bị</option>
-                          <option value="ready">Sẵn sàng</option>
-                          <option value="delivered">Đã giao</option>
-                          <option value="completed">Hoàn thành</option>
-                          <option value="cancelled">Đã hủy</option>
-                        </select>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="preparing">Đang chuẩn bị</option>
+                            <option value="ready">Sẵn sàng</option>
+                            <option value="delivered">Đã giao</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="cancelled">Đã hủy</option>
+                          </select>
                         )}
                       </div>
                     </div>
@@ -1977,7 +1979,7 @@ const AdminDashboard: React.FC = () => {
                 marginTop: '20px',
                 gap: '8px'
               }}>
-                <button 
+                <button
                   onClick={() => loadOrdersList(ordersPagination.current - 1)}
                   disabled={!ordersPagination.hasPrev}
                   style={{
@@ -1994,7 +1996,7 @@ const AdminDashboard: React.FC = () => {
                 <span style={{ fontSize: '12px', color: '#666' }}>
                   Trang {ordersPagination.current} / {ordersPagination.total}
                 </span>
-                <button 
+                <button
                   onClick={() => loadOrdersList(ordersPagination.current + 1)}
                   disabled={!ordersPagination.hasNext}
                   style={{
@@ -2054,8 +2056,8 @@ const AdminDashboard: React.FC = () => {
   // Real-time updates via Socket.io - Added after all functions are defined
   useEffect(() => {
     // Listen for admin order events
-    const adminOrderNotifications = notifications.filter(n => 
-      n.type === 'admin_order_created' || 
+    const adminOrderNotifications = notifications.filter(n =>
+      n.type === 'admin_order_created' ||
       n.type === 'order_status_updated' ||
       n.type === 'new_order'
     );
@@ -2063,10 +2065,10 @@ const AdminDashboard: React.FC = () => {
     // Auto-refresh dashboard when new orders come
     if (adminOrderNotifications.length > 0) {
       const latestNotification = adminOrderNotifications[adminOrderNotifications.length - 1];
-      if (latestNotification.timestamp && 
-          Date.now() - latestNotification.timestamp.getTime() < 5000) { // Only if within 5 seconds
+      if (latestNotification.timestamp &&
+        Date.now() - latestNotification.timestamp.getTime() < 5000) { // Only if within 5 seconds
         console.log('🔔 Admin: Auto-refreshing due to new order:', latestNotification);
-        
+
         // Use setTimeout to avoid dependency issues and ensure functions exist
         setTimeout(() => {
           try {
@@ -2118,28 +2120,28 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div style={{ fontSize: '12px', opacity: 0.8 }}>
                     {employeeInfo.role === 'admin' ? '🔧 Quản trị viên' :
-                     employeeInfo.role === 'manager' ? '👔 Quản lý' :
-                     employeeInfo.role === 'waiter' ? '🍽️ Phục vụ' :
-                     employeeInfo.role === 'chef' ? '👨‍🍳 Đầu bếp' :
-                     employeeInfo.role === 'cashier' ? '💰 Thu ngân' :
-                     employeeInfo.role === 'receptionist' ? '📞 Lễ tân' : employeeInfo.role}
+                      employeeInfo.role === 'manager' ? '👔 Quản lý' :
+                        employeeInfo.role === 'waiter' ? '🍽️ Phục vụ' :
+                          employeeInfo.role === 'chef' ? '👨‍🍳 Đầu bếp' :
+                            employeeInfo.role === 'cashier' ? '💰 Thu ngân' :
+                              employeeInfo.role === 'receptionist' ? '📞 Lễ tân' : employeeInfo.role}
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <span style={{ fontSize: '14px', opacity: 0.9 }}>
-                {new Date().toLocaleDateString('vi-VN', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                {new Date().toLocaleDateString('vi-VN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </span>
-              
+
               {/* Logout Button */}
-              <button 
+              <button
                 onClick={handleLogout}
                 style={{
                   background: 'rgba(255,255,255,0.2)',
@@ -2159,8 +2161,8 @@ const AdminDashboard: React.FC = () => {
               >
                 🚪 Đăng xuất
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => navigate('/')}
                 style={{
                   background: 'rgba(255,255,255,0.2)',
@@ -2227,7 +2229,7 @@ const AdminDashboard: React.FC = () => {
             <p>Đang tải dữ liệu...</p>
           </div>
         )}
-        
+
         {error && (
           <div style={{
             padding: '16px',
@@ -2251,8 +2253,8 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'staff' && <StaffManagement />}
             {activeTab === 'shifts' && <ShiftManagement />}
             {activeTab === 'statistics' && renderPlaceholder(
-              'Thống kê báo cáo', 
-              '📈', 
+              'Thống kê báo cáo',
+              '📈',
               'Doanh thu, khách hàng, món ăn bán chạy, xu hướng kinh doanh'
             )}
           </>
@@ -2282,7 +2284,7 @@ const AdminDashboard: React.FC = () => {
             overflow: 'auto'
           }}>
             <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>➕ Tạo bàn mới</h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
@@ -2413,8 +2415,8 @@ const AdminDashboard: React.FC = () => {
                   type="number"
                   min="0"
                   value={tableFormData.pricing.basePrice}
-                  onChange={(e) => setTableFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setTableFormData(prev => ({
+                    ...prev,
                     pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
                   }))}
                   style={{
@@ -2497,7 +2499,7 @@ const AdminDashboard: React.FC = () => {
             overflow: 'auto'
           }}>
             <h3 style={{ marginBottom: '20px', color: '#1f2937' }}>✏️ Chỉnh sửa bàn {editingTable?.tableNumber}</h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#374151' }}>
@@ -2626,8 +2628,8 @@ const AdminDashboard: React.FC = () => {
                   type="number"
                   min="0"
                   value={tableFormData.pricing.basePrice}
-                  onChange={(e) => setTableFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setTableFormData(prev => ({
+                    ...prev,
                     pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
                   }))}
                   style={{

@@ -71,7 +71,8 @@ const OrderSchema = new mongoose.Schema(
       method: {
         type: String,
         required: true,
-        enum: ["cash", "card", "momo", "banking", "zalopay"],
+        enum: ["none", "cash", "card", "momo", "banking", "zalopay"],
+        default: "none",
       },
       status: {
         type: String,

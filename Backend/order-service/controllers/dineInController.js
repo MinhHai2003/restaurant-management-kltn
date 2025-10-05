@@ -4,144 +4,179 @@ const axios = require("axios");
 // 🍽️ Create dine-in order
 exports.createDineInOrder = async (req, res) => {
   try {
-    const { reservationId, reservationNumber, items, specialInstructions } =
-      req.body;
+    const {
+      tableNumber,
+      tableSession,
+      items,
+      customerInfo,
+      notes,
+      payment = { method: "cash", status: "pending" },
+      orderNumber,
+    } = req.body;
 
-    // Verify reservation exists and is valid (call Table Service)
-    try {
-      const reservationResponse = await axios.get(
-        `${process.env.TABLE_SERVICE_URL}/api/reservations/${reservationNumber}`,
-        {
-          headers: {
-            Authorization: req.header("Authorization"),
-          },
-        }
-      );
+    console.log("🍽️ [DINE-IN] Creating order for table:", tableNumber);
+    console.log(
+      "🍽️ [DINE-IN] Items:",
+      items?.map((i) => `${i.name} x${i.quantity}`)
+    );
 
-      const reservation = reservationResponse.data.data.reservation;
-
-      // Skip status check for testing - allow any status
-      // if (!["seated", "dining"].includes(reservation.status)) {
-      //   return res.status(400).json({
-      //     success: false,
-      //     message: `Cannot create order for reservation with status: ${reservation.status}`,
-      //   });
-      // }
-
-      // Get customer info from reservation
-      const customerInfo = {
-        name: reservation.customerInfo.name,
-        email: reservation.customerInfo.email,
-        phone: reservation.customerInfo.phone || "0123456789", // Default phone for dine-in
-      };
-
-      // Validate and get menu items (call Menu Service if needed)
-      let totalAmount = 0;
-      const orderItems = [];
-
-      for (const item of items) {
-        // Here you would typically call Menu Service to validate items and get current prices
-        // For now, we'll trust the provided data
-        orderItems.push({
-          menuItemId: item.menuItemId,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          customizations: item.customizations || "",
-          notes: item.notes || "",
-        });
-
-        totalAmount += item.price * item.quantity;
-      }
-
-      // Calculate pricing
-      const tax = Math.round(totalAmount * 0.08); // 8% tax
-      const serviceCharge = Math.round(totalAmount * 0.1); // 10% service charge for dine-in
-      const total = totalAmount + tax + serviceCharge;
-
-      // Generate order number
-      const orderNumber = `ORD-${Date.now()}-${Math.floor(
-        Math.random() * 1000
-      )}`;
-
-      // Create order
-      const order = new Order({
-        orderNumber,
-        customerId: req.customerId,
-        customerInfo,
-        items: orderItems,
-        pricing: {
-          subtotal: totalAmount,
-          tax,
-          deliveryFee: 0, // No delivery fee for dine-in
-          discount: 0,
-          loyaltyDiscount: 0,
-          total,
-        },
-        payment: {
-          method: "cash", // Default payment method for dine-in
-          status: "pending",
-        },
-        delivery: {
-          type: "dine_in",
-          estimatedTime: 30, // 30 minutes cooking time
-        },
-        diningInfo: {
-          reservationId,
-          reservationNumber,
-          tableInfo: {
-            tableId: reservation.tableId,
-            tableNumber: reservation.tableInfo.tableNumber,
-            location: reservation.tableInfo.location,
-          },
-          serviceType: "table_service",
-        },
-        status: "ordered",
-        specialInstructions,
-      });
-
-      await order.save();
-
-      // Update reservation status to "dining"
-      try {
-        await axios.put(
-          `${process.env.TABLE_SERVICE_URL}/api/reservations/${reservationNumber}/status`,
-          { status: "dining" },
-          {
-            headers: {
-              Authorization: req.header("Authorization"),
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      } catch (updateError) {
-        console.warn(
-          "Failed to update reservation status:",
-          updateError.message
-        );
-      }
-
-      res.status(201).json({
-        success: true,
-        message: "Dine-in order created successfully",
-        data: {
-          order: {
-            orderNumber: order.orderNumber,
-            status: order.status,
-            estimatedTime: order.delivery.estimatedTime,
-            items: order.items,
-            pricing: order.pricing,
-            tableNumber: order.diningInfo.tableInfo.tableNumber,
-          },
-        },
-      });
-    } catch (reservationError) {
-      console.error("Failed to verify reservation:", reservationError.message);
+    if (!tableNumber || !items || !customerInfo) {
       return res.status(400).json({
         success: false,
-        message: "Invalid reservation or unable to verify reservation",
+        message: "Table number, items, and customer info are required",
       });
     }
+
+    // Validate table exists
+    let tableInfo;
+    try {
+      const tableResponse = await axios.get(
+        `${
+          process.env.TABLE_SERVICE_URL || "http://localhost:5004"
+        }/api/tables/number/${tableNumber}`
+      );
+
+      if (tableResponse.data.success) {
+        tableInfo = tableResponse.data.data.table;
+      } else {
+        throw new Error("Table not found");
+      }
+    } catch (tableError) {
+      console.warn(
+        "[DINE-IN] Table verification failed, proceeding with provided tableNumber:",
+        tableNumber,
+        tableError.message
+      );
+      // Fallback: vẫn cho phép tạo đơn với thông tin bàn tối thiểu để tránh chặn đặt món từ tab khác
+      tableInfo = {
+        _id: undefined,
+        tableNumber: String(tableNumber),
+        location: "unknown",
+      };
+    }
+
+    // Calculate pricing
+    let totalAmount = 0;
+    const orderItems = [];
+
+    for (const item of items) {
+      // Here you would typically call Menu Service to validate items and get current prices
+      // For now, we'll trust the provided data
+      orderItems.push({
+        menuItemId: item.menuItemId,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        customizations: item.customizations || "",
+        notes: item.notes || "",
+      });
+
+      totalAmount += item.price * item.quantity;
+    }
+
+    // Pricing for dine-in: giá menu đã bao gồm thuế -> không cộng thêm
+    const tax = 0;
+    const total = totalAmount;
+
+    // Generate or use provided order number
+    const finalOrderNumber =
+      orderNumber ||
+      `TBL-${tableNumber}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // Create order
+    const order = new Order({
+      orderNumber: finalOrderNumber,
+      sessionId: `table-${tableNumber}-${Date.now()}`, // Guest session
+      customerInfo,
+      items: orderItems,
+      pricing: {
+        subtotal: totalAmount,
+        tax,
+        deliveryFee: 0, // No delivery fee for dine-in
+        discount: 0,
+        loyaltyDiscount: 0,
+        total,
+      },
+      payment: {
+        method: payment.method === "banking" ? "banking" : payment.method,
+        status: payment.status || "pending",
+      },
+      delivery: {
+        type: "dine_in",
+        estimatedTime: 30, // 30 minutes cooking time
+      },
+      diningInfo: {
+        tableInfo: {
+          tableId: tableInfo._id,
+          tableNumber: tableInfo.tableNumber,
+          location: tableInfo.location,
+        },
+        serviceType: "table_service",
+      },
+      status: "ordered",
+      notes: {
+        customer: notes?.customer || "",
+        kitchen: notes?.kitchen || `Bàn ${tableNumber} - ${customerInfo.name}`,
+        delivery: notes?.delivery || "",
+      },
+    });
+
+    await order.save();
+
+    console.log("✅ [DINE-IN] Order created successfully:", finalOrderNumber);
+
+    // 🔔 Emit real-time events to kitchen/admins and specific table room
+    if (req.io) {
+      try {
+        // Notify kitchen and admins similar to other order flows
+        req.io.to("role_chef").emit("new_order_kitchen", {
+          type: "new_order",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          items: order.items,
+          specialInstructions: order.notes?.kitchen || "",
+          priority: "normal",
+          message: `Đơn tại bàn ${tableNumber} - ${order.orderNumber}`,
+        });
+
+        req.io.to("role_admin").to("role_manager").emit("admin_order_created", {
+          type: "dinein_order_created",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          total: order.pricing.total,
+          orderType: "dine_in",
+        });
+
+        // Notify all clients joined this table room
+        req.io.to(`table_${tableNumber}`).emit("table_order_created", {
+          order: {
+            orderNumber: order.orderNumber,
+            items: order.items,
+            pricing: order.pricing,
+            status: order.status,
+            createdAt: order.createdAt,
+          },
+          tableNumber: String(tableNumber),
+        });
+      } catch (emitErr) {
+        console.error("[SOCKET] Emit dine-in events error:", emitErr.message);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Dine-in order created successfully",
+      data: {
+        order: {
+          orderNumber: order.orderNumber,
+          status: order.status,
+          estimatedTime: order.delivery.estimatedTime,
+          items: order.items,
+          pricing: order.pricing,
+          tableNumber: order.diningInfo.tableInfo.tableNumber,
+        },
+      },
+    });
   } catch (error) {
     console.error("Create dine-in order error:", error);
     res.status(500).json({
@@ -173,6 +208,54 @@ exports.getOrdersByReservation = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch orders for reservation",
+      error: error.message,
+    });
+  }
+};
+
+// 📋 Get orders for a table by table number
+exports.getOrdersByTableNumber = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+    console.log(
+      `🔍 [GET ORDERS] Fetching orders for table number: ${tableNumber}`
+    );
+
+    // Try both possible field structures
+    const orders = await Order.find({
+      $or: [
+        { "diningInfo.tableInfo.tableNumber": tableNumber },
+        { tableNumber: tableNumber },
+      ],
+      "delivery.type": "dine_in",
+    }).sort({ createdAt: -1 });
+
+    console.log(
+      `📋 [GET ORDERS] Found ${orders.length} orders for table ${tableNumber}`
+    );
+    if (orders.length > 0) {
+      console.log(`📋 [GET ORDERS] Sample order structure:`, {
+        orderNumber: orders[0].orderNumber,
+        tableNumber: orders[0].tableNumber,
+        diningInfo: orders[0].diningInfo,
+        total: orders[0].pricing?.total,
+        status: orders[0].status,
+        paymentStatus: orders[0].payment?.status,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        count: orders.length,
+      },
+    });
+  } catch (error) {
+    console.error("Get orders by table number error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders for table",
       error: error.message,
     });
   }
@@ -312,10 +395,85 @@ exports.serveOrder = async (req, res) => {
   }
 };
 
+// Mark all orders of a table as completed (for session payment)
+exports.completeTableOrders = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+    const { paymentData, totalAmount } = req.body;
+
+    console.log(
+      `💳 [COMPLETE] Marking all orders of table ${tableNumber} as completed`
+    );
+
+    // Find all unpaid, non-cancelled orders for this table
+    const orders = await Order.find({
+      $or: [
+        { tableNumber: tableNumber },
+        { "diningInfo.tableInfo.tableNumber": tableNumber },
+      ],
+      "delivery.type": "dine_in",
+      status: { $nin: ["completed", "canceled"] },
+      "payment.status": { $nin: ["completed", "paid"] },
+    });
+
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy order nào cho bàn này",
+      });
+    }
+
+    // Update all orders to completed status
+    const updateResult = await Order.updateMany(
+      {
+        $or: [
+          { tableNumber: tableNumber },
+          { "diningInfo.tableInfo.tableNumber": tableNumber },
+        ],
+        "delivery.type": "dine_in",
+        status: { $nin: ["completed", "canceled"] },
+        "payment.status": { $nin: ["completed", "paid"] },
+      },
+      {
+        $set: {
+          status: "completed",
+          "payment.status": "completed",
+          "payment.method": "banking",
+          "payment.completedAt": new Date(),
+          "payment.sessionTotal": totalAmount,
+          "payment.paymentData": paymentData,
+        },
+      }
+    );
+
+    console.log(
+      `✅ [COMPLETE] Updated ${updateResult.modifiedCount} orders for table ${tableNumber}`
+    );
+
+    res.json({
+      success: true,
+      message: `Đã hoàn thành thanh toán cho ${updateResult.modifiedCount} đơn hàng`,
+      data: {
+        ordersCompleted: updateResult.modifiedCount,
+        totalAmount: totalAmount,
+      },
+    });
+  } catch (error) {
+    console.error("Mark table orders complete error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi hoàn thành thanh toán",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDineInOrder: exports.createDineInOrder,
   getOrdersByReservation: exports.getOrdersByReservation,
   getOrdersByTable: exports.getOrdersByTable,
+  getOrdersByTableNumber: exports.getOrdersByTableNumber,
   updateOrderStatus: exports.updateOrderStatus,
   serveOrder: exports.serveOrder,
+  completeTableOrders: exports.completeTableOrders,
 };

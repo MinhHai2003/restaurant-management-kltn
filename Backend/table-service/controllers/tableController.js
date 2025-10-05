@@ -234,6 +234,37 @@ exports.getTableById = async (req, res) => {
   }
 };
 
+// 🍽️ Get table by table number (for QR code scanning)
+exports.getTableByNumber = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+
+    const table = await Table.findOne({
+      tableNumber: tableNumber,
+      isActive: true,
+    });
+
+    if (!table) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bàn với số này",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { table },
+    });
+  } catch (error) {
+    console.error("Get table by number error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch table by number",
+      error: error.message,
+    });
+  }
+};
+
 // 🔍 Search available tables
 exports.searchAvailableTables = async (req, res) => {
   try {
@@ -555,15 +586,155 @@ exports.resetMaintenanceTables = async (req, res) => {
   }
 };
 
+// 🍽️ Table Session Management
+const tableSessions = new Map(); // In-memory session storage
+
+// Start table session
+exports.startTableSession = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+    const { sessionId, customerInfo } = req.body;
+
+    // Check if table exists
+    const table = await Table.findOne({
+      tableNumber: tableNumber,
+      isActive: true,
+    });
+
+    if (!table) {
+      return res.status(404).json({
+        success: false,
+        message: "Table not found",
+      });
+    }
+
+    // End any existing session first (cleanup)
+    const existingSession = tableSessions.get(tableNumber);
+    if (existingSession) {
+      console.log(
+        `🧹 [SESSION] Ending existing session for table ${tableNumber}`
+      );
+      existingSession.status = "completed";
+      existingSession.endTime = new Date().toISOString();
+    }
+
+    // Create new session
+    const session = {
+      sessionId: sessionId || `session_${Date.now()}`,
+      tableNumber,
+      tableId: table._id,
+      startTime: new Date().toISOString(),
+      orders: [],
+      totalAmount: 0,
+      status: "active",
+      customerInfo: customerInfo || null,
+    };
+
+    tableSessions.set(tableNumber, session);
+
+    // Update table status to occupied
+    table.status = "occupied";
+    await table.save();
+
+    res.json({
+      success: true,
+      message: "Table session started",
+      data: { session },
+    });
+  } catch (error) {
+    console.error("Start table session error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to start table session",
+      error: error.message,
+    });
+  }
+};
+
+// Get table session
+exports.getTableSession = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+
+    const session = tableSessions.get(tableNumber);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "No active session for this table",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { session },
+    });
+  } catch (error) {
+    console.error("Get table session error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get table session",
+      error: error.message,
+    });
+  }
+};
+
+// End table session
+exports.endTableSession = async (req, res) => {
+  try {
+    const { tableNumber } = req.params;
+
+    const session = tableSessions.get(tableNumber);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "No active session for this table",
+      });
+    }
+
+    // Update session status
+    session.status = "completed";
+    session.endTime = new Date().toISOString();
+
+    // Update table status back to available
+    const table = await Table.findOne({ tableNumber });
+    if (table) {
+      table.status = "available";
+      await table.save();
+    }
+
+    // Remove from active sessions
+    tableSessions.delete(tableNumber);
+
+    res.json({
+      success: true,
+      message: "Table session ended",
+      data: { session },
+    });
+  } catch (error) {
+    console.error("End table session error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to end table session",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTable: exports.createTable,
   deleteTable: exports.deleteTable,
   getAllTables: exports.getAllTables,
   getTableById: exports.getTableById,
+  getTableByNumber: exports.getTableByNumber,
   searchAvailableTables: exports.searchAvailableTables,
   getTableAvailability: exports.getTableAvailability,
   getTableStats: exports.getTableStats,
   updateTable: exports.updateTable,
   updateTableStatus: exports.updateTableStatus,
   resetMaintenanceTables: exports.resetMaintenanceTables,
+  startTableSession: exports.startTableSession,
+  getTableSession: exports.getTableSession,
+  endTableSession: exports.endTableSession,
 };

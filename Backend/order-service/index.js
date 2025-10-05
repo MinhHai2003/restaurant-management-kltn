@@ -43,9 +43,13 @@ app.use(express.json({ limit: "10mb" }));
 
 // Socket.io Authentication
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  const token = socket.handshake.auth?.token;
+  // Hỗ trợ kết nối guest (không token) cho các trang bàn tại chỗ
   if (!token) {
-    return next(new Error("Authentication error: No token provided"));
+    socket.userId = `guest_${socket.id}`;
+    socket.userRole = "guest";
+    console.log(`🔓 [SOCKET] Allowing guest connection: ${socket.userId}`);
+    return next();
   }
 
   try {
@@ -62,7 +66,7 @@ io.use((socket, next) => {
     }
 
     // Priority: userId first, then customerId for backward compatibility
-    socket.userId = decoded.userId || decoded.customerId;
+    socket.userId = decoded.userId || decoded.customerId || `guest_${socket.id}`;
     socket.userRole = decoded.role || "customer";
 
     console.log("🔍 [JWT DEBUG] Token decode details:");
@@ -112,6 +116,21 @@ io.on("connection", (socket) => {
 
   // Log all current rooms for debugging
   console.log("🔍 [SOCKET DEBUG] All socket rooms:", Array.from(socket.rooms));
+
+  // Join/leave table rooms for dine-in real-time updates
+  socket.on("join_table", (tableNumber) => {
+    if (!tableNumber) return;
+    const room = `table_${tableNumber}`;
+    socket.join(room);
+    console.log(`🪑 Socket ${socket.userId} joined room ${room}`);
+  });
+
+  socket.on("leave_table", (tableNumber) => {
+    if (!tableNumber) return;
+    const room = `table_${tableNumber}`;
+    socket.leave(room);
+    console.log(`🧹 Socket ${socket.userId} left room ${room}`);
+  });
 
   socket.on("disconnect", () => {
     console.log(`👋 Order Socket disconnected: ${socket.userId}`);

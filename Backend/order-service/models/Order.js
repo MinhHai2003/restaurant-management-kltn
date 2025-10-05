@@ -54,7 +54,7 @@ const OrderSchema = new mongoose.Schema(
     },
     customerInfo: {
       name: { type: String, required: true },
-      email: { type: String, required: true },
+      email: { type: String, required: false }, // Not required for dine-in orders
       phone: { type: String, required: true },
     },
     items: [OrderItemSchema],

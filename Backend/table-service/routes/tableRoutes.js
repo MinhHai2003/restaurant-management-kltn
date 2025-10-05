@@ -48,6 +48,11 @@ router.get(
   param("tableId").isMongoId().withMessage("Valid table ID is required"),
   tableController.getTableById
 );
+router.get(
+  "/number/:tableNumber",
+  param("tableNumber").notEmpty().withMessage("Table number is required"),
+  tableController.getTableByNumber
+);
 router.delete(
   "/:tableId",
   param("tableId").isMongoId().withMessage("Valid table ID is required"),
@@ -73,5 +78,10 @@ router.patch(
 
 // 🔄 Reset all maintenance tables to available (POST) - Admin only
 router.post("/admin/reset-maintenance", tableController.resetMaintenanceTables);
+
+// 🍽️ Table Session Management Routes
+router.post("/:tableNumber/start-session", tableController.startTableSession);
+router.get("/:tableNumber/session", tableController.getTableSession);
+router.post("/:tableNumber/end-session", tableController.endTableSession);
 
 module.exports = router;

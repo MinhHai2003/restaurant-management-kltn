@@ -17,7 +17,15 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    const { items, delivery, payment, notes, coupon, customerInfo } = req.body;
+    const {
+      items,
+      delivery,
+      payment,
+      notes,
+      coupon,
+      customerInfo,
+      orderNumber,
+    } = req.body;
 
     // 1. Validate customer (skip for guest users)
     let customer;
@@ -209,7 +217,7 @@ exports.createOrder = async (req, res) => {
 
     // 7. Create order
     const orderData = {
-      orderNumber: Order.generateOrderNumber(), // Generate order number
+      orderNumber: orderNumber || Order.generateOrderNumber(), // Use frontend orderNumber if provided, otherwise generate
       customerId: req.customerId || null, // null for guest users
       sessionId: req.sessionId || null, // session ID for guest users
       customerInfo: {

@@ -16,6 +16,8 @@ import ReservationsPage from './pages/account/ReservationsPage'
 import AddressesPage from './pages/account/AddressesPage'
 import AdminDashboard from './pages/AdminDashboard'
 import OrderSocketDemo from './pages/OrderSocketDemo'
+import TableMenuPage from './pages/TableMenuPage'
+import TableQRGenerator from './pages/TableQRGenerator'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedEmployeeRoute from './components/ProtectedEmployeeRoute'
 import './App.css'
@@ -50,6 +52,12 @@ function App() {
             {/* Socket.io Order Demo */}
             <Route path="/order-socket-demo" element={<OrderSocketDemo />} />
             <Route path="/socket-demo" element={<OrderSocketDemo />} />
+            
+            {/* Table Ordering Route */}
+            <Route path="/table/:tableNumber" element={<TableMenuPage />} />
+            
+            {/* QR Generator for Admin */}
+            <Route path="/admin/qr-generator" element={<TableQRGenerator />} />
             
             {/* Menu-Inventory Integration Test */}
             

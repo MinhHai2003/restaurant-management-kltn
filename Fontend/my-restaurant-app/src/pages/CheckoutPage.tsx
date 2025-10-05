@@ -65,6 +65,16 @@ const CheckoutPage: React.FC = () => {
   // QR Payment state
   const [showQRPayment, setShowQRPayment] = useState(false);
   
+  // Generate order number at frontend
+  const generateOrderNumber = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
+    const timeStr = now.getTime().toString().slice(-6); // 6 số cuối timestamp
+    return `ORD-${dateStr}-${timeStr}`;
+  };
+  
+  const [frontendOrderNumber] = useState(() => generateOrderNumber());
+  
   // Coupon
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
@@ -241,8 +251,9 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Nếu chọn chuyển khoản thì hiển thị QR payment
+    // Nếu chọn chuyển khoản thì hiển thị QR payment với mã đơn frontend
     if (paymentMethod === 'transfer') {
+      console.log('🔄 [TRANSFER] Showing QR with frontend order number:', frontendOrderNumber);
       setShowQRPayment(true);
       return;
     }
@@ -286,6 +297,8 @@ const CheckoutPage: React.FC = () => {
 
       // Gửi thông tin đơn hàng đến API theo format mà controller mong muốn
       const orderData = {
+        // Thêm orderNumber từ frontend
+        orderNumber: paymentMethod === 'transfer' ? frontendOrderNumber : undefined,
         items: cart.items.map(item => ({
           menuItemId: item.menuItemId || item._id,
           quantity: item.quantity,
@@ -302,7 +315,7 @@ const CheckoutPage: React.FC = () => {
           instructions: customerInfo.notes || ''
         },
         payment: {
-          method: paymentMethod
+          method: paymentMethod === 'transfer' ? 'banking' : paymentMethod // Đảm bảo dùng 'banking' cho QR payment
         },
         notes: {
           customer: customerInfo.notes || '',
@@ -1310,17 +1323,31 @@ const CheckoutPage: React.FC = () => {
               couponDiscount,
               totalDiscount,
               finalTotal,
-              membershipLevel
+              membershipLevel,
+              frontendOrderNumber
             });
             
             return finalTotal;
           })()}
-          orderInfo={`Thanh toán đơn hàng - ${customerInfo.name || 'GUEST'}`}
+          orderCode={frontendOrderNumber}
+          orderInfo={`Thanh toán đơn hàng ${frontendOrderNumber} - ${customerInfo.name || 'GUEST'}`}
           onPaymentSuccess={async (paymentData: any) => {
-            console.log('Payment success:', paymentData);
-            // Khi thanh toán thành công, xử lý đặt hàng
-            await processOrder();
-            setShowQRPayment(false);
+            console.log('🎯 [Checkout] QR Payment confirmed:', paymentData);
+            console.log('🔄 [Checkout] Creating order with frontend order number:', frontendOrderNumber);
+            
+            try {
+              // Sau khi thanh toán thành công, tạo đơn hàng với mã đã có
+              await processOrder();
+              
+              alert(`Thanh toán thành công! Mã đơn hàng: ${frontendOrderNumber}`);
+              
+              // Chuyển hướng về trang chủ
+              navigate('/');
+            } catch (error) {
+              console.error('❌ [Checkout] Order creation failed:', error);
+              alert('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!');
+              setShowQRPayment(false);
+            }
           }}
           onClose={() => setShowQRPayment(false)}
         />

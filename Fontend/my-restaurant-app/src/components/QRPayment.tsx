@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 interface QRPaymentProps {
   amount: number;
-  reservationId?: string;
+  orderCode?: string;
   orderInfo?: string;
   onPaymentSuccess?: (paymentData: any) => void;
   onPaymentComplete?: () => void;
@@ -11,7 +11,7 @@ interface QRPaymentProps {
 
 const QRPayment: React.FC<QRPaymentProps> = ({ 
   amount, 
-  reservationId, 
+  orderCode, 
   orderInfo,
   onPaymentSuccess, 
   onPaymentComplete,
@@ -30,10 +30,12 @@ const QRPayment: React.FC<QRPaymentProps> = ({
   };
 
   const generateQRCode = useCallback(() => {
-    // Tạo nội dung chuyển khoản
-    const transferContent = `DAT BAN ${reservationId || Date.now()} ${amount}VND`;
+    // Tạo nội dung chuyển khoản với mã đơn hàng
+    const transferContent = `DAT MON ${orderCode || Date.now()}`;
     
     console.log('🔍 [QR Payment] Generating QR with amount:', amount);
+    console.log('🔍 [QR Payment] Order code:', orderCode);
+    console.log('🔍 [QR Payment] Transfer content:', transferContent);
     
     // Tạo QR theo chuẩn VietQR cho Techcombank
     // Format: https://img.vietqr.io/image/[BANK_CODE]-[ACCOUNT_NUMBER]-[TEMPLATE].png?amount=[AMOUNT]&addInfo=[CONTENT]&accountName=[ACCOUNT_NAME]
@@ -42,7 +44,7 @@ const QRPayment: React.FC<QRPaymentProps> = ({
     console.log('🔍 [QR Payment] Generated QR URL:', vietQRUrl);
     
     setQrCode(vietQRUrl);
-  }, [amount, reservationId, bankInfo.bankCode, bankInfo.accountNumber, bankInfo.accountName]);
+  }, [amount, orderCode, bankInfo.bankCode, bankInfo.accountNumber, bankInfo.accountName]);
 
   useEffect(() => {
     generateQRCode();
@@ -59,7 +61,7 @@ const QRPayment: React.FC<QRPaymentProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [amount, reservationId, generateQRCode]);
+  }, [amount, orderCode, generateQRCode]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -71,20 +73,37 @@ const QRPayment: React.FC<QRPaymentProps> = ({
     return new Intl.NumberFormat('vi-VN').format(amount);
   };
 
-  const handlePaymentConfirm = () => {
-    // Giả lập xác nhận thanh toán thành công
+  const handlePaymentConfirm = async () => {
+    // Gọi callback ngay lập tức khi người dùng xác nhận thanh toán
+    console.log('🎯 [QR Payment] User confirmed payment');
+    
+    if (onPaymentSuccess) {
+      try {
+        await onPaymentSuccess({
+          amount,
+          method: 'bank_transfer',
+          transactionId: `TXN${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          orderCode
+        });
+        console.log('✅ [QR Payment] Payment processing completed');
+      } catch (error) {
+        console.error('❌ [QR Payment] Payment processing failed:', error);
+        alert('Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại!');
+        return;
+      }
+    }
+    
+    // Hiển thị trạng thái thành công
     setPaymentStatus('success');
-    setTimeout(() => {
-      onPaymentSuccess?.({
-        amount,
-        method: 'bank_transfer',
-        transactionId: `TXN${Date.now()}`,
-        timestamp: new Date().toISOString()
-      });
-    }, 1000);
   };
 
   if (paymentStatus === 'success') {
+    // Tự động đóng modal sau 2 giây
+    setTimeout(() => {
+      onClose?.();
+    }, 2000);
+    
     return (
       <div style={{
         position: 'fixed',
@@ -108,26 +127,28 @@ const QRPayment: React.FC<QRPaymentProps> = ({
         }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
           <h3 style={{ color: '#059669', marginBottom: '16px' }}>
-            Thanh toán thành công!
+            Đang xử lý đơn hàng...
           </h3>
           <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-            Cảm ơn bạn đã thanh toán. Đặt bàn của bạn đã được xác nhận.
+            Cảm ơn bạn đã thanh toán. Đơn hàng đang được xử lý.
           </p>
-          <button
-            onClick={onClose}
-            style={{
-              background: '#059669',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 24px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            Đóng
-          </button>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #059669',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto'
+          }} />
+          <style>
+            {`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}
+          </style>
         </div>
       </div>
     );
@@ -282,7 +303,7 @@ const QRPayment: React.FC<QRPaymentProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6b7280' }}>Nội dung:</span>
               <span style={{ fontWeight: '600', fontSize: '12px' }}>
-                DAT BAN {reservationId || Date.now()}
+                DAT MON {orderCode || Date.now()}
               </span>
             </div>
           </div>

@@ -81,13 +81,35 @@ interface Order {
     phone?: string;
   };
   delivery: {
-    type: 'pickup' | 'delivery' | 'dine-in';
+    type: 'pickup' | 'delivery' | 'dine_in';
+    address?: {
+      full?: string;
+      district?: string;
+      city?: string;
+    };
+  };
+  diningInfo?: {
+    tableInfo?: {
+      tableNumber: string;
+      tableId?: string;
+      location?: string;
+    };
+    serviceType?: string;
   };
   pricing: {
     total: number;
   };
   status: string;
   createdAt: string;
+  payment?: {
+    method?: 'cash' | 'transfer' | 'banking';
+    status?: string;
+  };
+  notes?: {
+    customer?: string;
+    kitchen?: string;
+    delivery?: string;
+  };
 }
 
 const AdminDashboard: React.FC = () => {
@@ -1698,8 +1720,8 @@ const AdminDashboard: React.FC = () => {
                   padding: '12px',
                   borderBottom: '1px solid #e5e5e5',
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1.2fr 1.5fr 0.8fr 1fr 1.2fr 1fr 0.8fr',
-                  gap: '12px',
+                  gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 1.1fr 1fr 0.8fr',
+                  gap: '10px',
                   fontSize: '12px',
                   fontWeight: '600',
                   color: '#666'
@@ -1707,8 +1729,10 @@ const AdminDashboard: React.FC = () => {
                   <div>Mã đơn</div>
                   <div>Khách hàng</div>
                   <div>Địa chỉ & SĐT</div>
+                  <div>Bàn số</div>
                   <div>Loại</div>
                   <div>Tổng tiền</div>
+                  <div>Phương thức TT</div>
                   <div>Ghi chú</div>
                   <div>Trạng thái</div>
                   <div>Thao tác</div>
@@ -1751,8 +1775,8 @@ const AdminDashboard: React.FC = () => {
                         padding: '12px',
                         borderBottom: '1px solid #f0f0f0',
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1.2fr 1.5fr 0.8fr 1fr 1.2fr 1fr 0.8fr',
-                        gap: '12px',
+                        gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 1.1fr 1fr 0.8fr',
+                        gap: '10px',
                         fontSize: '12px',
                         alignItems: 'center'
                       }}
@@ -1792,19 +1816,68 @@ const AdminDashboard: React.FC = () => {
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical'
                           }}>
-                            {(order.delivery as any)?.address?.full ? 
-                              `${(order.delivery as any).address.full}${(order.delivery as any).address.district ? ', ' + (order.delivery as any).address.district : ''}${(order.delivery as any).address.city ? ', ' + (order.delivery as any).address.city : ''}` : 
+                            {order.delivery.address?.full ? 
+                              `${order.delivery.address.full}${order.delivery.address.district ? ', ' + order.delivery.address.district : ''}${order.delivery.address.city ? ', ' + order.delivery.address.city : ''}` : 
                               'N/A'}
                           </span>
                         </div>
                       </div>
+                      
+                      {/* Table Number Column */}
+                      <div style={{ fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>
+                        {order.delivery?.type === 'dine_in' && order.diningInfo?.tableInfo?.tableNumber ? (
+                          <span style={{
+                            background: '#ffeaa7',
+                            color: '#e17055',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '10px',
+                            fontWeight: 'bold'
+                          }}>
+                            🍽️ {order.diningInfo.tableInfo.tableNumber}
+                          </span>
+                        ) : order.delivery?.type === 'delivery' ? (
+                          <span style={{ color: '#666', fontSize: '10px' }}>Giao hàng</span>
+                        ) : order.delivery?.type === 'pickup' ? (
+                          <span style={{ color: '#666', fontSize: '10px' }}>Lấy tại quầy</span>
+                        ) : (
+                          <span style={{ color: '#ccc', fontSize: '10px' }}>-</span>
+                        )}
+                      </div>
+                      
                       <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
                         {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' : 
                          order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' : 
+                         order.delivery?.type === 'dine_in' ? '🍽️ Tại bàn' :
                          '🍽️ Tại bàn'}
                       </div>
                       <div style={{ fontWeight: '600', color: '#16a34a' }}>
                         {order.pricing?.total?.toLocaleString() || 0}đ
+                      </div>
+                      <div style={{ fontSize: '11px', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '3px 6px',
+                          borderRadius: '4px',
+                          fontWeight: '500',
+                          fontSize: '10px',
+                          backgroundColor: 
+                            order.payment?.method === 'cash' ? '#fef3c7' : 
+                            (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#dbeafe' : 
+                            '#f3f4f6',
+                          color: 
+                            order.payment?.method === 'cash' ? '#92400e' : 
+                            (order.payment?.method === 'transfer' || order.payment?.method === 'banking') ? '#1e40af' : 
+                            '#374151'
+                        }}>
+                          {(() => {
+                            const paymentMethod = order.payment?.method;
+                            if (paymentMethod === 'cash') return '💵 Tiền mặt';
+                            if (paymentMethod === 'transfer' || paymentMethod === 'banking') return '🏦 Chuyển khoản';
+                            // Nếu không có payment method, đoán dựa trên orderNumber format
+                            if (order.orderNumber?.startsWith('ORD-')) return '🏦 Chuyển khoản';
+                            return '💵 Tiền mặt';
+                          })()}
+                        </span>
                       </div>
                       <div style={{ fontSize: '11px', color: '#666' }}>
                         <div style={{ 
@@ -1813,9 +1886,9 @@ const AdminDashboard: React.FC = () => {
                           textOverflow: 'ellipsis',
                           lineHeight: '1.2'
                         }}>
-                          {(order as any)?.notes?.customer || 
-                           (order as any)?.notes?.kitchen || 
-                           (order as any)?.notes?.delivery || 
+                          {order.notes?.customer || 
+                           order.notes?.kitchen || 
+                           order.notes?.delivery || 
                            'Không có ghi chú'}
                         </div>
                       </div>

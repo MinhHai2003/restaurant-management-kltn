@@ -38,6 +38,9 @@ interface Table {
   isActive: boolean;
 }
 
+// Web Search API
+const SERPER_API_KEY = import.meta.env.VITE_SERPER_API_KEY;
+
 // Free AI APIs that actually work
 const FREE_AI_APIS = [
   {
@@ -208,13 +211,19 @@ export async function processQuestion(question: string): Promise<string> {
   // Step 2: Fetch real data from database for menu questions
   const restaurantData = await fetchRestaurantData();
   
-  // Step 3: Send question + real data to AI
-  const apiResponse = await tryFreeAPIs(question, restaurantData);
+  // Step 3: Web search for general questions
+  let webSearchResults: string | null = null;
+  if (shouldSearchWeb(question)) {
+    webSearchResults = await searchWeb(question);
+  }
+  
+  // Step 4: Send question + real data + web search to AI
+  const apiResponse = await tryFreeAPIs(question, restaurantData, webSearchResults);
   if (apiResponse) {
     return apiResponse;
   }
   
-  // Step 4: Fallback to local AI with real data
+  // Step 5: Fallback to local AI with real data
   return getLocalAIResponse(question, restaurantData);
 }
 
@@ -413,7 +422,7 @@ function extractQuantityForRemoval(question: string): number | undefined {
   return undefined; // Không có số lượng cụ thể = xóa toàn bộ
 }
 
-async function tryFreeAPIs(question: string, restaurantData: RestaurantData): Promise<string | null> {
+async function tryFreeAPIs(question: string, restaurantData: RestaurantData, webSearchResults?: string): Promise<string | null> {
   // Try each API in order
   for (const api of FREE_AI_APIS) {
     const apiKey = import.meta.env[api.key];
@@ -427,7 +436,7 @@ async function tryFreeAPIs(question: string, restaurantData: RestaurantData): Pr
       
       switch (api.name) {
         case 'groq':
-          response = await callGroqAPI(question, apiKey, restaurantData);
+          response = await callGroqAPI(question, apiKey, restaurantData, webSearchResults);
           break;
         case 'cohere':
           response = await callCohereAPI(question, apiKey, restaurantData);
@@ -449,7 +458,89 @@ async function tryFreeAPIs(question: string, restaurantData: RestaurantData): Pr
   return null;
 }
 
-async function callGroqAPI(question: string, apiKey: string, restaurantData: RestaurantData): Promise<string | null> {
+// Check if question needs web search
+function shouldSearchWeb(question: string): boolean {
+  const lowerQuestion = question.toLowerCase();
+  
+  // Don't search for restaurant-specific questions
+  const restaurantKeywords = [
+    'menu', 'món ăn', 'giá', 'bàn', 'đặt bàn',
+    'nhà hàng', 'restaurant', 'hải sản',
+    'giỏ hàng', 'cart', 'thanh toán',
+    'order', 'đơn hàng', 'món', 'thức ăn',
+    'table', 'bàn ăn', 'reservation', 'đặt chỗ'
+  ];
+  
+  // Check if it's a restaurant question
+  const isRestaurantQuestion = restaurantKeywords.some(keyword => 
+    lowerQuestion.includes(keyword)
+  );
+  
+  if (isRestaurantQuestion) {
+    return false;
+  }
+  
+  // Search web for all other questions
+  return true;
+}
+
+// Web Search API using Serper.dev
+async function searchWeb(query: string): Promise<string | null> {
+  if (!SERPER_API_KEY) {
+    console.log('🔍 Serper API key not found, skipping web search');
+    return null;
+  }
+
+  try {
+    console.log('🔍 Searching web for:', query);
+    
+    const response = await fetch('https://google.serper.dev/search', {
+      method: 'POST',
+      headers: {
+        'X-API-KEY': SERPER_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        q: query,
+        num: 5, // Lấy 5 kết quả đầu tiên
+        gl: 'vn', // Google Vietnam
+        hl: 'vi' // Tiếng Việt
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('🔍 Web search results:', data);
+      
+      // Tạo summary từ kết quả tìm kiếm
+      let searchSummary = 'THÔNG TIN TÌM KIẾM WEB:\n\n';
+      
+      if (data.organic && data.organic.length > 0) {
+        data.organic.slice(0, 3).forEach((result: any, index: number) => {
+          searchSummary += `${index + 1}. **${result.title}**\n`;
+          searchSummary += `   ${result.snippet}\n`;
+          searchSummary += `   Nguồn: ${result.link}\n\n`;
+        });
+      }
+      
+      if (data.knowledgeGraph) {
+        searchSummary += `**THÔNG TIN CHI TIẾT:**\n`;
+        searchSummary += `${data.knowledgeGraph.description}\n`;
+        searchSummary += `Nguồn: ${data.knowledgeGraph.descriptionSource}\n\n`;
+      }
+      
+      return searchSummary;
+    } else {
+      console.error('🔍 Serper API Error:', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('🔍 Web search error:', error);
+  }
+  
+  return null;
+}
+
+async function callGroqAPI(question: string, apiKey: string, restaurantData: RestaurantData, webSearchResults?: string): Promise<string | null> {
   try {
     // Step 3: Create enhanced prompt with real data
     const menuInfo = restaurantData.availability.menuItems.length > 0 
@@ -480,15 +571,17 @@ Thông tin nhà hàng:
 - Giờ mở: 6:00-22:00 hàng ngày
 - Đặc sản: Hải sản tươi sống
 
-THÔNG TIN THỜI GIAN THỰC TỪ DATABASE:
+THÔNG TIN THỰC TẾ TỪ DATABASE:
 ${menuInfo}
 
-${tableInfo}
+${tableInfo}${webSearchResults ? `\n\n${webSearchResults}` : ''}
 
 QUAN TRỌNG: 
 - Khi hỏi về số lượng món, trả lời chính xác số món có sẵn
 - Khi hỏi về bàn, cung cấp thông tin chi tiết về tỷ lệ trống/đã đặt
 - Luôn dựa trên dữ liệu thực tế từ database
+- Khi hỏi về thời gian, trả lời theo múi giờ Việt Nam (GMT+7)
+- Sử dụng thông tin web search để bổ sung câu trả lời nếu cần
 
 Hãy trả lời dựa trên thông tin thực tế này, thân thiện và hữu ích với emoji phù hợp.`
           },

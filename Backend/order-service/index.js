@@ -170,6 +170,7 @@ app.use("/api/orders/pickup", require("./routes/pickupRoutes"));
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory-test", require("./routes/inventoryTestRoutes"));
+app.use("/api/casso", require("./routes/cassoRoutes"));
 
 // 404 Handler
 app.use("*", (req, res) => {
@@ -223,6 +224,12 @@ server.listen(PORT, () => {
   console.log(`   POST /api/admin/orders - Create admin order`);
   console.log(`   GET  /api/admin/orders - Get all orders (admin)`);
   console.log(`   PATCH /api/admin/orders/:id/status - Update order status`);
+  console.log(`\n🏦 Casso Payment endpoints:`);
+  console.log(`   POST /api/casso/webhook - Casso webhook (no auth)`);
+  console.log(`   GET  /api/casso/payment-instructions/:orderNumber - Get payment info`);
+  console.log(`   GET  /api/casso/payment-status/:orderNumber - Check payment status`);
+  console.log(`   GET  /api/casso/transactions - Get all transactions (admin)`);
+  console.log(`   POST /api/casso/transactions/:id/match - Manual match (admin)`);
   console.log(`\n🚀 Order Service ready for requests!`);
   console.log(`📡 Socket.io ready for real-time notifications`);
 });

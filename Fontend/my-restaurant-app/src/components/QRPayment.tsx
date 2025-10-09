@@ -23,10 +23,10 @@ const QRPayment: React.FC<QRPaymentProps> = ({
   
   // Thông tin ngân hàng
   const bankInfo = {
-    bankName: 'Techcombank',
-    accountNumber: '19037987850010',
-    accountName: 'Nhà hàng hải sản',
-    bankCode: 'TCB'
+    bankName: 'Vietinbank',
+    accountNumber: '106875077043',
+    accountName: 'VONG VINH LOI',
+    bankCode: 'ICB'  // VietinBank = ICB trong VietQR
   };
 
   const generateQRCode = useCallback(() => {
@@ -37,9 +37,9 @@ const QRPayment: React.FC<QRPaymentProps> = ({
     console.log('🔍 [QR Payment] Order code:', orderCode);
     console.log('🔍 [QR Payment] Transfer content:', transferContent);
     
-    // Tạo QR theo chuẩn VietQR cho Techcombank
-    // Format: https://img.vietqr.io/image/[BANK_CODE]-[ACCOUNT_NUMBER]-[TEMPLATE].png?amount=[AMOUNT]&addInfo=[CONTENT]&accountName=[ACCOUNT_NAME]
-    const vietQRUrl = `https://img.vietqr.io/image/${bankInfo.bankCode}-${bankInfo.accountNumber}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
+    // Tạo QR theo chuẩn VietQR
+    // Format: https://img.vietqr.io/image/[BANK_CODE]-[ACCOUNT_NUMBER]-[TEMPLATE].jpg?amount=[AMOUNT]&addInfo=[CONTENT]&accountName=[ACCOUNT_NAME]
+    const vietQRUrl = `https://img.vietqr.io/image/${bankInfo.bankCode}-${bankInfo.accountNumber}-compact2.jpg?amount=${amount}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
     
     console.log('🔍 [QR Payment] Generated QR URL:', vietQRUrl);
     
@@ -258,6 +258,12 @@ const QRPayment: React.FC<QRPaymentProps> = ({
                 src={qrCode} 
                 alt="QR Code Payment" 
                 style={{ width: '280px', height: '280px' }}
+                onError={(e) => {
+                  console.error('❌ [QR Payment] Failed to load QR:', qrCode);
+                }}
+                onLoad={() => {
+                  console.log('✅ [QR Payment] QR loaded successfully');
+                }}
               />
             ) : (
               <div style={{

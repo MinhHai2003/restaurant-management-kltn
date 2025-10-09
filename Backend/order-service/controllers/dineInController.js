@@ -437,7 +437,7 @@ exports.completeTableOrders = async (req, res) => {
       {
         $set: {
           status: "completed",
-          "payment.status": "completed",
+          "payment.status": "paid",
           "payment.method": paymentMethod === "cash" ? "cash" : "banking",
           "payment.completedAt": new Date(),
           "payment.sessionTotal": totalAmount,

@@ -130,6 +130,19 @@ class PaymentService {
         };
       }
 
+      // Banking via Casso - awaiting payment
+      if (method === "banking") {
+        return {
+          success: true,
+          status: "awaiting_payment", // Waiting for bank transfer confirmation
+          transactionId: null, // Will be set by Casso webhook
+          paidAt: null,
+          message: "Awaiting bank transfer confirmation via Casso",
+          requiresAction: true,
+          actionType: "bank_transfer",
+        };
+      }
+
       // For digital payments, simulate API call
       const paymentResult = await this.simulatePaymentGateway({
         amount,
@@ -234,6 +247,7 @@ class PaymentService {
         description: "Pay with cash when order arrives",
         processingTime: "instant",
         fee: 0,
+        enabled: true,
       },
       {
         id: "card",
@@ -241,6 +255,7 @@ class PaymentService {
         description: "Visa, MasterCard, etc.",
         processingTime: "instant",
         fee: 0,
+        enabled: false, // Demo mode
       },
       {
         id: "momo",
@@ -248,13 +263,17 @@ class PaymentService {
         description: "Pay with MoMo e-wallet",
         processingTime: "instant",
         fee: 0,
+        enabled: false, // Demo mode
       },
       {
         id: "banking",
-        name: "Internet Banking",
-        description: "Bank transfer",
-        processingTime: "1-3 minutes",
+        name: "Chuyển khoản ngân hàng",
+        description: "Chuyển khoản tự động qua Casso.vn",
+        processingTime: "1-3 phút",
         fee: 0,
+        enabled: true,
+        icon: "🏦",
+        note: "Thanh toán được xác nhận tự động sau khi chuyển khoản thành công",
       },
       {
         id: "zalopay",
@@ -262,6 +281,7 @@ class PaymentService {
         description: "Pay with ZaloPay wallet",
         processingTime: "instant",
         fee: 0,
+        enabled: false, // Demo mode
       },
     ];
   }

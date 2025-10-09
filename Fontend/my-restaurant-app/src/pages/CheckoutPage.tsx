@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import QRPayment from '../components/QRPayment';
+import CassoPayment from '../components/CassoPayment';
 import { cartService } from '../services/cartService';
 import { customerService } from '../services/customerService';
 import orderService from '../services/orderService';
@@ -65,12 +65,12 @@ const CheckoutPage: React.FC = () => {
   // QR Payment state
   const [showQRPayment, setShowQRPayment] = useState(false);
   
-  // Generate order number at frontend
+  // Generate order number at frontend (không có dấu gạch ngang để khớp với Casso)
   const generateOrderNumber = () => {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
     const timeStr = now.getTime().toString().slice(-6); // 6 số cuối timestamp
-    return `ORD-${dateStr}-${timeStr}`;
+    return `ORD${dateStr}${timeStr}`; // Không có dấu gạch ngang
   };
   
   const [frontendOrderNumber] = useState(() => generateOrderNumber());
@@ -251,14 +251,25 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
-    // Nếu chọn chuyển khoản thì hiển thị QR payment với mã đơn frontend
+    // Nếu chọn chuyển khoản: TẠO ORDER TRƯỚC, sau đó hiển thị QR
     if (paymentMethod === 'transfer') {
-      console.log('🔄 [TRANSFER] Showing QR with frontend order number:', frontendOrderNumber);
-      setShowQRPayment(true);
+      console.log('🔄 [TRANSFER] Creating order first with order number:', frontendOrderNumber);
+      
+      try {
+        // Tạo đơn hàng trước với payment method = "banking"
+        await processOrder();
+        
+        // Sau khi tạo order thành công, hiển thị CassoPayment để scan QR
+        console.log('✅ [TRANSFER] Order created, showing CassoPayment modal');
+        setShowQRPayment(true);
+      } catch (error) {
+        console.error('❌ [TRANSFER] Failed to create order:', error);
+        alert('Không thể tạo đơn hàng. Vui lòng thử lại!');
+      }
       return;
     }
 
-    // Chỉ xử lý đặt hàng cho COD
+    // Xử lý đặt hàng cho COD
     await processOrder();
   };
 
@@ -385,6 +396,14 @@ const CheckoutPage: React.FC = () => {
       const result = await orderService.createOrder(orderData);
       console.log('✅ Đặt hàng thành công:', result);
 
+      // Nếu là chuyển khoản, KHÔNG làm trống giỏ hàng và KHÔNG hiển thị alert
+      // Vì sẽ hiển thị QR code để user scan
+      if (paymentMethod === 'transfer') {
+        console.log('🔄 [TRANSFER] Order created, keeping cart for QR payment');
+        return; // Không làm gì thêm, để CassoPayment modal xử lý
+      }
+
+      // Chỉ làm trống giỏ hàng và hiển thị alert cho COD
       // Làm trống giỏ hàng - cập nhật UI ngay lập tức
       setCart(null);
       // Đồng thời cập nhật lại số lượng giỏ hàng trong context hoặc localStorage ngay lập tức
@@ -1293,9 +1312,10 @@ const CheckoutPage: React.FC = () => {
         </div>
       </main>
 
-      {/* QR Payment Modal */}
-      {showQRPayment && (
-        <QRPayment 
+      {/* Casso Payment Modal - Tự động xác nhận thanh toán */}
+      {showQRPayment && cart && (
+        <CassoPayment 
+          orderNumber={frontendOrderNumber}
           amount={(() => {
             // Sử dụng cùng logic tính toán như phần hiển thị UI
             const subtotal = cart?.summary.subtotal || 0;
@@ -1314,7 +1334,7 @@ const CheckoutPage: React.FC = () => {
             const totalDiscount = loyaltyDiscount + couponDiscount;
             const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
             
-            console.log('🔍 [QR Payment Amount] Final calculation:', {
+            console.log('🔍 [Casso Payment Amount] Final calculation:', {
               subtotal,
               tax,
               deliveryFee,
@@ -1324,32 +1344,44 @@ const CheckoutPage: React.FC = () => {
               totalDiscount,
               finalTotal,
               membershipLevel,
-              frontendOrderNumber
+              frontendOrderNumber,
+              cartSummary: cart.summary,
+              cartItems: cart.items?.length
             });
             
-            return finalTotal;
+            const amount = Math.max(0, finalTotal);
+            console.log('💰 [Casso Payment] Final amount to pay:', amount);
+            return amount;
           })()}
-          orderCode={frontendOrderNumber}
-          orderInfo={`Thanh toán đơn hàng ${frontendOrderNumber} - ${customerInfo.name || 'GUEST'}`}
-          onPaymentSuccess={async (paymentData: any) => {
-            console.log('🎯 [Checkout] QR Payment confirmed:', paymentData);
-            console.log('🔄 [Checkout] Creating order with frontend order number:', frontendOrderNumber);
+          onPaymentConfirmed={(transaction: any) => {
+            console.log('🎉 [Checkout] Payment confirmed by Casso:', transaction);
+            console.log('💳 Transaction details:', transaction);
             
-            try {
-              // Sau khi thanh toán thành công, tạo đơn hàng với mã đã có
-              await processOrder();
-              
-              alert(`Thanh toán thành công! Mã đơn hàng: ${frontendOrderNumber}`);
-              
-              // Chuyển hướng về trang chủ
+            // Clear cart
+            updateCartCount(0);
+            
+            // Hiển thị thông báo thành công
+            alert(`🎉 Thanh toán thành công!\n\nMã đơn hàng: ${frontendOrderNumber}\nSố tiền: ${transaction?.amount?.toLocaleString()} VNĐ\n\nĐơn hàng của bạn đang được xử lý.`);
+            
+            // Chuyển hướng về trang chủ
+            navigate('/');
+          }}
+          onClose={() => {
+            console.log('⚠️ [Checkout] CassoPayment closed by user');
+            // Nếu user đóng modal, có thể họ đã chuyển khoản nhưng chưa verify
+            // Đơn hàng đã được tạo, nên redirect về orders để xem status
+            const shouldRedirect = window.confirm(
+              'Bạn đã chuyển khoản chưa?\n\n' +
+              'Nếu đã chuyển khoản, hệ thống sẽ tự động xác nhận trong vài phút.\n\n' +
+              'Nhấn OK để về trang chủ.'
+            );
+            
+            if (shouldRedirect) {
               navigate('/');
-            } catch (error) {
-              console.error('❌ [Checkout] Order creation failed:', error);
-              alert('Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!');
+            } else {
               setShowQRPayment(false);
             }
           }}
-          onClose={() => setShowQRPayment(false)}
         />
       )}
 

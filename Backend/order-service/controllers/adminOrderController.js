@@ -1,4 +1,5 @@
 const { validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const menuApiClient = require("../services/menuApiClient");
 const inventoryApiClient = require("../services/inventoryApiClient");
@@ -297,6 +298,15 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Update status và timeline
     order.status = status;
+    
+    // Nếu trạng thái đơn hàng là "completed" hoặc "delivered", tự động cập nhật trạng thái thanh toán thành "paid"
+    if ((status === 'completed' || status === 'delivered') && order.payment?.status !== 'paid') {
+      order.payment.method = 'banking'; // Cập nhật phương thức thanh toán
+      order.payment.status = 'paid';
+      order.payment.paidAt = new Date();
+      console.log(`✅ [ADMIN ORDER] Auto-updated payment method to 'banking' and status to 'paid' for ${status} order ${order.orderNumber}`);
+    }
+    
     order.timeline.push({
       status,
       timestamp: new Date(),
@@ -371,6 +381,104 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi cập nhật trạng thái",
+      error: error.message,
+    });
+  }
+};
+
+// 💳 Cập nhật trạng thái các đơn gốc khi thanh toán tổng thành công
+exports.updateTablePaymentOrders = async (req, res) => {
+  try {
+    const { tablePaymentOrderId } = req.params;
+
+    console.log(`💳 [ADMIN] ===== UPDATE TABLE PAYMENT ORDERS START =====`);
+    console.log(`💳 [ADMIN] Request params:`, req.params);
+    console.log(`💳 [ADMIN] Request body:`, req.body);
+    console.log(`💳 [ADMIN] Updating original orders for table payment: ${tablePaymentOrderId}`);
+
+    // Tìm table payment order
+    const tablePaymentOrder = await Order.findById(tablePaymentOrderId);
+    if (!tablePaymentOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đơn thanh toán tổng",
+      });
+    }
+
+    // Kiểm tra xem có phải table payment order không
+    if (!tablePaymentOrder.tablePaymentData?.isTablePayment || !tablePaymentOrder.tablePaymentData?.originalOrderIds) {
+      return res.status(400).json({
+        success: false,
+        message: "Đơn hàng này không phải là đơn thanh toán tổng",
+      });
+    }
+
+    // Tìm các đơn gốc
+    const originalOrders = await Order.find({
+      _id: { $in: tablePaymentOrder.tablePaymentData.originalOrderIds }
+    });
+
+    console.log(`💳 [ADMIN] Found ${originalOrders.length} original orders to update`);
+
+    const updatedOrders = [];
+
+    for (const originalOrder of originalOrders) {
+      // Cập nhật payment method và status
+      originalOrder.payment.method = 'banking'; // Cập nhật phương thức thanh toán
+      originalOrder.payment.status = 'paid';
+      originalOrder.payment.transactionId = tablePaymentOrder.payment.transactionId;
+      originalOrder.payment.paidAt = tablePaymentOrder.payment.paidAt;
+      originalOrder.payment.cassoData = {
+        ...tablePaymentOrder.payment.cassoData,
+        paidViaTablePayment: tablePaymentOrder.orderNumber
+      };
+
+      // Cập nhật order status thành completed (vì đã thanh toán xong)
+      if (originalOrder.status === "pending" || originalOrder.status === "confirmed") {
+        await originalOrder.updateStatus("completed", `Thanh toán đã được xác nhận qua đơn thanh toán tổng ${tablePaymentOrder.orderNumber}`);
+      }
+
+      await originalOrder.save();
+      updatedOrders.push({
+        orderNumber: originalOrder.orderNumber,
+        status: originalOrder.status,
+        paymentStatus: originalOrder.payment.status
+      });
+
+      console.log(`✅ [ADMIN] Updated original order ${originalOrder.orderNumber} to paid`);
+    }
+
+    console.log(`✅ [ADMIN] All ${updatedOrders.length} original orders updated to paid`);
+    
+    // Cập nhật table payment order thành completed
+    if (tablePaymentOrder.status === "pending" || tablePaymentOrder.status === "confirmed") {
+      await tablePaymentOrder.updateStatus("completed", `Thanh toán tổng bàn đã hoàn thành - ${updatedOrders.length} đơn hàng đã được thanh toán`);
+      console.log(`✅ [ADMIN] Updated table payment order ${tablePaymentOrder.orderNumber} to completed`);
+    }
+
+    console.log(`💳 [ADMIN] ===== UPDATE TABLE PAYMENT ORDERS SUCCESS =====`);
+    console.log(`💳 [ADMIN] Updated ${updatedOrders.length} original orders`);
+    console.log(`💳 [ADMIN] Table payment order status: ${tablePaymentOrder.status}`);
+    console.log(`💳 [ADMIN] Updated orders:`, updatedOrders);
+
+    res.json({
+      success: true,
+      message: `Đã cập nhật ${updatedOrders.length} đơn hàng gốc và đơn thanh toán tổng`,
+      data: {
+        tablePaymentOrder: {
+          orderNumber: tablePaymentOrder.orderNumber,
+          status: tablePaymentOrder.status,
+          paymentStatus: tablePaymentOrder.payment.status
+        },
+        updatedOrders
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ [ADMIN] Update table payment orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi cập nhật đơn hàng gốc",
       error: error.message,
     });
   }
@@ -485,9 +593,141 @@ exports.getOrderDashboard = async (req, res) => {
   }
 };
 
+// 💳 Tạo đơn hàng thanh toán tổng cho bàn
+exports.createTablePaymentOrder = async (req, res) => {
+  try {
+    const {
+      orderNumber,
+      tableNumber,
+      totalAmount,
+      originalOrderIds,
+      notes,
+      payment
+    } = req.body;
+
+    console.log("💳 [TABLE PAYMENT] Creating table payment order:", {
+      orderNumber,
+      tableNumber,
+      totalAmount,
+      originalOrderIds: originalOrderIds?.length || 0
+    });
+
+    // Validate input
+    if (!orderNumber || !tableNumber || !totalAmount || !originalOrderIds?.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin bắt buộc: orderNumber, tableNumber, totalAmount, originalOrderIds"
+      });
+    }
+
+    // Verify original orders exist and belong to the same table
+    const originalOrders = await Order.find({
+      _id: { $in: originalOrderIds },
+      'diningInfo.tableInfo.tableNumber': tableNumber,
+      'payment.status': { $ne: 'paid' }
+    });
+
+    if (originalOrders.length !== originalOrderIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Một số đơn hàng không tồn tại hoặc đã được thanh toán"
+      });
+    }
+
+    // Create table payment order
+    const tablePaymentOrder = new Order({
+      orderNumber,
+      sessionId: `table_payment_${tableNumber}_${Date.now()}`,
+      customerInfo: {
+        name: `Khách tại bàn ${tableNumber}`,
+        email: "guest@restaurant.local",
+        phone: "0000000000"
+      },
+      delivery: {
+        type: 'dine_in',
+        address: {
+          full: 'N/A'
+        }
+      },
+      diningInfo: {
+        tableInfo: {
+          tableNumber: tableNumber,
+          location: 'indoor'
+        },
+        serviceType: 'table_service'
+      },
+      items: [{
+        name: `Thanh toán tổng bàn ${tableNumber}`,
+        quantity: 1,
+        price: totalAmount,
+        total: totalAmount,
+        category: 'table_payment',
+        menuItemId: new mongoose.Types.ObjectId()
+      }],
+      pricing: {
+        subtotal: totalAmount,
+        tax: 0,
+        discount: 0,
+        deliveryFee: 0,
+        total: totalAmount
+      },
+      status: 'pending',
+      payment: {
+        method: payment?.method || 'banking',
+        status: payment?.status || 'awaiting_payment'
+      },
+      notes: {
+        customer: notes?.customer || `Bàn ${tableNumber} thanh toán tổng tiền`,
+        kitchen: notes?.kitchen || `Tổng hợp ${originalOrders.length} đơn hàng bàn ${tableNumber}`,
+        delivery: notes?.delivery || `Thanh toán tổng bàn ${tableNumber}`
+      },
+      timeline: [{
+        status: 'pending',
+        timestamp: new Date(),
+        note: `Đơn thanh toán tổng bàn ${tableNumber} được tạo`,
+        updatedBy: 'admin'
+      }],
+      // Store reference to original orders
+      tablePaymentData: {
+        originalOrderIds: originalOrderIds,
+        tableNumber: tableNumber,
+        isTablePayment: true
+      }
+    });
+
+    await tablePaymentOrder.save();
+
+    console.log("✅ [TABLE PAYMENT] Table payment order created:", {
+      orderId: tablePaymentOrder._id,
+      orderNumber: tablePaymentOrder.orderNumber,
+      totalAmount: tablePaymentOrder.pricing.total
+    });
+
+    res.json({
+      success: true,
+      message: `Đã tạo đơn thanh toán tổng cho bàn ${tableNumber}`,
+      data: {
+        order: tablePaymentOrder,
+        originalOrdersCount: originalOrders.length,
+        totalAmount: totalAmount
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ [TABLE PAYMENT] Error creating table payment order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi tạo đơn thanh toán tổng",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createAdminOrder: exports.createAdminOrder,
   getAdminOrders: exports.getAdminOrders,
   updateOrderStatus: exports.updateOrderStatus,
   getOrderDashboard: exports.getOrderDashboard,
+  createTablePaymentOrder: exports.createTablePaymentOrder,
+  updateTablePaymentOrders: exports.updateTablePaymentOrders,
 };

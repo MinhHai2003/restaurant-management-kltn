@@ -25,6 +25,7 @@ exports.createOrder = async (req, res) => {
       coupon,
       customerInfo,
       orderNumber,
+      tablePaymentData,
     } = req.body;
 
     // 1. Validate customer (skip for guest users)
@@ -215,7 +216,52 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // 7. Create order
+    // 7. Handle table payment data
+    let finalTablePaymentData = tablePaymentData;
+    if (tablePaymentData?.isTablePayment && tablePaymentData?.tableNumber) {
+      console.log('💳 [TABLE PAYMENT] Processing table payment order for table:', tablePaymentData.tableNumber);
+      console.log('🔍 [TABLE PAYMENT] tablePaymentData received:', JSON.stringify(tablePaymentData, null, 2));
+      
+      // Tìm tất cả đơn hàng chưa thanh toán của bàn này
+      const query = {
+        'diningInfo.tableInfo.tableNumber': tablePaymentData.tableNumber,
+        $or: [
+          { 'payment.status': { $nin: ['paid', 'completed'] } },
+          { 'payment.status': { $exists: false } },
+          { 'paymentStatus': { $nin: ['paid', 'completed'] } },
+          { 'paymentStatus': { $exists: false } }
+        ],
+        status: { $in: ['pending', 'confirmed', 'preparing', 'ready', 'ordered'] }
+      };
+      
+      console.log('🔍 [TABLE PAYMENT] Query used:', JSON.stringify(query, null, 2));
+      
+      const allTableOrders = await Order.find(query);
+      
+      console.log(`💳 [TABLE PAYMENT] Found ${allTableOrders.length} unpaid orders for table ${tablePaymentData.tableNumber}`);
+      
+      // Debug: Log cấu trúc đơn hàng để kiểm tra
+      if (allTableOrders.length > 0) {
+        console.log('💳 [TABLE PAYMENT] Sample order structure:', {
+          _id: allTableOrders[0]._id,
+          orderNumber: allTableOrders[0].orderNumber,
+          diningInfo: allTableOrders[0].diningInfo,
+          delivery: allTableOrders[0].delivery,
+          payment: allTableOrders[0].payment,
+          status: allTableOrders[0].status
+        });
+      }
+      
+      // Cập nhật originalOrderIds với tất cả đơn hàng của bàn
+      finalTablePaymentData = {
+        ...tablePaymentData,
+        originalOrderIds: allTableOrders.map(order => order._id.toString())
+      };
+      
+      console.log('💳 [TABLE PAYMENT] Updated originalOrderIds:', finalTablePaymentData.originalOrderIds);
+    }
+
+    // 8. Create order
     const orderData = {
       orderNumber: orderNumber || Order.generateOrderNumber(), // Use frontend orderNumber if provided, otherwise generate
       customerId: req.customerId || null, // null for guest users
@@ -264,6 +310,7 @@ exports.createOrder = async (req, res) => {
       requiresAge18: await menuApiClient.checkAgeRestriction(
         validatedItems.items.map((item) => item.menuItemId)
       ),
+      tablePaymentData: finalTablePaymentData,
     };
 
     const order = new Order(orderData);
@@ -472,7 +519,14 @@ exports.createOrder = async (req, res) => {
         order.payment.status = paymentResult.status;
         order.payment.transactionId = paymentResult.transactionId;
         order.payment.paidAt = paymentResult.paidAt;
-        await order.updateStatus("confirmed", "Payment processed successfully");
+        
+        // For banking method via Casso, keep as pending and wait for webhook
+        if (payment.method === "banking" && paymentResult.status === "awaiting_payment") {
+          console.log(`💳 [ORDER] Banking payment initiated for order ${order.orderNumber}, awaiting Casso confirmation`);
+          // Don't update status to confirmed yet, wait for Casso webhook
+        } else {
+          await order.updateStatus("confirmed", "Payment processed successfully");
+        }
       } else {
         await order.updateStatus(
           "cancelled",

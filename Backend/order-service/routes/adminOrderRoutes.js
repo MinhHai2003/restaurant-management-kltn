@@ -6,6 +6,8 @@ const {
   getAdminOrders,
   updateOrderStatus,
   getOrderDashboard,
+  createTablePaymentOrder,
+  updateTablePaymentOrders,
 } = require("../controllers/adminOrderController");
 
 // Validation rules cho admin order
@@ -76,5 +78,11 @@ router.patch(
   updateOrderStatusValidation,
   updateOrderStatus
 );
+
+// 💳 Tạo đơn hàng thanh toán tổng cho bàn
+router.post("/table-payment", createTablePaymentOrder);
+
+// 💳 Cập nhật trạng thái các đơn gốc khi thanh toán tổng thành công
+router.patch("/table-payment/:tablePaymentOrderId/update-original-orders", updateTablePaymentOrders);
 
 module.exports = router;

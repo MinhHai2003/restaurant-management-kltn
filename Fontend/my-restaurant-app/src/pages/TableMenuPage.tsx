@@ -4,6 +4,8 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { menuService } from '../services/menuService';
 import QRPayment from '../components/QRPayment';
+import CassoPayment from '../components/CassoPayment';
+import orderService, { type CreateOrderResponse } from '../services/orderService';
 import { useCart } from '../contexts/CartContext';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 
@@ -60,6 +62,11 @@ const TableMenuPage: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [tableSession, setTableSession] = useState<TableSession | null>(null);
+  
+  // Debug: Log tableSession changes
+  useEffect(() => {
+    console.log('🔄 [STATE] tableSession updated:', tableSession);
+  }, [tableSession]);
   const [sessionPayMethod, setSessionPayMethod] = useState<'cash' | 'banking' | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,6 +80,10 @@ const TableMenuPage: React.FC = () => {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | null>(null);
   const [isSessionPayment, setIsSessionPayment] = useState(false); // Track if paying for entire session
+  
+  // Table Payment States
+  const [showTablePayment, setShowTablePayment] = useState(false);
+  const [tablePaymentOrder, setTablePaymentOrder] = useState<any>(null);
 
   // Customer Info for session
   const [customerInfo, setCustomerInfo] = useState({
@@ -94,6 +105,132 @@ const TableMenuPage: React.FC = () => {
   };
 
   const [sessionOrderNumber] = useState(() => generateSessionOrderNumber());
+
+  // Generate table payment order number
+  const generateTablePaymentOrderNumber = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const timeStr = now.getTime().toString().slice(-6);
+    return `BAN${tableNumber}${dateStr}${timeStr}`;
+  };
+
+  // Create table payment order using orderService (same as CheckoutPage)
+  const createTablePaymentOrder = async () => {
+    try {
+      if (!tableSession?.orders?.length) {
+        alert('Không có đơn hàng nào để thanh toán');
+        return;
+      }
+
+      const totalAmount = tableSession.orders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+      const orderNumber = generateTablePaymentOrderNumber();
+      
+      console.log('💳 [TABLE PAYMENT] Creating order with orderService...', {
+        orderNumber,
+        tableNumber,
+        totalAmount,
+        ordersCount: tableSession.orders.length
+      });
+      
+      // Debug: Kiểm tra tableNumber
+      console.log('🔍 [TABLE PAYMENT] tableNumber from useParams:', tableNumber);
+      console.log('🔍 [TABLE PAYMENT] typeof tableNumber:', typeof tableNumber);
+      
+      // Debug table session structure
+      console.log('🔍 [TABLE PAYMENT] Table session orders:', tableSession.orders);
+      console.log('🔍 [TABLE PAYMENT] First order items:', tableSession.orders[0]?.items);
+      console.log('🔍 [TABLE PAYMENT] First item menuItemId:', tableSession.orders[0]?.items?.[0]?.menuItemId);
+
+      // Get a valid menu item ID from the first order
+      const firstOrder = tableSession.orders[0];
+      const firstItem = firstOrder?.items?.[0];
+      const menuItemId = firstItem?.menuItemId;
+      
+      if (!menuItemId) {
+        throw new Error('Không tìm thấy menu item ID hợp lệ');
+      }
+
+      // Prepare order data similar to CheckoutPage
+      const orderData = {
+        orderNumber, // Frontend generated order number
+        items: [{
+          menuItemId: menuItemId, // Use real menu item ID from first order
+          quantity: 1,
+          customizations: "",
+          notes: `Thanh toán tổng bàn ${tableNumber} - ${tableSession.orders.length} đơn hàng`
+        }],
+        delivery: {
+          type: 'pickup', // Use 'pickup' instead of 'dine_in' to pass validation
+          address: {
+            full: `Bàn ${tableNumber}`,
+            district: 'N/A',
+            city: 'N/A'
+          },
+          instructions: `Thanh toán tổng bàn ${tableNumber}`
+        },
+        payment: {
+          method: 'banking' // Same as CheckoutPage for transfer
+        },
+        notes: {
+          customer: `Bàn ${tableNumber} thanh toán tổng tiền`,
+          kitchen: `Tổng hợp ${tableSession.orders.length} đơn hàng bàn ${tableNumber}`,
+          delivery: `Thanh toán tổng bàn ${tableNumber}`
+        },
+        // Add customer info for guest users (required by backend validation)
+        customerInfo: {
+          name: `Khách bàn ${tableNumber}`,
+          email: `table${tableNumber}@restaurant.com`,
+          phone: '0000000000'
+        },
+        // Add table payment metadata
+        tablePaymentData: {
+          isTablePayment: true,
+          originalOrderIds: tableSession.orders.map(order => order._id), // Sẽ được cập nhật bởi backend
+          tableNumber: tableNumber
+        },
+        // Add calculated pricing
+        frontendPricing: {
+          subtotal: totalAmount,
+          tax: 0,
+          deliveryFee: 0,
+          loyaltyDiscount: 0,
+          couponDiscount: 0,
+          total: totalAmount,
+          membershipLevel: 'bronze',
+          breakdown: {
+            originalDeliveryFee: 0,
+            freeShipping: false
+          }
+        }
+      };
+
+      console.log('📤 [TABLE PAYMENT] Sending order data:', JSON.stringify(orderData, null, 2));
+
+      // Use orderService.createOrder() - same as CheckoutPage
+      const result = await orderService.createOrder(orderData);
+      console.log('✅ [TABLE PAYMENT] Order created successfully:', result);
+      console.log('🔍 [TABLE PAYMENT] Full result:', JSON.stringify(result, null, 2));
+
+      // Check if order was created successfully (even if validation had warnings)
+      if (result && result.success && result.data && result.data.order) {
+        const order = result.data.order;
+        setTablePaymentOrder(order);
+        setShowTablePayment(true);
+        
+        // Show success message
+        alert(`✅ Tạo đơn thanh toán tổng thành công!\nMã đơn: ${order.orderNumber || orderNumber}\nTổng tiền: ${totalAmount.toLocaleString()}₫`);
+        return order;
+      } else {
+        console.error('❌ [TABLE PAYMENT] Validation errors:', result?.errors);
+        console.error('❌ [TABLE PAYMENT] Error message:', result?.error);
+        console.error('❌ [TABLE PAYMENT] Full result structure:', result);
+        throw new Error(result?.error || result?.message || 'Failed to create table payment order');
+      }
+    } catch (error) {
+      console.error('❌ [TABLE PAYMENT] Error creating order:', error);
+      alert('❌ Lỗi tạo đơn thanh toán tổng: ' + (error as Error).message);
+    }
+  };
 
   // Load table info and start session
   useEffect(() => {
@@ -166,15 +303,15 @@ const TableMenuPage: React.FC = () => {
           } else if (menuData.data.items && Array.isArray(menuData.data.items)) {
             allItems = menuData.data.items;
             console.log('🍽️ [MENU] Using menuData.data.items');
-          } else if (menuData.data.menuItems && Array.isArray(menuData.data.menuItems)) {
-            allItems = menuData.data.menuItems;
+          } else if ((menuData.data as any).menuItems && Array.isArray((menuData.data as any).menuItems)) {
+            allItems = (menuData.data as any).menuItems;
             console.log('🍽️ [MENU] Using menuData.data.menuItems');
           } else {
             console.log('🍽️ [MENU] Trying to find items in:', Object.keys(menuData.data));
             // Try to find any array in the data
             for (const key of Object.keys(menuData.data)) {
-              if (Array.isArray(menuData.data[key])) {
-                allItems = menuData.data[key];
+              if (Array.isArray((menuData.data as any)[key])) {
+                allItems = (menuData.data as any)[key];
                 console.log(`🍽️ [MENU] Found items array in: ${key}`);
                 break;
               }
@@ -318,14 +455,14 @@ const TableMenuPage: React.FC = () => {
   // Calculate total for all unpaid, non-cancelled orders of this table
   const calculateTableTotal = async () => {
     const orders = await loadTableOrders();
-    const unpaidOrders = orders.filter(order =>
+    const unpaidOrders = orders.filter((order: any) =>
       order.payment?.status !== 'completed' &&
       order.payment?.status !== 'paid' &&
       order.status !== 'completed' &&
       order.status !== 'canceled'
     );
 
-    return unpaidOrders.reduce((total, order) => {
+    return unpaidOrders.reduce((total: number, order: any) => {
       return total + (order.pricing?.total || 0);
     }, 0);
   };
@@ -337,7 +474,7 @@ const TableMenuPage: React.FC = () => {
     const orders = await loadTableOrders();
     console.log('📋 [SESSION PAYMENT] Loaded orders:', orders.length, orders);
 
-    const unpaidOrders = orders.filter(order =>
+    const unpaidOrders = orders.filter((order: any) =>
       order.payment?.status !== 'completed' &&
       order.payment?.status !== 'paid' &&
       order.status !== 'completed' &&
@@ -351,7 +488,7 @@ const TableMenuPage: React.FC = () => {
       return;
     }
 
-    const totalAmount = unpaidOrders.reduce((total, order) => {
+    const totalAmount = unpaidOrders.reduce((total: number, order: any) => {
       return total + (order.pricing?.total || 0);
     }, 0);
 
@@ -362,7 +499,10 @@ const TableMenuPage: React.FC = () => {
 
     // Update table session state with all orders
     setTableSession(prev => ({
-      ...prev,
+      sessionId: prev?.sessionId || `session_${Date.now()}`,
+      tableNumber: prev?.tableNumber || String(tableNumber),
+      startTime: prev?.startTime || new Date().toISOString(),
+      status: prev?.status || 'active',
       orders: unpaidOrders,
       totalAmount: totalAmount
     }));
@@ -393,14 +533,19 @@ const TableMenuPage: React.FC = () => {
         const ordersResult = await ordersResponse.json();
         // Lọc chỉ các đơn chưa hoàn thành và chưa hủy
         const allOrders = ordersResult.data?.orders || [];
+        console.log('🔍 [REFRESH] All orders found:', allOrders.length);
+        console.log('🔍 [REFRESH] Sample order:', allOrders[0]);
+        
         unpaidOrders = allOrders.filter((o: any) =>
           o.payment?.status !== 'completed' &&
           o.payment?.status !== 'paid' &&
           o.status !== 'completed' &&
           o.status !== 'canceled'
         );
+        
+        console.log('🔍 [REFRESH] Unpaid orders after filter:', unpaidOrders.length);
         console.log('📋 [REFRESH] Found orders for table:', unpaidOrders.length, unpaidOrders);
-        console.log('📋 [REFRESH] Orders detail:', unpaidOrders.map(o => ({ id: o._id, amount: o.pricing?.total, status: o.payment?.status })));
+        console.log('📋 [REFRESH] Orders detail:', unpaidOrders.map((o: any) => ({ id: o._id, amount: o.pricing?.total, status: o.payment?.status })));
       } else {
         console.error('❌ [REFRESH] Failed to fetch orders:', ordersResponse.status);
         const errorText = await ordersResponse.text();
@@ -408,18 +553,26 @@ const TableMenuPage: React.FC = () => {
       }
 
       // Update session with unpaid orders
+      console.log('🔍 [REFRESH] currentSession:', currentSession);
+      console.log('🔍 [REFRESH] unpaidOrders.length:', unpaidOrders.length);
+      
       if (currentSession && unpaidOrders.length > 0) {
+        console.log('✅ [REFRESH] Updating existing session with orders');
         currentSession.orders = unpaidOrders;
-        currentSession.totalAmount = unpaidOrders.reduce((total, order) => {
+        currentSession.totalAmount = unpaidOrders.reduce((total: number, order: any) => {
           return total + (order.pricing?.total || 0);
         }, 0);
+        console.log('🔍 [REFRESH] Updated session before setTableSession:', currentSession);
         setTableSession(currentSession);
+        console.log('✅ [REFRESH] setTableSession called');
       } else if (currentSession) {
+        console.log('⚠️ [REFRESH] Session exists but no unpaid orders');
         // Session exists but no unpaid orders
         currentSession.orders = [];
         currentSession.totalAmount = 0;
         setTableSession(currentSession);
       } else {
+        console.log('🆕 [REFRESH] No session, creating recovered session');
         // Không có session nhưng vẫn còn unpaid orders từ phiên cũ → tạo phiên tạm để hiển thị và cho phép thanh toán tổng
         if (unpaidOrders.length > 0) {
           const recoveredSession = {
@@ -428,8 +581,9 @@ const TableMenuPage: React.FC = () => {
             startTime: new Date().toISOString(),
             status: 'active' as const,
             orders: unpaidOrders,
-            totalAmount: unpaidOrders.reduce((total, order) => total + (order.pricing?.total || 0), 0)
+            totalAmount: unpaidOrders.reduce((total: number, order: any) => total + (order.pricing?.total || 0), 0)
           };
+          console.log('✅ [REFRESH] Created recovered session:', recoveredSession);
           setTableSession(recoveredSession as unknown as TableSession);
         } else {
           setTableSession(null);
@@ -772,14 +926,14 @@ const TableMenuPage: React.FC = () => {
                     <button
                       onClick={async () => {
                         console.log('🎯 [BUTTON CLICK] THANH TOÁN TỔNG TẤT CẢ clicked');
-                        // Luôn tải lại toàn bộ đơn chưa thanh toán
-                        await handleSessionPayment();
-                        // Nhánh xử lý theo phương thức đã chọn
+                        
                         if (!sessionPayMethod) {
                           alert('Vui lòng chọn phương thức thanh toán (Tiền mặt hoặc Chuyển khoản)!');
                           return;
                         }
+                        
                         if (sessionPayMethod === 'cash') {
+                          // Xử lý thanh toán tiền mặt như cũ
                           try {
                             const res = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
                               method: 'PATCH',
@@ -803,8 +957,8 @@ const TableMenuPage: React.FC = () => {
                             alert('Lỗi mạng khi thanh toán tiền mặt');
                           }
                         } else if (sessionPayMethod === 'banking') {
-                          setIsSessionPayment(true);
-                          setShowPayment(true);
+                          // Tạo đơn hàng thanh toán tổng và hiển thị CassoPayment
+                          await createTablePaymentOrder();
                         }
                       }}
                       style={{
@@ -1393,6 +1547,61 @@ const TableMenuPage: React.FC = () => {
           onClose={() => {
             setShowPayment(false);
             setIsSessionPayment(false);
+          }}
+        />
+      )}
+
+      {/* Table Payment Modal */}
+      {showTablePayment && tablePaymentOrder && (
+        <CassoPayment
+          orderNumber={tablePaymentOrder.orderNumber}
+          amount={tablePaymentOrder.total || 0}
+          onPaymentConfirmed={async (transaction) => {
+            console.log('✅ [TABLE PAYMENT] Payment confirmed:', transaction);
+            
+            try {
+              // Sử dụng API /complete giống như thanh toán tiền mặt
+              console.log('🔄 [TABLE PAYMENT] Completing table payment...');
+              
+              const res = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentMethod: 'banking',
+                  paymentData: { method: 'banking' },
+                  totalAmount: tablePaymentOrder.total || 0
+                })
+              });
+              
+              if (res.ok) {
+                console.log('✅ [TABLE PAYMENT] Table payment completed successfully');
+              } else {
+                const errorText = await res.text();
+                console.error('❌ [TABLE PAYMENT] Complete error:', errorText);
+                alert('Lỗi xác nhận thanh toán chuyển khoản');
+                return;
+              }
+            } catch (error) {
+              console.error('❌ [TABLE PAYMENT] Error completing payment:', error);
+              alert('Lỗi mạng khi thanh toán chuyển khoản');
+              return;
+            }
+            
+            alert(`Thanh toán tổng bàn ${tableNumber} thành công!\nTổng tiền: ${formatPrice(tablePaymentOrder.total || 0)}`);
+            
+            // Refresh table session
+            refreshTableSession();
+            
+            // Close modal
+            setShowTablePayment(false);
+            setTablePaymentOrder(null);
+            
+            // Navigate to home after 3 seconds
+            setTimeout(() => navigate('/'), 3000);
+          }}
+          onClose={() => {
+            setShowTablePayment(false);
+            setTablePaymentOrder(null);
           }}
         />
       )}

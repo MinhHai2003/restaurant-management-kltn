@@ -12,11 +12,15 @@ interface OrderData {
   frontendPricing?: any;
 }
 
-interface CreateOrderResponse {
+export interface CreateOrderResponse {
   success: boolean;
   order?: any;
+  data?: {
+    order?: any;
+  };
   message?: string;
   error?: string;
+  errors?: any[];
 }
 
 class OrderService {
@@ -182,6 +186,55 @@ class OrderService {
       return result;
     } catch (error) {
       console.error('❌ Error reordering:', error);
+      throw error;
+    }
+  }
+
+  async updateOrderStatus(orderId: string, status: string, note?: string): Promise<any> {
+    try {
+      console.log('🔄 [OrderService] Updating order status:', { orderId, status, note });
+      
+      const response = await fetch(`http://localhost:5005/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify({ status, note }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ [OrderService] Update status failed:', errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [OrderService] Order status updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [OrderService] Error updating order status:', error);
+      throw error;
+    }
+  }
+
+  async updateTablePaymentOrders(tablePaymentOrderId: string): Promise<any> {
+    try {
+      console.log('💳 [OrderService] Updating original orders for table payment:', tablePaymentOrderId);
+      
+      const response = await fetch(`http://localhost:5005/api/admin/orders/table-payment/${tablePaymentOrderId}/update-original-orders`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ [OrderService] Update table payment orders failed:', errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [OrderService] Table payment orders updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [OrderService] Error updating table payment orders:', error);
       throw error;
     }
   }

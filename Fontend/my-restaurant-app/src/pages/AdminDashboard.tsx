@@ -467,11 +467,22 @@ const AdminDashboard: React.FC = () => {
         if (data.success) {
           // Cập nhật trạng thái trong danh sách local
           setOrdersList(prevOrders =>
-            prevOrders.map((order: Order) =>
-              order._id === orderId
-                ? { ...order, status: newStatus }
-                : order
-            )
+            prevOrders.map((order: Order) => {
+              if (order._id === orderId) {
+                // Nếu trạng thái đơn hàng là "completed" hoặc "delivered", tự động cập nhật trạng thái thanh toán thành "paid"
+                const updatedOrder = { ...order, status: newStatus };
+                if ((newStatus === 'completed' || newStatus === 'delivered') && order.payment?.status !== 'paid') {
+                  updatedOrder.payment = {
+                    ...order.payment,
+                    method: 'banking',
+                    status: 'paid'
+                  };
+                  console.log(`✅ Auto-updated payment method to 'banking' and status to 'paid' for ${newStatus} order ${order.orderNumber}`);
+                }
+                return updatedOrder;
+              }
+              return order;
+            })
           );
 
           // Reload dashboard stats để cập nhật số liệu
@@ -596,7 +607,7 @@ const AdminDashboard: React.FC = () => {
         throw new Error(errorData.message || 'Lỗi tạo bàn');
       }
 
-      const newTable = await response.json();
+      await response.json();
 
       // Fetch lại danh sách bàn để đảm bảo dữ liệu đồng bộ
       await loadTables();
@@ -615,7 +626,7 @@ const AdminDashboard: React.FC = () => {
       alert('✅ Tạo bàn thành công!');
     } catch (error) {
       console.error('Error creating table:', error);
-      alert('❌ Lỗi tạo bàn: ' + error.message);
+      alert('❌ Lỗi tạo bàn: ' + (error as Error).message);
     } finally {
       setCreatingTable(false);
     }
@@ -1720,7 +1731,7 @@ const AdminDashboard: React.FC = () => {
                   padding: '12px',
                   borderBottom: '1px solid #e5e5e5',
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 1.1fr 1fr 0.8fr',
+                  gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 0.9fr 1.1fr 1fr 0.8fr',
                   gap: '10px',
                   fontSize: '12px',
                   fontWeight: '600',
@@ -1733,6 +1744,7 @@ const AdminDashboard: React.FC = () => {
                   <div>Loại</div>
                   <div>Tổng tiền</div>
                   <div>Phương thức TT</div>
+                  <div>Trạng thái TT</div>
                   <div>Ghi chú</div>
                   <div>Trạng thái</div>
                   <div>Thao tác</div>
@@ -1775,7 +1787,7 @@ const AdminDashboard: React.FC = () => {
                         padding: '12px',
                         borderBottom: '1px solid #f0f0f0',
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 1.1fr 1fr 0.8fr',
+                        gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 0.9fr 1.1fr 1fr 0.8fr',
                         gap: '10px',
                         fontSize: '12px',
                         alignItems: 'center'
@@ -1881,6 +1893,32 @@ const AdminDashboard: React.FC = () => {
                           })()}
                         </span>
                       </div>
+                      <div>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontWeight: '500',
+                          fontSize: '10px',
+                          backgroundColor:
+                            order.payment?.status === 'paid' ? '#dcfce7' :
+                              order.payment?.status === 'pending' ? '#fef3c7' :
+                                order.payment?.status === 'awaiting_payment' ? '#dbeafe' :
+                                  '#f3f4f6',
+                          color:
+                            order.payment?.status === 'paid' ? '#166534' :
+                              order.payment?.status === 'pending' ? '#92400e' :
+                                order.payment?.status === 'awaiting_payment' ? '#1e40af' :
+                                  '#374151'
+                        }}>
+                          {(() => {
+                            const paymentStatus = order.payment?.status;
+                            if (paymentStatus === 'paid') return '✅ Đã thanh toán';
+                            if (paymentStatus === 'pending') return '⏳ Chờ thanh toán';
+                            if (paymentStatus === 'awaiting_payment') return '🔄 Chờ xác nhận';
+                            return '❓ Chưa xác định';
+                          })()}
+                        </span>
+                      </div>
                       <div style={{ fontSize: '11px', color: '#666' }}>
                         <div style={{
                           maxHeight: '36px',
@@ -1925,7 +1963,7 @@ const AdminDashboard: React.FC = () => {
                                 order.status === 'preparing' ? 'Đang chuẩn bị' :
                                   order.status === 'ready' ? 'Sẵn sàng' :
                                     order.status === 'picked_up' ? 'Đã lấy hàng' :
-                                      order.status === 'delivered' ? 'Đã giao' :
+                                      order.status === 'delivered' ? 'Đã hoàn thành' :
                                         order.status === 'completed' ? 'Hoàn thành' :
                                           order.status === 'cancelled' ? 'Đã hủy' :
                                             order.status
@@ -1960,7 +1998,7 @@ const AdminDashboard: React.FC = () => {
                             <option value="confirmed">Đã xác nhận</option>
                             <option value="preparing">Đang chuẩn bị</option>
                             <option value="ready">Sẵn sàng</option>
-                            <option value="delivered">Đã giao</option>
+                            <option value="delivered">Đã hoàn thành</option>
                             <option value="completed">Hoàn thành</option>
                             <option value="cancelled">Đã hủy</option>
                           </select>
@@ -2689,6 +2727,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

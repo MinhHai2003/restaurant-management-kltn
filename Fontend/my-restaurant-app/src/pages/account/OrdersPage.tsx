@@ -28,7 +28,7 @@ const getStatusText = (status: string) => {
     case 'confirmed': return 'Đã xác nhận';
     case 'preparing': return 'Đang chuẩn bị';
     case 'ready': return 'Sẵn sàng';
-    case 'delivered': return 'Đã giao';
+    case 'delivered': return 'Đã hoàn thành';
     case 'completed': return 'Hoàn thành';
     case 'cancelled': return 'Đã hủy';
     default: return 'Không xác định';
@@ -141,7 +141,7 @@ const OrdersPage: React.FC = () => {
   const filters = [
     { id: 'all', label: 'Tất cả', count: orders.length },
     { id: 'pending', label: 'Chờ xác nhận', count: orders.filter(o => o.status === 'pending').length },
-    { id: 'delivered', label: 'Đã giao', count: orders.filter(o => o.status === 'delivered').length },
+    { id: 'delivered', label: 'Đã hoàn thành', count: orders.filter(o => o.status === 'delivered').length },
     { id: 'cancelled', label: 'Đã hủy', count: orders.filter(o => o.status === 'cancelled').length }
   ];
 

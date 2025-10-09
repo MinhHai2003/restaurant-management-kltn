@@ -77,11 +77,16 @@ const OrderSchema = new mongoose.Schema(
       status: {
         type: String,
         required: true,
-        enum: ["pending", "paid", "failed", "refunded"],
+        enum: ["pending", "awaiting_payment", "paid", "failed", "refunded"],
         default: "pending",
       },
       transactionId: String,
       paidAt: Date,
+      cassoData: {
+        tid: String,
+        amount: Number,
+        description: String,
+      },
     },
     delivery: {
       type: {
@@ -207,6 +212,17 @@ const OrderSchema = new mongoose.Schema(
       kitchen: String,
       delivery: String,
       internal: String,
+    },
+    tablePaymentData: {
+      isTablePayment: {
+        type: Boolean,
+        default: false,
+      },
+      originalOrderIds: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Order",
+      }],
+      tableNumber: String,
     },
     ratings: {
       food: {

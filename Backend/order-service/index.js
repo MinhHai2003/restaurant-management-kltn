@@ -171,6 +171,7 @@ app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory-test", require("./routes/inventoryTestRoutes"));
 app.use("/api/casso", require("./routes/cassoRoutes"));
+app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 // 404 Handler
 app.use("*", (req, res) => {
@@ -219,6 +220,12 @@ server.listen(PORT, () => {
   console.log(`   POST /api/orders/:id/rate - Rate order`);
   console.log(`   POST /api/orders/:id/reorder - Reorder`);
   console.log(`   GET  /api/orders/track/:orderNumber - Track order`);
+  console.log(`\n⭐ Review endpoints:`);
+  console.log(`   POST /api/reviews/order/:orderNumber - Create order review`);
+  console.log(`   GET  /api/reviews/customer/my-reviews - Get my reviews`);
+  console.log(`   GET  /api/reviews/menu-item/:menuItemId - Get menu item reviews`);
+  console.log(`   GET  /api/reviews/top-rated - Get top rated items`);
+  console.log(`   GET  /api/reviews/customer/recommendations - Get recommendations`);
   console.log(`\n👨‍💼 Admin Order endpoints:`);
   console.log(`   GET  /api/admin/orders/dashboard - Get dashboard stats`);
   console.log(`   POST /api/admin/orders - Create admin order`);

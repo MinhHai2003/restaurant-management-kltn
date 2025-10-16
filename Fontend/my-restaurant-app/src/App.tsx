@@ -14,6 +14,7 @@ import ProfilePage from './pages/account/ProfilePage'
 import OrdersPage from './pages/account/OrdersPage'
 import ReservationsPage from './pages/account/ReservationsPage'
 import AddressesPage from './pages/account/AddressesPage'
+import RecommendationsPage from './pages/account/RecommendationsPage'
 import AdminDashboard from './pages/AdminDashboard'
 import OrderSocketDemo from './pages/OrderSocketDemo'
 import TableMenuPage from './pages/TableMenuPage'
@@ -97,6 +98,11 @@ function App() {
             <Route path="/profile/addresses" element={
               <ProtectedRoute>
                 <AddressesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/recommendations" element={
+              <ProtectedRoute>
+                <RecommendationsPage />
               </ProtectedRoute>
             } />
           </Routes>

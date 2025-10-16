@@ -71,6 +71,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children, activeTab }) =>
     { id: 'profile', label: 'Thông tin tài khoản', icon: '👤', path: '/profile' },
     { id: 'orders', label: 'Quản lý đơn hàng', icon: '📦', path: '/profile/orders' },
     { id: 'reservations', label: 'Lịch sử đặt bàn', icon: '🍽️', path: '/profile/reservations' },
+    { id: 'recommendations', label: 'Gợi ý cho bạn', icon: '⭐', path: '/profile/recommendations' },
     { id: 'addresses', label: 'Sổ địa chỉ', icon: '📍', path: '/profile/addresses' },
     { id: 'logout', label: 'Đăng xuất', icon: '🚪', path: '/logout' },
   ];

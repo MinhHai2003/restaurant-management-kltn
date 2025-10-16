@@ -5,8 +5,17 @@ import html2pdf from 'html2pdf.js';
 import { customerService, type Order as ApiOrder } from '../../services/customerService';
 import AccountLayout from '../../components/account/AccountLayout';
 import { useOrderSocket } from '../../hooks/useOrderSocket';
+import OrderRatingModal from '../../components/OrderRatingModal';
+import reviewService from '../../services/reviewService';
+import type { ReviewData } from '../../services/reviewService';
 
-type Order = ApiOrder;
+interface Order extends ApiOrder {
+  itemRatings?: {
+    isRated: boolean;
+    ratedAt?: string;
+    reviewIds?: string[];
+  };
+}
 
 
 const getStatusColor = (status: string) => {
@@ -47,6 +56,8 @@ const OrdersPage: React.FC = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingOrder, setRatingOrder] = useState<Order | null>(null);
 
   const handleViewPdf = (order: Order) => {
     setSelectedOrder(order);
@@ -62,6 +73,39 @@ const OrdersPage: React.FC = () => {
         }).from(element).save();
       }
     }, 300);
+  };
+
+  const handleRateOrder = (order: Order) => {
+    setRatingOrder(order);
+    setShowRatingModal(true);
+  };
+
+  const handleSubmitRating = async (reviews: ReviewData[]) => {
+    if (!ratingOrder) return;
+
+    try {
+      const result = await reviewService.submitOrderReview(ratingOrder.orderNumber, reviews);
+      if (result.success) {
+        // Update order status to show it's been rated
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === ratingOrder._id 
+              ? { ...order, itemRatings: { isRated: true, ratedAt: new Date().toISOString() } }
+              : order
+          )
+        );
+        setShowRatingModal(false);
+        setRatingOrder(null);
+      } else {
+        throw new Error(result.error || 'Failed to submit rating');
+      }
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const canRateOrder = (order: Order) => {
+    return order.status === 'delivered' && !order.itemRatings?.isRated;
   };
 
   useEffect(() => {
@@ -402,6 +446,51 @@ const OrdersPage: React.FC = () => {
                   >
                     Xem chi tiết
                   </button>
+                  
+                  {/* Rating Button */}
+                  {canRateOrder(order) ? (
+                    <button
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#f59e0b',
+                        border: 'none',
+                        borderRadius: '0.375rem',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
+                      onClick={() => handleRateOrder(order)}
+                    >
+                      ⭐ Đánh giá
+                    </button>
+                  ) : order.itemRatings?.isRated ? (
+                    <span
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#10b981',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ✅ Đã đánh giá
+                    </span>
+                  ) : order.status !== 'delivered' ? (
+                    <span
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#6b7280',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        color: 'white',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ⏳ Chờ hoàn thành
+                    </span>
+                  ) : null}
       {/* Modal hóa đơn HTML để xuất PDF */}
       {showInvoice && selectedOrder && (
         <div style={{ display: 'none' }}>
@@ -491,6 +580,17 @@ const OrdersPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Rating Modal */}
+      <OrderRatingModal
+        isOpen={showRatingModal}
+        onClose={() => {
+          setShowRatingModal(false);
+          setRatingOrder(null);
+        }}
+        order={ratingOrder}
+        onSubmit={handleSubmitRating}
+      />
     </AccountLayout>
   );
 };

@@ -8,6 +8,7 @@ import CassoPayment from '../components/CassoPayment';
 import orderService, { type CreateOrderResponse } from '../services/orderService';
 import { useCart } from '../contexts/CartContext';
 import { useOrderSocket } from '../hooks/useOrderSocket';
+import RatingStars from '../components/RatingStars';
 
 interface MenuItem {
   _id: string;
@@ -20,6 +21,10 @@ interface MenuItem {
   preparationTime?: number;
   createdAt?: string;
   updatedAt?: string;
+  ratings?: {
+    average: number;
+    count: number;
+  };
 }
 
 interface TableInfo {
@@ -1181,6 +1186,40 @@ const TableMenuPage: React.FC = () => {
                     }}>
                       {item.description}
                     </p>
+
+                    {/* Rating Display */}
+                    {item.ratings && item.ratings.count > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '12px'
+                      }}>
+                        <RatingStars 
+                          value={item.ratings.average} 
+                          readonly 
+                          size="sm" 
+                        />
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#64748b'
+                        }}>
+                          ({item.ratings.count} đánh giá)
+                        </span>
+                        {item.ratings.average >= 4.5 && (
+                          <span style={{
+                            fontSize: '10px',
+                            background: '#fbbf24',
+                            color: 'white',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: '500'
+                          }}>
+                            TOP RATED
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div style={{
                       display: 'flex',

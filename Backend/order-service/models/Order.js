@@ -224,6 +224,7 @@ const OrderSchema = new mongoose.Schema(
       }],
       tableNumber: String,
     },
+    // Legacy overall order rating (keep for backward compatibility)
     ratings: {
       food: {
         type: Number,
@@ -242,6 +243,18 @@ const OrderSchema = new mongoose.Schema(
       },
       comment: String,
       ratedAt: Date,
+    },
+    // New item-level rating tracking
+    itemRatings: {
+      isRated: {
+        type: Boolean,
+        default: false,
+      },
+      ratedAt: Date,
+      reviewIds: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Review",
+      }],
     },
     // Business metrics
     preparationTime: Number, // minutes
@@ -362,6 +375,11 @@ OrderSchema.methods.calculateLoyaltyPoints = function () {
 
 OrderSchema.methods.canRate = function () {
   return this.status === "completed" && !this.ratings.overall;
+};
+
+// New method for item-level rating
+OrderSchema.methods.canRateItems = function () {
+  return ['completed', 'delivered'].includes(this.status) && !this.itemRatings.isRated;
 };
 
 // Statics

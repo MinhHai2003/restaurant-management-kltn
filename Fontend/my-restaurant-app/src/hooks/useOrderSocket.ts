@@ -105,61 +105,73 @@ export const useOrderSocket = () => {
       }
     });
 
-    newSocket.on('order_status_updated', (data: { orderId: string; status: string; order?: Order }) => {
-      console.log('Order status updated:', data);
+    newSocket.on('order_status_updated', (data: { orderId: string; status: string; order?: Order; orderNumber?: string; message?: string }) => {
+      console.log('🔄 Order status updated:', data);
 
-      if (data.order) {
+      // Update order status even if order object is not provided
+      if (data.orderId && data.status) {
         setOrders(prev => {
           const index = prev.findIndex(order => order._id === data.orderId);
-          if (index !== -1 && data.order) {
+          if (index !== -1) {
             const newOrders = [...prev];
-            newOrders[index] = data.order;
+            newOrders[index] = { ...newOrders[index], status: data.status as any };
             return newOrders;
           }
           return prev;
         });
+        
+        // Also emit a global event for other components to listen
+        window.dispatchEvent(new CustomEvent('orderStatusUpdated', { 
+          detail: { orderId: data.orderId, status: data.status } 
+        }));
       }
 
       setNotifications(prev => [...prev, {
         type: 'status_update',
         orderId: data.orderId,
-        message: `Order status changed to: ${data.status}`,
+        message: data.message || `Order status changed to: ${data.status}`,
         timestamp: new Date()
       }]);
 
       if (Notification.permission === 'granted') {
         new Notification('Order Status Updated!', {
-          body: `Order status changed to: ${data.status}`,
+          body: data.message || `Order ${data.orderNumber || data.orderId} status: ${data.status}`,
           icon: '/vite.svg'
         });
       }
     });
 
-    newSocket.on('customer_order_status_updated', (data: { orderId: string; status: string; order?: Order }) => {
-      console.log('Customer order status updated:', data);
+    newSocket.on('customer_order_status_updated', (data: { orderId: string; status: string; order?: Order; orderNumber?: string; message?: string }) => {
+      console.log('🔄 Customer order status updated:', data);
 
-      if (data.order) {
+      // Update order status even if order object is not provided
+      if (data.orderId && data.status) {
         setOrders(prev => {
           const index = prev.findIndex(order => order._id === data.orderId);
-          if (index !== -1 && data.order) {
+          if (index !== -1) {
             const newOrders = [...prev];
-            newOrders[index] = data.order;
+            newOrders[index] = { ...newOrders[index], status: data.status as any };
             return newOrders;
           }
           return prev;
         });
+        
+        // Also emit a global event for other components to listen
+        window.dispatchEvent(new CustomEvent('orderStatusUpdated', { 
+          detail: { orderId: data.orderId, status: data.status } 
+        }));
       }
 
       setNotifications(prev => [...prev, {
         type: 'customer_status_update',
         orderId: data.orderId,
-        message: `Your order status: ${data.status}`,
+        message: data.message || `Your order status: ${data.status}`,
         timestamp: new Date()
       }]);
 
       if (Notification.permission === 'granted') {
         new Notification('Your Order Updated!', {
-          body: `Your order status: ${data.status}`,
+          body: data.message || `Order ${data.orderNumber || data.orderId} status: ${data.status}`,
           icon: '/vite.svg'
         });
       }

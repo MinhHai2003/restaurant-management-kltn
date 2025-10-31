@@ -133,14 +133,12 @@ const OrdersPage: React.FC = () => {
         
         // Update specific order status in the list
         setOrders(prevOrders => {
-          const updated = prevOrders.map(order => {
-            if (order._id === data.orderId || order._id?.toString() === data.orderId?.toString()) {
-              console.log(`✅ Updating order ${order.orderNumber || order._id} status from ${order.status} to ${data.status}`);
-              return { ...order, status: data.status as any };
+          return prevOrders.map(order => {
+            if (order._id === data.orderId) {
+              return { ...order, status: data.status };
             }
             return order;
           });
-          return updated;
         });
 
         // Show browser notification
@@ -151,22 +149,6 @@ const OrdersPage: React.FC = () => {
           });
         }
       };
-      
-      // Also listen to global event from useOrderSocket
-      const handleGlobalOrderStatusUpdate = (event: CustomEvent) => {
-        const { orderId, status } = event.detail;
-        console.log('🔄 Customer OrdersPage: Order status updated via global event:', { orderId, status });
-        setOrders(prevOrders => {
-          return prevOrders.map(order => {
-            if (order._id === orderId || order._id?.toString() === orderId?.toString()) {
-              return { ...order, status: status as any };
-            }
-            return order;
-          });
-        });
-      };
-      
-      window.addEventListener('orderStatusUpdated', handleGlobalOrderStatusUpdate as EventListener);
 
       const handleNewOrder = (data: { orderNumber: string; status: string; [key: string]: unknown }) => {
         console.log('🆕 Customer OrdersPage: New order created via Socket.io:', data);
@@ -191,7 +173,6 @@ const OrdersPage: React.FC = () => {
         socket.off('order_status_updated', handleOrderStatusUpdate);
         socket.off('customer_order_status_updated', handleOrderStatusUpdate);
         socket.off('order_created', handleNewOrder);
-        window.removeEventListener('orderStatusUpdated', handleGlobalOrderStatusUpdate as EventListener);
       };
     }
   }, [socket, isConnected]);

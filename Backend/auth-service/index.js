@@ -16,10 +16,7 @@ const server = http.createServer(app);
 // 🔒 Trust proxy (required for Railway/reverse proxy)
 app.set('trust proxy', true);
 
-// 🔒 Security middleware
-app.use(helmet());
-
-// CORS configuration - allow Vercel deployments
+// CORS configuration - allow Vercel deployments (MUST be before helmet)
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
@@ -39,10 +36,18 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
+
+// 🔒 Security middleware (after CORS to avoid header conflicts)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 
 // 📝 Logging
 app.use(morgan("combined"));

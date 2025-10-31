@@ -59,7 +59,9 @@ app.use((req, res, next) => {
 // 🔒 Security middleware (after CORS to avoid header conflicts)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  // Don't modify CORS headers
+  contentSecurityPolicy: false, // Temporarily disable to avoid conflicts
 }));
 
 // 📝 Logging

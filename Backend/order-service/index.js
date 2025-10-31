@@ -168,6 +168,7 @@ app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/orders/dine-in", require("./routes/dineInRoutes"));
 app.use("/api/orders/pickup", require("./routes/pickupRoutes"));
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
+app.use("/api/admin/statistics", require("./routes/statisticsRoutes"));
 app.use("/api/orders", orderRoutes);
 app.use("/api/inventory-test", require("./routes/inventoryTestRoutes"));
 app.use("/api/casso", require("./routes/cassoRoutes"));

@@ -10,11 +10,11 @@ const Header: React.FC = () => {
 
   // Categories từ menu data - Simple list như trong hình
   const menuCategories = [
-    { name: "HẢI SẢN TƯƠI SỐNG", link: "/menu/hai-san-tuoi-song" },
-    { name: "HẢI SẢN CHẾ BIẾN", link: "/menu/hai-san-che-bien" },
-    { name: "SASHIMI NHẬT BẢN", link: "/menu/sashimi-nhat-ban" },
-    { name: "MÓN ĂN, ĐỒ PHỤ", link: "/menu/mon-an-do-phu" },
-    { name: "SẢN PHẨM KHUYẾN MÃI", link: "/menu/khuyen-mai" },
+    { name: "CƠM CHIÊN & PHỞ", link: "/menu/com-chien-pho" },
+    { name: "HẢI SẢN & NƯỚNG", link: "/menu/hai-san-nuong" },
+    { name: "LẨU  & CANH", link: "/menu/lau-canh" },
+    { name: "BÁNH & GỎI CUỐN", link: "/menu/banh-goi-cuon" },
+    { name: "NƯỚC UỐNG & TRÁNG MIỆNG", link: "/menu/nuoc-uong-trang-mieng" },
     { name: "Liên hệ nhà hàng", link: "/lien-he" },
     { name: "Đặt bàn", link: "/dat-ban" },
     { name: "Facebook", link: "https://facebook.com" }
@@ -41,9 +41,8 @@ const Header: React.FC = () => {
           gap: '1rem'
         }}>
           {/* Logo Section */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
             <div style={{
-              
               padding: '0.5rem',
               borderRadius: '8px',
               display: 'flex',
@@ -58,7 +57,6 @@ const Header: React.FC = () => {
                 fontWeight: 'bold',
                 margin: 0,
                 lineHeight: 1,
-                
               }}>
                 NHÀ HÀNG
               </h1>
@@ -71,7 +69,7 @@ const Header: React.FC = () => {
                 HẢI SẢN BIỂN ĐÔNG
               </div>
             </div>
-          </div>
+          </a>
 
           {/* Search Bar */}
           <div style={{ 
@@ -81,6 +79,7 @@ const Header: React.FC = () => {
             margin: '0 2rem'
           }}>
             <input
+              id="global-search-input"
               type="text"
               placeholder="Tìm kiếm trên nhà hàng hải sản Biển đông"
               style={{
@@ -90,6 +89,12 @@ const Header: React.FC = () => {
                 borderRadius: '6px 0 0 6px',
                 outline: 'none',
                 fontSize: '0.9rem'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const value = (e.currentTarget as HTMLInputElement).value.trim();
+                  if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+                }
               }}
             />
             <button style={{
@@ -101,7 +106,13 @@ const Header: React.FC = () => {
               cursor: 'pointer',
               fontSize: '1rem',
               fontWeight: 'bold'
-            }}>
+            }}
+            onClick={() => {
+              const el = document.getElementById('global-search-input') as HTMLInputElement | null;
+              const value = el?.value.trim();
+              if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+            }}
+            >
               🔍
             </button>
           </div>

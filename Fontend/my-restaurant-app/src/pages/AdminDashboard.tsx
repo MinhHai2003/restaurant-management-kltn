@@ -6,6 +6,7 @@ import ShiftManagement from '../components/admin/ShiftManagement';
 import MenuManagement from '../components/admin/MenuManagement';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import { useTableSocket } from '../hooks/useTableSocket';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ApiReservation {
   _id: string;
@@ -25,10 +26,73 @@ interface ApiReservation {
   status: string;
   occasion?: string;
   specialRequests?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 type TabType = 'overview' | 'reservations' | 'tables' | 'inventory' | 'staff' | 'shifts' | 'statistics' | 'orders';
+
+interface StatisticsData {
+  revenue: {
+    daily: Array<{ date: string; revenue: number }>;
+    weekly: Array<{ week: string; revenue: number }>;
+    monthly: Array<{ month: string; revenue: number }>;
+  };
+  topDishes: {
+    daily: Array<{ name: string; orders: number }>;
+    weekly: Array<{ name: string; orders: number }>;
+    monthly: Array<{ name: string; orders: number }>;
+  };
+  reservationStats: {
+    daily: {
+      totalReservations: number;
+      completedReservations: number;
+      cancelledReservations: number;
+      avgPartySize: number;
+    };
+    weekly: {
+      totalReservations: number;
+      completedReservations: number;
+      cancelledReservations: number;
+      avgPartySize: number;
+    };
+    monthly: {
+      totalReservations: number;
+      completedReservations: number;
+      cancelledReservations: number;
+      avgPartySize: number;
+    };
+  };
+  tableUtilization: {
+    daily: Array<{ hour: string; utilization: number }>;
+    weekly: Array<{ hour: string; utilization: number }>;
+    monthly: Array<{ hour: string; utilization: number }>;
+  };
+  orderStats: {
+    daily: {
+      totalOrders: number;
+      completedOrders: number;
+      cancelledOrders: number;
+      avgOrderTime: number;
+    };
+    weekly: {
+      totalOrders: number;
+      completedOrders: number;
+      cancelledOrders: number;
+      avgOrderTime: number;
+    };
+    monthly: {
+      totalOrders: number;
+      completedOrders: number;
+      cancelledOrders: number;
+      avgOrderTime: number;
+    };
+  };
+  peakHours: {
+    daily: Array<{ hour: string; orders: number }>;
+    weekly: Array<{ hour: string; orders: number }>;
+    monthly: Array<{ hour: string; orders: number }>;
+  };
+}
 
 interface Stats {
   totalTables: number;
@@ -37,8 +101,6 @@ interface Stats {
   reservedTables: number;
   totalReservations: number;
   pendingReservations: number;
-  totalRevenue: number;
-  totalOrders: number;
 }
 
 interface Reservation {
@@ -55,6 +117,7 @@ interface Reservation {
   status: string;
   occasion: string;
   specialRequests?: string;
+  createdAt?: string;
 }
 
 interface AdminTable {
@@ -67,10 +130,6 @@ interface AdminTable {
   description?: string;
 }
 
-interface OrderItem {
-  _id: string;
-  status: string;
-}
 
 interface Order {
   _id: string;
@@ -120,9 +179,7 @@ const AdminDashboard: React.FC = () => {
     occupiedTables: 0,
     reservedTables: 0,
     totalReservations: 0,
-    pendingReservations: 0,
-    totalRevenue: 0,
-    totalOrders: 0
+    pendingReservations: 0
   });
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<AdminTable[]>([]);
@@ -173,6 +230,22 @@ const AdminDashboard: React.FC = () => {
     hasPrev: false
   });
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  // Real-time clock state
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Real-time order stats state
+  const [realTimeOrderStats, setRealTimeOrderStats] = useState({
+    todayOrders: 0,
+    todayRevenue: 0,
+    avgOrders: 0,
+    pendingOrders: 0
+  });
+
+  // Statistics states
+  const [statisticsData, setStatisticsData] = useState<StatisticsData | null>(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
+  const [statisticsPeriod, setStatisticsPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   // Socket.io for real-time updates
   const { notifications, isConnected, socket } = useOrderSocket();
@@ -230,6 +303,32 @@ const AdminDashboard: React.FC = () => {
 
     loadData();
     checkServices();
+
+    // Set up real-time clock
+    const clockInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Set up real-time order stats update
+    const orderStatsInterval = setInterval(() => {
+      if (ordersList.length > 0) {
+        const pendingCount = ordersList.filter(order => 
+          order.status === 'pending' || 
+          order.status === 'ordered' || 
+          order.status === 'confirmed'
+        ).length;
+        
+        setRealTimeOrderStats(prev => ({
+          ...prev,
+          pendingOrders: pendingCount
+        }));
+      }
+    }, 2000); // Cập nhật mỗi 2 giây
+
+    return () => {
+      clearInterval(clockInterval);
+      clearInterval(orderStatsInterval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -241,6 +340,31 @@ const AdminDashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderActiveTab, serviceStatus.orderService]);
 
+  // Update order stats when ordersList changes
+  useEffect(() => {
+    if (ordersList.length > 0) {
+      // Đếm tất cả đơn hàng cần xử lý (pending, ordered, confirmed)
+      const pendingOrdersCount = ordersList.filter(order => 
+        order.status === 'pending' || 
+        order.status === 'ordered' || 
+        order.status === 'confirmed'
+      ).length;
+      
+      // Cập nhật cả orderStats và realTimeOrderStats
+      setOrderStats(prev => ({
+        ...prev,
+        pendingOrders: pendingOrdersCount
+      }));
+      
+      setRealTimeOrderStats(prev => ({
+        ...prev,
+        pendingOrders: pendingOrdersCount
+      }));
+      
+      console.log('📊 Updated pending orders count:', pendingOrdersCount);
+    }
+  }, [ordersList]);
+
   // Listen to Socket.io events for real-time updates
   useEffect(() => {
     if (socket && isConnected) {
@@ -248,7 +372,31 @@ const AdminDashboard: React.FC = () => {
 
       const handleOrderStatusUpdate = (data: { orderId: string; status: string;[key: string]: unknown }) => {
         console.log('🔄 AdminDashboard: Order status updated via Socket.io:', data);
-        // Refresh both dashboard stats and orders list
+        
+        // Kiểm tra và xử lý status hợp lệ
+        const validStatus = data.status && data.status !== 'undefined' ? data.status : 'pending';
+        const statusDisplay = {
+          'pending': 'Chờ xử lý',
+          'confirmed': 'Đã xác nhận', 
+          'preparing': 'Đang chuẩn bị',
+          'ready': 'Sẵn sàng',
+          'delivered': 'Đã giao hàng',
+          'completed': 'Hoàn thành',
+          'cancelled': 'Đã hủy'
+        };
+        
+        console.log(`📢 Order ${data.orderId} status changed to: ${statusDisplay[validStatus as keyof typeof statusDisplay] || validStatus}`);
+        
+        // Cập nhật trực tiếp trong ordersList
+        setOrdersList(prevOrders => 
+          prevOrders.map(order => 
+            order._id === data.orderId 
+              ? { ...order, status: validStatus }
+              : order
+          )
+        );
+        
+        // Refresh dashboard stats
         loadOrderDashboard();
         if (orderActiveTab === 'orders') {
           loadOrdersList(ordersPagination.current);
@@ -257,11 +405,10 @@ const AdminDashboard: React.FC = () => {
 
       const handleNewOrder = (data: { orderNumber?: string;[key: string]: unknown }) => {
         console.log('🆕 AdminDashboard: New order received via Socket.io:', data);
-        // Refresh both dashboard stats and orders list
+        // Reload orders list để cập nhật dữ liệu mới
+        loadOrdersList(ordersPagination.current);
+        // Refresh dashboard stats
         loadOrderDashboard();
-        if (orderActiveTab === 'orders') {
-          loadOrdersList(ordersPagination.current);
-        }
       };
 
       // Register event listeners
@@ -398,16 +545,53 @@ const AdminDashboard: React.FC = () => {
         console.log('Order dashboard data:', data);
 
         if (data.success) {
-          setOrderStats({
+          // Tính pending orders từ danh sách đơn hàng thực tế
+          const pendingOrdersCount = ordersList.filter(order => 
+            order.status === 'pending' || 
+            order.status === 'ordered' || 
+            order.status === 'confirmed'
+          ).length;
+          
+          const newStats = {
             todayOrders: data.data.today?.totalOrders || 0,
             todayRevenue: data.data.today?.totalRevenue || 0,
             avgOrders: Math.round(data.data.week?.totalOrders / 7) || 0,
-            pendingOrders: data.data.recentOrders?.filter((order: OrderItem) => order.status === 'pending').length || 0
-          });
+            pendingOrders: pendingOrdersCount
+          };
+          
+          setOrderStats(newStats);
+          setRealTimeOrderStats(newStats);
         }
       }
     } catch (error) {
       console.error('Error loading order dashboard:', error);
+    }
+  };
+
+  // Load statistics data
+  const loadStatistics = async () => {
+    setStatisticsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5005/api/admin/statistics', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load statistics');
+      }
+      
+      const data = await response.json();
+      console.log('📊 Statistics loaded:', data);
+      console.log('📊 Statistics data structure:', data.data);
+      console.log('📊 Top dishes data:', data.data?.topDishes);
+      setStatisticsData(data.data);
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+      // Hiển thị thông báo lỗi thay vì dữ liệu mẫu
+      setStatisticsData(null);
+      alert('Không thể tải dữ liệu thống kê từ server. Vui lòng thử lại sau.');
+    } finally {
+      setStatisticsLoading(false);
     }
   };
 
@@ -485,6 +669,23 @@ const AdminDashboard: React.FC = () => {
             })
           );
 
+          // Cập nhật pending orders count
+          const updatedOrdersList = ordersList.map((order: Order) => {
+            if (order._id === orderId) {
+              return { ...order, status: newStatus };
+            }
+            return order;
+          });
+          const pendingCount = updatedOrdersList.filter(order => 
+            order.status === 'pending' || 
+            order.status === 'ordered' || 
+            order.status === 'confirmed'
+          ).length;
+          setOrderStats(prev => ({
+            ...prev,
+            pendingOrders: pendingCount
+          }));
+
           // Reload dashboard stats để cập nhật số liệu
           loadOrderDashboard();
         }
@@ -549,7 +750,8 @@ const AdminDashboard: React.FC = () => {
             partySize: res.partySize,
             status: res.status,
             occasion: res.occasion,
-            specialRequests: res.specialRequests || 'Không có yêu cầu đặc biệt'
+            specialRequests: res.specialRequests || 'Không có yêu cầu đặc biệt',
+            createdAt: res.createdAt
           }));
 
           setReservations(realReservations);
@@ -832,98 +1034,363 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const renderOverview = () => (
-    <div style={{ padding: '24px' }}>
-      {/* Stats Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-        marginBottom: '32px'
-      }}>
+  const renderOverview = () => {
+    // Tính toán các chỉ số bổ sung
+    const tableUtilizationRate = stats.totalTables > 0 ? Math.round((stats.occupiedTables / stats.totalTables) * 100) : 0;
+    
+    // Tính tỷ lệ hủy dựa trên số đặt bàn có status = 'cancelled'
+    const cancelledReservations = reservations.filter(r => r.status === 'cancelled').length;
+    const cancellationRate = stats.totalReservations > 0 ? Math.round((cancelledReservations / stats.totalReservations) * 100) : 0;
+
+    return (
+      <div style={{ padding: '24px' }}>
+        {/* Welcome Section */}
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           borderRadius: '16px',
           padding: '24px',
           color: 'white',
+          marginBottom: '24px',
           boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Tổng số bàn</h3>
-          <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.totalTables}</p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
-            Trống: {stats.availableTables} | Đang dùng: {stats.occupiedTables}
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 'bold' }}>
+                👋 Chào mừng trở lại, {employeeInfo?.fullName || 'Admin'}!
+              </h2>
+              <p style={{ margin: '0', fontSize: '16px', opacity: 0.9 }}>
+                {currentTime.toLocaleDateString('vi-VN', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })} - {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '4px' }}>Trạng thái hệ thống</div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: tableSocketConnected ? '#10b981' : '#ef4444'
+                  }}></div>
+                  <span style={{ fontSize: '12px' }}>Bàn & Đặt bàn</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: isConnected ? '#10b981' : '#ef4444'
+                  }}></div>
+                  <span style={{ fontSize: '12px' }}>Đơn hàng</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Main Stats Cards */}
         <div style={{
-          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: 'white',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '20px',
+          marginBottom: '32px'
         }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Đặt bàn hôm nay</h3>
-          <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.totalReservations}</p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
-            Chờ duyệt: {stats.pendingReservations}
-          </p>
+          {/* Tổng số bàn */}
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '16px',
+            padding: '24px',
+            color: 'white',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '80px', opacity: 0.1 }}>🪑</div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Tổng số bàn</h3>
+              <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold' }}>{stats.totalTables}</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
+                Trống: {stats.availableTables} | Đang dùng: {stats.occupiedTables}
+              </p>
+              <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
+                Tỷ lệ sử dụng: {tableUtilizationRate}%
+              </div>
+            </div>
+          </div>
+
+          {/* Đặt bàn hôm nay */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            borderRadius: '16px',
+            padding: '24px',
+            color: 'white',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '80px', opacity: 0.1 }}>📝</div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Đặt bàn hôm nay</h3>
+              <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold' }}>{stats.totalReservations}</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
+                Đã hủy: {cancelledReservations}
+              </p>
+              <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
+                Tỷ lệ hủy: {cancellationRate}%
+              </div>
+            </div>
+          </div>
+
+
+          {/* Cần xử lý */}
+          <div style={{
+            background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+            borderRadius: '16px',
+            padding: '24px',
+            color: 'white',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '80px', opacity: 0.1 }}>⚠️</div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Cần xử lý</h3>
+              <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold' }}>{stats.pendingReservations}</p>
+              <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
+                Đặt bàn chờ xác nhận
+              </p>
+              <div style={{ marginTop: '12px', fontSize: '12px', opacity: 0.7 }}>
+                {stats.pendingReservations > 0 ? 'Cần xử lý ngay' : 'Tất cả đã xử lý'}
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Additional Stats Row */}
         <div style={{
-          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-          borderRadius: '16px',
-          padding: '24px',
-          color: 'white',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '16px',
+          marginBottom: '32px'
         }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Doanh thu hôm nay</h3>
-          <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>
-            {stats.totalRevenue.toLocaleString('vi-VN')}đ
-          </p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
-            Đơn hàng: {stats.totalOrders}
-          </p>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
+            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Tỷ lệ sử dụng bàn</h4>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>{tableUtilizationRate}%</div>
+          </div>
+
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>❌</div>
+            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Tỷ lệ hủy</h4>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{cancellationRate}%</div>
+          </div>
+
+
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏰</div>
+            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Thời gian hiện tại</h4>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#6b7280' }}>
+              {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
         </div>
 
+        {/* Recent Activity */}
         <div style={{
-          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          background: 'white',
           borderRadius: '16px',
           padding: '24px',
-          color: 'white',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Cần xử lý</h3>
-          <p style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>{stats.pendingReservations}</p>
-          <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
-            Đặt bàn chờ xác nhận
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
+              🕐 Hoạt động gần đây
+            </h3>
+            <button
+              onClick={() => {
+                Promise.all([loadReservations(), loadTableStats(), loadTables()]);
+              }}
+              style={{
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              🔄 Làm mới
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Recent Activities - Combined and Sorted */}
+            {(() => {
+              // Tạo danh sách hoạt động kết hợp từ reservations và orders
+              const activities: Array<{
+                id: string;
+                type: 'reservation' | 'order';
+                timestamp: Date;
+                data: any;
+              }> = [];
+
+              // Thêm reservations với thời gian tạo thực tế
+              reservations.forEach((reservation) => {
+                // Sử dụng createdAt nếu có, nếu không thì dùng thời gian đặt bàn
+                const timestamp = reservation.createdAt ? 
+                  new Date(reservation.createdAt) : 
+                  new Date(reservation.reservationDate + 'T' + reservation.timeSlot.startTime);
+                
+                activities.push({
+                  id: reservation._id,
+                  type: 'reservation',
+                  timestamp: timestamp,
+                  data: reservation
+                });
+              });
+
+              // Thêm orders với thời gian tạo thực tế
+              ordersList.forEach((order) => {
+                activities.push({
+                  id: order._id,
+                  type: 'order',
+                  timestamp: new Date(order.createdAt),
+                  data: order
+                });
+              });
+
+              // Sắp xếp theo thời gian mới nhất (giảm dần)
+              activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+              // Hiển thị 5 hoạt động gần đây nhất
+              return activities.slice(0, 5).map((activity) => {
+                if (activity.type === 'reservation') {
+                  const reservation = activity.data;
+                  return (
+                    <div key={activity.id} style={{
+                      padding: '16px',
+                      background: '#f8fafc',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: getStatusColor(reservation.status).bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px'
+                      }}>
+                        {reservation.status === 'pending' ? '⏳' : 
+                         reservation.status === 'confirmed' ? '✅' : 
+                         reservation.status === 'seated' ? '🪑' : '🎉'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '4px' }}>
+                          {reservation.customerName} đã đặt bàn {reservation.tableNumber}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                          {new Date(reservation.reservationDate).toLocaleDateString('vi-VN')} - {reservation.timeSlot.startTime} | 
+                          {reservation.partySize} người | {getStatusColor(reservation.status).label}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {activity.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const order = activity.data;
+                  return (
+                    <div key={activity.id} style={{
+                      padding: '16px',
+                      background: '#f0f9ff',
+                      borderRadius: '12px',
+                      border: '1px solid #bae6fd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: '#dbeafe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px'
+                      }}>
+                        🍽️
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '4px' }}>
+                          Đơn hàng {order.orderNumber} - {order.customerInfo?.name}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                          {order.pricing?.total?.toLocaleString('vi-VN')}đ | 
+                          {order.delivery?.type === 'dine_in' ? 'Tại bàn' : 
+                           order.delivery?.type === 'delivery' ? 'Giao hàng' : 'Lấy tại quầy'} | 
+                          {order.status === 'pending' ? 'Chờ xử lý' : 
+                           order.status === 'confirmed' ? 'Đã xác nhận' : 
+                           order.status === 'preparing' ? 'Đang chuẩn bị' : 'Hoàn thành'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                        {activity.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  );
+                }
+              });
+            })()}
+
+            {/* Placeholder activities if no recent data */}
+            {reservations.length === 0 && ordersList.length === 0 && (
+              <>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', textAlign: 'center', color: '#6b7280' }}>
+                  📝 Chưa có hoạt động gần đây
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', textAlign: 'center', color: '#6b7280' }}>
+                  🍽️ Hệ thống đang chờ dữ liệu...
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Recent Activity */}
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-        <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 'bold' }}>
-          🕐 Hoạt động gần đây
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <p style={{ margin: '8px 0', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-            ✅ <strong>Nguyễn Văn A</strong> đã đặt bàn T001 lúc 14:30
-          </p>
-          <p style={{ margin: '8px 0', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-            🍽️ <strong>Bàn T003</strong> đã hoàn thành phục vụ - Thu: 850,000đ
-          </p>
-          <p style={{ margin: '8px 0', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
-            📦 <strong>Nguyên liệu</strong> tôm hùm sắp hết - Còn 5kg
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderReservations = () => (
     <div style={{ padding: '24px' }}>
@@ -1455,8 +1922,7 @@ const AdminDashboard: React.FC = () => {
             {[
               { key: 'dashboard', label: '📊 Dashboard' },
               { key: 'orders', label: '📋 Danh sách đơn hàng' },
-              { key: 'menu', label: '🍽️ Quản lý Menu' },
-              { key: 'analytics', label: '📈 Báo cáo' }
+              { key: 'menu', label: '🍽️ Quản lý Menu' }
             ].map(tab => (
               <button
                 key={tab.key}
@@ -1486,27 +1952,6 @@ const AdminDashboard: React.FC = () => {
         }}>
           {orderActiveTab === 'dashboard' && (
             <div style={{ padding: '24px' }}>
-              {/* Info Banner */}
-              <div style={{
-                backgroundColor: '#e6f7ff',
-                border: '1px solid #91d5ff',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <div style={{ fontSize: '20px' }}>ℹ️</div>
-                <div>
-                  <div style={{ fontWeight: '500', color: '#0050b3', fontSize: '14px' }}>
-                    Thống kê Đơn hàng từ Khách hàng
-                  </div>
-                  <div style={{ color: '#096dd9', fontSize: '12px', marginTop: '4px' }}>
-                    Hiển thị tất cả đơn hàng được khách hàng đặt qua website/app, không bao gồm đơn hàng tại quầy
-                  </div>
-                </div>
-              </div>
 
               {/* Recent Notifications */}
               {notifications.length > 0 && (
@@ -1521,22 +1966,30 @@ const AdminDashboard: React.FC = () => {
                     📢 Thông báo mới ({notifications.slice(-3).length})
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {notifications.slice(-3).reverse().map((notification, index) => (
-                      <div key={`notification-${notification.timestamp || Date.now()}-${index}`} style={{
-                        fontSize: '12px',
-                        color: '#713f12',
-                        padding: '8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                        borderRadius: '4px'
-                      }}>
-                        <strong>{notification.message}</strong>
-                        {notification.timestamp && (
-                          <div style={{ fontSize: '10px', color: '#a16207', marginTop: '4px' }}>
-                            {notification.timestamp.toLocaleTimeString('vi-VN')}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {notifications.slice(-3).reverse().map((notification, index) => {
+                      // Xử lý thông báo để hiển thị rõ ràng hơn
+                      let displayMessage = notification.message;
+                      if (notification.message && notification.message.includes('undefined')) {
+                        displayMessage = 'Trạng thái đơn hàng đã được cập nhật';
+                      }
+                      
+                      return (
+                        <div key={`notification-${notification.timestamp || Date.now()}-${index}`} style={{
+                          fontSize: '12px',
+                          color: '#713f12',
+                          padding: '8px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                          borderRadius: '4px'
+                        }}>
+                          <strong>{displayMessage}</strong>
+                          {notification.timestamp && (
+                            <div style={{ fontSize: '10px', color: '#a16207', marginTop: '4px' }}>
+                              {notification.timestamp.toLocaleTimeString('vi-VN')}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -1558,7 +2011,7 @@ const AdminDashboard: React.FC = () => {
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
                   <h4 style={{ margin: '0 0 8px 0', color: '#0ea5e9', fontSize: '14px' }}>Đơn hàng hôm nay</h4>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0284c7' }}>
-                    {serviceStatus.orderService ? orderStats.todayOrders : '0'}
+                    {serviceStatus.orderService ? realTimeOrderStats.todayOrders : '0'}
                   </div>
                 </div>
                 <div style={{
@@ -1571,7 +2024,7 @@ const AdminDashboard: React.FC = () => {
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>💰</div>
                   <h4 style={{ margin: '0 0 8px 0', color: '#22c55e', fontSize: '14px' }}>Doanh thu hôm nay</h4>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
-                    {serviceStatus.orderService ? `${orderStats.todayRevenue.toLocaleString()}đ` : '0đ'}
+                    {serviceStatus.orderService ? `${realTimeOrderStats.todayRevenue.toLocaleString()}đ` : '0đ'}
                   </div>
                 </div>
                 <div style={{
@@ -1584,7 +2037,7 @@ const AdminDashboard: React.FC = () => {
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
                   <h4 style={{ margin: '0 0 8px 0', color: '#f59e0b', fontSize: '14px' }}>Đơn TB/ngày</h4>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d97706' }}>
-                    {serviceStatus.orderService ? orderStats.avgOrders : '0'}
+                    {serviceStatus.orderService ? realTimeOrderStats.avgOrders : '0'}
                   </div>
                 </div>
                 <div style={{
@@ -1597,58 +2050,11 @@ const AdminDashboard: React.FC = () => {
                   <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏱️</div>
                   <h4 style={{ margin: '0 0 8px 0', color: '#ec4899', fontSize: '14px' }}>Chờ xử lý</h4>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#be185d' }}>
-                    {serviceStatus.orderService ? orderStats.pendingOrders : '0'}
+                    {serviceStatus.orderService ? realTimeOrderStats.pendingOrders : '0'}
                   </div>
                 </div>
               </div>
 
-              {/* Service Status */}
-              <div style={{
-                backgroundColor: '#fafafa',
-                padding: '20px',
-                borderRadius: '8px',
-                border: '1px solid #e5e5e5'
-              }}>
-                <h3 style={{ margin: '0 0 16px 0', fontSize: '16px' }}>🔧 Trạng thái Services</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px' }}>
-                    <span>Order Service (5005)</span>
-                    <span style={{ color: serviceStatus.orderService ? '#22c55e' : '#ef4444', fontSize: '12px' }}>
-                      {serviceStatus.orderService ? '✅ Online' : '❌ Offline'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px' }}>
-                    <span>Menu Service (5003)</span>
-                    <span style={{ color: serviceStatus.menuService ? '#22c55e' : '#ef4444', fontSize: '12px' }}>
-                      {serviceStatus.menuService ? '✅ Online' : '❌ Offline'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px' }}>
-                    <span>Inventory Service (5004)</span>
-                    <span style={{ color: serviceStatus.inventoryService ? '#22c55e' : '#ef4444', fontSize: '12px' }}>
-                      {serviceStatus.inventoryService ? '✅ Online' : '❌ Offline'}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={checkServices}
-                  style={{
-                    marginTop: '16px',
-                    padding: '8px 16px',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}
-                >
-                  🔄 Kiểm tra lại
-                </button>
-                <p style={{ margin: '12px 0 0 0', fontSize: '12px', color: '#666' }}>
-                  Khi tất cả services chạy, dashboard sẽ hiển thị dữ liệu thực tế.
-                </p>
-              </div>
             </div>
           )}
 
@@ -2052,15 +2458,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {orderActiveTab === 'analytics' && (
-            <div style={{ padding: '24px', textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
-              <h3 style={{ fontSize: '18px', marginBottom: '8px' }}>Báo cáo & Thống kê</h3>
-              <p style={{ color: '#666', fontSize: '14px' }}>
-                Biểu đồ doanh thu, báo cáo chi tiết sẽ hiển thị ở đây.
-              </p>
-            </div>
-          )}
 
           {orderActiveTab === 'menu' && (
             <MenuManagement />
@@ -2091,6 +2488,445 @@ const AdminDashboard: React.FC = () => {
     </div>
   );
 
+  // Render Statistics with real data
+  const renderStatistics = () => {
+    if (statisticsLoading) {
+      return (
+        <div style={{ padding: '48px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+          <p>Đang tải dữ liệu thống kê...</p>
+        </div>
+      );
+    }
+
+    if (!statisticsData) {
+      return (
+        <div style={{ padding: '48px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
+          <p>Không có dữ liệu thống kê từ server</p>
+          <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '16px' }}>
+            Vui lòng kiểm tra kết nối server và thử lại
+          </p>
+          <button 
+            onClick={loadStatistics}
+            style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '12px 24px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              marginTop: '16px'
+            }}
+          >
+            🔄 Tải lại dữ liệu
+          </button>
+        </div>
+      );
+    }
+
+    const currentRevenueData = statisticsData.revenue?.[statisticsPeriod] || [];
+    
+    // Debug revenue data
+    console.log('📊 Current period:', statisticsPeriod);
+    console.log('📊 Available revenue data:', {
+      daily: statisticsData.revenue?.daily?.length || 0,
+      weekly: statisticsData.revenue?.weekly?.length || 0,
+      monthly: statisticsData.revenue?.monthly?.length || 0
+    });
+    console.log('📊 Current revenue data for', statisticsPeriod, ':', currentRevenueData);
+    console.log('📊 Full revenue data structure:', statisticsData.revenue);
+    
+    // Debug table utilization data
+    console.log('📊 Table utilization data:', statisticsData.tableUtilization);
+    console.log('📊 Current table utilization for', statisticsPeriod, ':', statisticsData.tableUtilization?.[statisticsPeriod]);
+    
+    // Debug: Show sample data values
+    if (statisticsData.tableUtilization?.[statisticsPeriod]) {
+      const sampleData = statisticsData.tableUtilization[statisticsPeriod].slice(0, 3);
+      console.log('📊 Sample table utilization values:', sampleData);
+    }
+    
+    // Debug topDishes data
+    console.log('📊 Top dishes for chart:', statisticsData.topDishes);
+    console.log('📊 Current period top dishes:', statisticsData.topDishes?.[statisticsPeriod]);
+    console.log('📊 Using fallback data:', !statisticsData.topDishes?.[statisticsPeriod] || statisticsData.topDishes[statisticsPeriod].length === 0);
+    if (statisticsData.topDishes?.[statisticsPeriod]) {
+      console.log('📊 Top dishes orders for', statisticsPeriod, ':', statisticsData.topDishes[statisticsPeriod].map((d: any) => ({ name: d.name, orders: d.orders })));
+    }
+    
+    // Debug peakHours data
+    console.log('📊 Peak hours for chart:', statisticsData.peakHours);
+    console.log('📊 Current period peak hours:', statisticsData.peakHours?.[statisticsPeriod]);
+    if (statisticsData.peakHours?.[statisticsPeriod]) {
+      console.log('📊 Peak hours for', statisticsPeriod, ':', statisticsData.peakHours[statisticsPeriod].map((h: any) => ({ hour: h.hour, orders: h.orders })));
+    }
+    
+    // Calculate max value for XAxis based on current period
+    const chartData = statisticsData.topDishes?.[statisticsPeriod] || [];
+    const maxOrders = chartData.length > 0 ? Math.max(...chartData.map((d: any) => d.orders)) : 0;
+    const xAxisMax = Math.max(20, maxOrders + 5); // At least 20, or max + 5
+    console.log('📊 XAxis max value for', statisticsPeriod, ':', xAxisMax);
+
+    return (
+      <div style={{ padding: '24px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+            📊 Thống kê & Báo cáo
+          </h2>
+          <p style={{ color: '#6b7280', fontSize: '16px' }}>
+            Phân tích dữ liệu kinh doanh nhà hàng hải sản
+          </p>
+        </div>
+
+        {/* Period Selector */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            {(['daily', 'weekly', 'monthly'] as const).map((period) => (
+              <button
+                key={period}
+                onClick={() => setStatisticsPeriod(period)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: statisticsPeriod === period 
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                    : '#f3f4f6',
+                  color: statisticsPeriod === period ? 'white' : '#374151',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px'
+                }}
+              >
+                {period === 'daily' ? 'Hàng ngày' : period === 'weekly' ? 'Hàng tuần' : 'Hàng tháng'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Revenue Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+            💰 Doanh thu theo thời gian
+          </h3>
+          <div style={{ height: '300px', width: '100%', minHeight: '300px', minWidth: '400px' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={400}>
+              <AreaChart data={currentRevenueData} key={statisticsPeriod}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#667eea" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey={statisticsPeriod === 'daily' ? 'date' : statisticsPeriod === 'weekly' ? 'week' : 'month'} 
+                  stroke="#6b7280"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value.toLocaleString('vi-VN')} VNĐ`, 'Doanh thu']}
+                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{ 
+                    background: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#667eea"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#revenueGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Dishes Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+            🦀 Món ăn bán chạy
+          </h3>
+          
+          {/* Debug info */}
+          <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+            Debug: {statisticsData.topDishes?.[statisticsPeriod] ? `${statisticsData.topDishes[statisticsPeriod].length} items` : 'No data'} | 
+            Using fallback: {!statisticsData.topDishes?.[statisticsPeriod] || statisticsData.topDishes[statisticsPeriod].length === 0 ? 'Yes' : 'No'} |
+            Max orders: {statisticsData.topDishes?.[statisticsPeriod] ? Math.max(...statisticsData.topDishes[statisticsPeriod].map((d: any) => d.orders)) : 0} |
+            XAxis max: {xAxisMax}
+          </div>
+          
+          <div style={{ height: '400px', width: '100%', minHeight: '400px', minWidth: '400px' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={400} minWidth={400}>
+              <BarChart 
+                key={statisticsPeriod}
+                data={statisticsData.topDishes?.[statisticsPeriod] || [
+                  { name: 'Cơm Chiên Hải Sản', orders: 25, revenue: 1360000 },
+                  { name: 'Cơm Chiên Dương Châu', orders: 18, revenue: 390000 },
+                  { name: 'Phở Bò Tái', orders: 15, revenue: 165000 },
+                  { name: 'Nước Cam Tươi', orders: 12, revenue: 40000 },
+                  { name: 'Tôm Nướng Muối Ớt', orders: 10, revenue: 360000 },
+                  { name: 'Sườn Nướng BBQ', orders: 8, revenue: 150000 },
+                  { name: 'Lẩu Cá Khoai', orders: 6, revenue: 350000 }
+                ]} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                barCategoryGap="20%"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  type="category" 
+                  dataKey="name" 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  height={100}
+                  interval={0}
+                />
+                <YAxis 
+                  type="number" 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  domain={[0, xAxisMax]}
+                  tickCount={Math.min(10, Math.ceil(xAxisMax / 2))}
+                  tickFormatter={(value) => value.toString()}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} đơn`, 'Số lượng']}
+                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{ 
+                    background: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Bar 
+                  dataKey="orders" 
+                  fill="#667eea" 
+                  radius={[0, 4, 4, 0]}
+                  maxBarSize={80}
+                  minPointSize={5}
+                  stroke="#4f46e5"
+                  strokeWidth={1}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+          {/* Customer Stats */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+              🪑 Thống kê đặt bàn
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Tổng đặt bàn:</span>
+                <span style={{ fontWeight: 'bold', color: '#1f2937' }}>
+                  {(statisticsData.reservationStats?.[statisticsPeriod]?.totalReservations || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Đã hoàn thành:</span>
+                <span style={{ fontWeight: 'bold', color: '#10b981' }}>
+                  {(statisticsData.reservationStats?.[statisticsPeriod]?.completedReservations || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Đã hủy:</span>
+                <span style={{ fontWeight: 'bold', color: '#ef4444' }}>
+                  {(statisticsData.reservationStats?.[statisticsPeriod]?.cancelledReservations || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Số người TB:</span>
+                <span style={{ fontWeight: 'bold', color: '#f59e0b' }}>
+                  {(statisticsData.reservationStats?.[statisticsPeriod]?.avgPartySize || 0).toLocaleString('vi-VN')} người
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Stats */}
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+              📋 Thống kê đơn hàng
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Tổng đơn hàng:</span>
+                <span style={{ fontWeight: 'bold', color: '#1f2937' }}>
+                  {(statisticsData.orderStats?.[statisticsPeriod]?.totalOrders || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Đã hoàn thành:</span>
+                <span style={{ fontWeight: 'bold', color: '#10b981' }}>
+                  {(statisticsData.orderStats?.[statisticsPeriod]?.completedOrders || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Đã hủy:</span>
+                <span style={{ fontWeight: 'bold', color: '#ef4444' }}>
+                  {(statisticsData.orderStats?.[statisticsPeriod]?.cancelledOrders || 0).toLocaleString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#6b7280' }}>Thời gian xử lý TB:</span>
+                <span style={{ fontWeight: 'bold', color: '#f59e0b' }}>
+                  {statisticsData.orderStats?.[statisticsPeriod]?.avgOrderTime || 0} phút
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table Utilization Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+            🪑 Số bàn được đặt theo thời gian
+          </h3>
+          <div style={{ height: '300px', width: '100%', minHeight: '300px', minWidth: '400px' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={400}>
+              <LineChart data={statisticsData.tableUtilization?.[statisticsPeriod] || []} key={statisticsPeriod}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="hour" 
+                  stroke="#6b7280" 
+                  fontSize={12} 
+                />
+                <YAxis 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  domain={[0, 'dataMax']}
+                  tickFormatter={(value) => `${value} bàn`}
+                  label={{ value: 'Số bàn', angle: -90, position: 'insideLeft' }}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} bàn`, 'Số bàn được đặt']}
+                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{ 
+                    background: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="utilization" 
+                  stroke="#667eea" 
+                  strokeWidth={3}
+                  dot={{ fill: '#667eea', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: '#667eea', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Peak Hours Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#1f2937' }}>
+            ⏰ Giờ cao điểm
+          </h3>
+          <div style={{ height: '300px', width: '100%', minHeight: '300px', minWidth: '400px' }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={400}>
+              <BarChart 
+                key={statisticsPeriod}
+                data={statisticsData.peakHours?.[statisticsPeriod] || []}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="hour" stroke="#6b7280" fontSize={12} />
+                <YAxis 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  domain={[0, 'dataMax']}
+                  tickFormatter={(value) => `${value} đơn`}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} đơn`, 'Số đơn hàng']}
+                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{ 
+                    background: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Bar dataKey="orders" fill="#764ba2" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Load statistics when statistics or overview tab is active
+  useEffect(() => {
+    if ((activeTab === 'statistics' || activeTab === 'overview') && !statisticsData) {
+      loadStatistics();
+    }
+  }, [activeTab, statisticsData]);
+
+  // Log when period changes to debug chart updates
+  useEffect(() => {
+    if (statisticsData) {
+      console.log('📊 Period changed to:', statisticsPeriod);
+      console.log('📊 Revenue data for new period:', statisticsData.revenue?.[statisticsPeriod]);
+    }
+  }, [statisticsPeriod, statisticsData]);
+
   // Real-time updates via Socket.io - Added after all functions are defined
   useEffect(() => {
     // Listen for admin order events
@@ -2110,10 +2946,10 @@ const AdminDashboard: React.FC = () => {
         // Use setTimeout to avoid dependency issues and ensure functions exist
         setTimeout(() => {
           try {
+            // Reload orders list trước để có dữ liệu mới nhất
+            loadOrdersList(ordersPagination.current);
+            // Sau đó refresh dashboard stats
             loadOrderDashboard();
-            if (orderActiveTab === 'orders') {
-              loadOrdersList(1);
-            }
           } catch (error) {
             console.error('Error in real-time refresh:', error);
           }
@@ -2290,11 +3126,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'orders' && renderOrderManagement()}
             {activeTab === 'staff' && <StaffManagement />}
             {activeTab === 'shifts' && <ShiftManagement />}
-            {activeTab === 'statistics' && renderPlaceholder(
-              'Thống kê báo cáo',
-              '📈',
-              'Doanh thu, khách hàng, món ăn bán chạy, xu hướng kinh doanh'
-            )}
+            {activeTab === 'statistics' && renderStatistics()}
           </>
         )}
       </div>

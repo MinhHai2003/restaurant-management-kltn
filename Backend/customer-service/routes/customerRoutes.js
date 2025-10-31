@@ -36,4 +36,7 @@ router.get("/loyalty", authenticateCustomer, customerController.getLoyaltyInfo);
 // 🔗 Inter-Service Communication (for other microservices)
 router.get("/:customerId/info", customerController.getCustomerInfo);
 
+// 📊 Admin Routes (for statistics)
+router.get("/admin/all", customerController.getAllCustomersForAdmin);
+
 module.exports = router;

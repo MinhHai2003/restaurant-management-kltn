@@ -675,6 +675,30 @@ exports.getCustomerInfo = async (req, res) => {
   }
 };
 
+// 📊 Get All Customers for Admin (for statistics)
+exports.getAllCustomersForAdmin = async (req, res) => {
+  try {
+    const customers = await Customer.find({})
+      .select('_id name email phone loyaltyPoints membershipLevel totalOrders totalSpent isActive createdAt updatedAt lastLogin')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        customers: customers,
+        total: customers.length
+      },
+    });
+  } catch (error) {
+    console.error("Get all customers for admin error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch customers",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register: exports.register,
   login: exports.login,
@@ -688,4 +712,5 @@ module.exports = {
   setDefaultAddress: exports.setDefaultAddress,
   getLoyaltyInfo: exports.getLoyaltyInfo,
   getCustomerInfo: exports.getCustomerInfo,
+  getAllCustomersForAdmin: exports.getAllCustomersForAdmin,
 };

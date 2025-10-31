@@ -52,10 +52,11 @@ const Footer: React.FC = () => {
           {/* Products */}
           <div className="footer-section">
             <h4>SẢN PHẨM</h4>
-            <a href="/sp/hai-san-tuoi-song/all">Hải Sản Tươi Sống</a>
-            <a href="/sp/hai-san-che-bien/all">Hải Sản Chế Biến</a>
-            <a href="/sp/sashimi-nhat-ban/all">Sashimi Nhật Bản</a>
-            <a href="/sp/mon-an-do-phu/all">Món ăn, đồ phụ</a>
+            <a href="/sp/com-chien-pho/all">Cơm chiên & Phở</a>
+            <a href="/sp/hai-san-nuong/all">Hải sản & Nướng</a>
+            <a href="/sp/lau-canh/all">Lẩu  & Canh</a>
+            <a href="/sp/banh-goi-cuon/all">Bánh & Gỏi cuốn</a>
+            <a href="/sp/nuoc-uong-trang-mieng/all">Nước uống & Tráng miệng</a>
             <a href="/sp/san-pham-khuyen-mai/all">Sản Phẩm Khuyến Mãi</a>
           </div>
 

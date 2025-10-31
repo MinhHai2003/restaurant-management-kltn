@@ -19,6 +19,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import OrderSocketDemo from './pages/OrderSocketDemo'
 import TableMenuPage from './pages/TableMenuPage'
 import TableQRGenerator from './pages/TableQRGenerator'
+import CategoryPage from './pages/CategoryPage'
+import SearchPage from './pages/SearchPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedEmployeeRoute from './components/ProtectedEmployeeRoute'
 import './App.css'
@@ -49,6 +51,11 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/thanh-toan" element={<CheckoutPage />} />
             <Route path="/dat-ban" element={<DatBanPage />} />
+            {/* Category routes */}
+            <Route path="/menu/:slug" element={<CategoryPage />} />
+            <Route path="/sp/:slug/all" element={<CategoryPage />} />
+            <Route path="/sp/group/:slug" element={<CategoryPage />} />
+            <Route path="/search" element={<SearchPage />} />
             
             {/* Socket.io Order Demo */}
             <Route path="/order-socket-demo" element={<OrderSocketDemo />} />

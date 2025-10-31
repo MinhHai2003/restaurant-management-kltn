@@ -98,8 +98,7 @@ export const categories = [
     image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332733/restaurant-menu/menu-1759332727925-385629513-comchienhaisan.jpg",
     subcategories: [
       { name: "Cơm chiên", slug: "com-chien" },
-      { name: "Phở", slug: "pho" },
-      { name: "Cơm tấm", slug: "com-tam" }
+      { name: "Phở", slug: "pho" }
     ]
   },
   {
@@ -108,9 +107,8 @@ export const categories = [
     slug: "hai-san-nuong",
     image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&h=300&fit=crop",
     subcategories: [
-      { name: "Hải sản nướng", slug: "hai-san-nuong" },
-      { name: "Nướng BBQ", slug: "nuong-bbq" },
-      { name: "Hải sản tươi sống", slug: "hai-san-tuoi-song" }
+      { name: "Hải sản", slug: "hai-san" },
+      { name: "Nướng BBQ", slug: "thit-nuong" }
     ]
   },
   {
@@ -120,8 +118,7 @@ export const categories = [
     image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332847/restaurant-menu/menu-1759332843485-105455699-lau-ca-khoai-quang-binh-01-1632812019.jpg",
     subcategories: [
       { name: "Lẩu", slug: "lau" },
-      { name: "Canh", slug: "canh" },
-      { name: "Mì Quảng", slug: "mi-quang" }
+      { name: "Canh", slug: "canh" }
     ]
   },
   {
@@ -132,8 +129,7 @@ export const categories = [
     subcategories: [
       { name: "Gỏi cuốn", slug: "goi-cuon" },
       { name: "Bánh mì", slug: "banh-mi" },
-      { name: "Bánh xèo", slug: "banh-xeo" },
-      { name: "Bún", slug: "bun" }
+      { name: "Bánh xèo", slug: "banh-xeo" }
     ]
   },
   {
@@ -142,7 +138,7 @@ export const categories = [
     slug: "nuoc-uong-trang-mieng",
     image: "https://res.cloudinary.com/dgqgwefnv/image/upload/v1759332938/restaurant-menu/menu-1759332934400-20242317-aquafina-500ml.jpg",
     subcategories: [
-      { name: "Nước uống", slug: "nuoc-uong" },
+      { name: "Nước uống", slug: "do-uong" },
       { name: "Tráng miệng", slug: "trang-mieng" }
     ]
   }

@@ -511,7 +511,12 @@ exports.getOrderDashboard = async (req, res) => {
     // Lấy thống kê từng bước để debug dễ hơn
     console.log("📊 [DASHBOARD] Getting today stats...");
     const todayStats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfDay } } },
+      { 
+        $match: { 
+          createdAt: { $gte: startOfDay },
+          status: { $in: ['completed', 'delivered'] }
+        } 
+      },
       {
         $group: {
           _id: null,
@@ -525,7 +530,12 @@ exports.getOrderDashboard = async (req, res) => {
 
     console.log("📊 [DASHBOARD] Getting week stats...");
     const weekStats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfWeek } } },
+      { 
+        $match: { 
+          createdAt: { $gte: startOfWeek },
+          status: { $in: ['completed', 'delivered'] }
+        } 
+      },
       {
         $group: {
           _id: null,
@@ -538,7 +548,12 @@ exports.getOrderDashboard = async (req, res) => {
 
     console.log("📊 [DASHBOARD] Getting month stats...");
     const monthStats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfMonth } } },
+      { 
+        $match: { 
+          createdAt: { $gte: startOfMonth },
+          status: { $in: ['completed', 'delivered'] }
+        } 
+      },
       {
         $group: {
           _id: null,

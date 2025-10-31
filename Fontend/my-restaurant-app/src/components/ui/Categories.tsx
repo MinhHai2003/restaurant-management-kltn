@@ -65,8 +65,10 @@ const Categories: React.FC = () => {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    transition: 'transform 0.3s ease',
+                    transition: 'transform 0.35s ease',
                   }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1.06)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLImageElement).style.transform = 'scale(1)'; }}
                 />
                 <div style={{
                   position: 'absolute',
@@ -122,8 +124,9 @@ const Categories: React.FC = () => {
                   marginBottom: '20px',
                 }}>
                   {category.subcategories.slice(0, 3).map((sub, index) => (
-                    <span 
-                      key={index} 
+                    <a
+                      key={index}
+                      href={`/menu/${category.slug}?sub=${sub.slug}`}
                       style={{
                         background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
                         color: 'white',
@@ -132,10 +135,13 @@ const Categories: React.FC = () => {
                         fontSize: '0.8rem',
                         fontWeight: '500',
                         boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)',
+                        textDecoration: 'none'
                       }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
                       {sub.name}
-                    </span>
+                    </a>
                   ))}
                   {category.subcategories.length > 3 && (
                     <span style={{
@@ -152,7 +158,7 @@ const Categories: React.FC = () => {
                 </div>
                 
                 <a 
-                  href={`/category/${category.slug}`} 
+                  href={`/menu/${category.slug}`} 
                   style={{
                     display: 'inline-block',
                     background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',

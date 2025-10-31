@@ -27,15 +27,15 @@ const corsOptions = {
     
     // Allow localhost for development
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, true);
+      return callback(null, origin); // Return exact origin
     }
     
     // Allow Vercel deployments (all *.vercel.app domains)
     if (origin.includes('.vercel.app')) {
-      return callback(null, true);
+      return callback(null, origin); // Return exact origin to match request
     }
     
-    callback(null, true); // Allow all origins for now (can restrict later)
+    callback(null, origin); // Return exact origin for all other origins
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

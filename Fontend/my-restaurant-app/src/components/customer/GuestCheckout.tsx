@@ -40,15 +40,26 @@ interface GuestCheckoutProps {
 const GuestCheckout: React.FC<GuestCheckoutProps> = ({ cart, onOrderSuccess }) => {
   const navigate = useNavigate();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    district: string;
+    city: string;
+    paymentMethod: 'cash' | 'momo';
+    deliveryType: 'pickup' | 'delivery';
+    customerNotes: string;
+    kitchenNotes: string;
+  }>({
     name: '',
     email: '',
     phone: '',
     address: '',
     district: '',
     city: '',
-    paymentMethod: 'cash' as const,
-    deliveryType: 'delivery' as const,
+    paymentMethod: 'cash',
+    deliveryType: 'delivery',
     customerNotes: '',
     kitchenNotes: '',
   });

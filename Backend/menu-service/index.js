@@ -5,14 +5,38 @@ const connectDB = require("./config/db");
 
 const app = express();
 
+// Trust proxy (required for Railway/reverse proxy)
+app.set('trust proxy', true);
+
 // Middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:3001",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:3001",
+        process.env.FRONTEND_URL,
+        "https://my-restaurant-app-six.vercel.app",
+        "https://my-restaurant-b93364dpn-vinh-lois-projects.vercel.app",
+      ].filter(Boolean);
+      
+      // Allow all Vercel deployments
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Default: deny
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );
@@ -33,6 +57,25 @@ app.get("/api/debug/cloudinary", (req, res) => {
     hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     apiKey: process.env.CLOUDINARY_API_KEY?.substring(0, 5) + "...",
+  });
+});
+
+// Health check route
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Menu Service is running",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+// 404 handler - must be after all routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
   });
 });
 

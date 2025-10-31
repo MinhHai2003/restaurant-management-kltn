@@ -277,6 +277,12 @@ const CheckoutPage: React.FC = () => {
     setProcessing(true);
 
     try {
+      if (!cart) {
+        setError('Giỏ hàng trống!');
+        setProcessing(false);
+        return;
+      }
+
       // Calculate final pricing with frontend discount
       const subtotal = cart.summary.subtotal || 0;
       const tax = cart.summary.tax || 0;
@@ -373,7 +379,7 @@ const CheckoutPage: React.FC = () => {
       console.log('🔑 Token từ localStorage:', token ? 'Có token' : 'Không có token');
       console.log('👤 User state:', user ? 'Authenticated' : 'Guest');
       console.log('📦 Dữ liệu gửi đi:', orderData);
-      console.log('🍽️ Menu items trong cart:', cart.items.map(item => ({ 
+      console.log('🍽️ Menu items trong cart:', cart?.items.map(item => ({ 
         cartItemId: item._id, 
         menuItemId: item.menuItemId,
         name: item.name 
@@ -1358,7 +1364,7 @@ const CheckoutPage: React.FC = () => {
             console.log('💳 Transaction details:', transaction);
             
             // Clear cart
-            updateCartCount(0);
+            updateCartCount();
             
             // Hiển thị thông báo thành công
             alert(`🎉 Thanh toán thành công!\n\nMã đơn hàng: ${frontendOrderNumber}\nSố tiền: ${transaction?.amount?.toLocaleString()} VNĐ\n\nĐơn hàng của bạn đang được xử lý.`);

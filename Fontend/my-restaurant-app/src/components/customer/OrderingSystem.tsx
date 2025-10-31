@@ -23,7 +23,7 @@ const OrderingSystem: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { isConnected, cartUpdates } = useOrderSocket();
+  const { isConnected } = useOrderSocket();
 
   // Fetch menu items
   useEffect(() => {
@@ -44,13 +44,21 @@ const OrderingSystem: React.FC = () => {
     fetchMenu();
   }, []);
 
-  // Update cart when receiving real-time updates
+  // Listen for cart updates via socket
   useEffect(() => {
-    if (cartUpdates?.type === 'item_added') {
-      // Optionally refresh cart from server or update UI
-      console.log('Cart updated via Socket.io:', cartUpdates);
-    }
-  }, [cartUpdates]);
+    const handleCartUpdate = (event: CustomEvent) => {
+      const data = event.detail;
+      if (data?.type === 'item_added') {
+        // Optionally refresh cart from server or update UI
+        console.log('Cart updated via Socket.io:', data);
+      }
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate as EventListener);
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate as EventListener);
+    };
+  }, []);
 
   const addToCart = async (menuItem: MenuItem, quantity: number = 1, customizations?: string) => {
     try {

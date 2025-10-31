@@ -7,16 +7,41 @@ const customerRoutes = require("./routes/customerRoutes");
 
 const app = express();
 
-// Middleware
+// Trust proxy (required for Railway/reverse proxy)
+app.set('trust proxy', true);
+
+// Middleware - CORS với support cho tất cả Vercel deployments
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.FRONTEND_URL,
-    ].filter(Boolean),
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        process.env.FRONTEND_URL,
+        "https://my-restaurant-app-six.vercel.app",
+        "https://my-restaurant-b93364dpn-vinh-lois-projects.vercel.app",
+      ].filter(Boolean);
+      
+      // Allow all Vercel deployments (ends with .vercel.app)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Default: deny
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use(express.json({ limit: "10mb" }));

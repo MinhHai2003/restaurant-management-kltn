@@ -253,7 +253,7 @@ const socketService = new SocketService();
 // Global notification function for window object
 declare global {
   interface Window {
-    showSocketNotification?: (message: string, type: string) => void;
+    showSocketNotification?: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
   }
 }
 

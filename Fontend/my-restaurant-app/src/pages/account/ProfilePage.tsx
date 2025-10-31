@@ -60,7 +60,8 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5002/api/customers/profile', {
+      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/profile`;
+      const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -110,7 +111,8 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5002/api/customers/profile', {
+      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/profile`;
+      const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -13,6 +13,9 @@ const { initSocket } = require("./config/socket");
 const app = express();
 const server = http.createServer(app);
 
+// 🔒 Trust proxy (required for Railway/reverse proxy)
+app.set('trust proxy', true);
+
 // 🔒 Security middleware
 app.use(helmet());
 app.use(

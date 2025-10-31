@@ -14,6 +14,15 @@ interface Order {
   _id: string;
   orderNumber: string;
   items: OrderItem[];
+  status?: string;
+  pricing?: {
+    subtotal?: number;
+    tax?: number;
+    deliveryFee?: number;
+    discount?: number;
+    loyaltyDiscount?: number;
+    total: number;
+  };
   customerInfo?: {
     name?: string;
     email?: string;

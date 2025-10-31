@@ -17,10 +17,39 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for Railway
+app.set('trust proxy', true);
+
+// CORS configuration - allow Vercel deployments
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Allow Vercel deployments (all *.vercel.app domains)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    callback(null, true); // Allow all origins for now (can restrict later)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id']
+};
+
 // Socket.IO setup
 const io = socketIO(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: function (origin, callback) {
+      // Allow all origins for Socket.io (Vercel preview URLs are dynamic)
+      callback(null, true);
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -80,12 +109,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -110,7 +134,7 @@ app.use("/api/tables", tableRoutes);
 app.use("/api/reservations", reservationRoutes);
 
 // 404 handler
-app.use("*", (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",

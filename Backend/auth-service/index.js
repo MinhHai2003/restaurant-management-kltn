@@ -41,39 +41,8 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+// Apply CORS
 app.use(cors(corsOptions));
-
-// Manual CORS headers to ensure correct origin is returned
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Set CORS headers based on request origin
-  if (origin) {
-    // Allow localhost
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    // Allow Vercel deployments
-    else if (origin.includes('.vercel.app')) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    // Allow any other origin (for now)
-    else {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-  }
-  
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-  
-  next();
-});
 
 // 🔒 Security middleware (after CORS to avoid header conflicts)
 app.use(helmet({

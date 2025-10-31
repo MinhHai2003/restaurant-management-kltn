@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const http = require("http");
@@ -15,54 +16,49 @@ const server = http.createServer(app);
 // 🔒 Trust proxy (required for Railway/reverse proxy)
 app.set('trust proxy', true);
 
-// 🔒 Security middleware (configured to not interfere with CORS)
+// CORS configuration - MUST be FIRST, before any other middleware
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.FRONTEND_URL,
+      "https://my-restaurant-app-six.vercel.app",
+      "https://my-restaurant-b93364dpn-vinh-lois-projects.vercel.app",
+    ].filter(Boolean);
+    
+    // Allow all Vercel deployments (ends with .vercel.app)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, origin);
+    }
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, origin);
+    }
+    
+    // Default: deny
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
+  exposedHeaders: [],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// 🔒 Security middleware (after CORS)
 app.use(helmet({
-  crossOriginResourcePolicy: false, // Disable to allow CORS override
+  crossOriginResourcePolicy: false,
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: false,
 }));
-
-// CORS configuration - MUST be after helmet to override any conflicting headers
-// Use dynamic origin that always matches the request origin
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Debug logging
-  if (origin) {
-    console.log(`[CORS] Request origin: ${origin}`);
-  }
-  
-  // Set CORS headers dynamically based on request origin
-  if (origin) {
-    // Allow localhost and Vercel domains
-    if (
-      origin.includes('localhost') || 
-      origin.includes('127.0.0.1') || 
-      origin.includes('.vercel.app')
-    ) {
-      // CRITICAL: Set the exact origin from the request (override any previous headers)
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
-      res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
-      res.setHeader('Vary', 'Origin'); // Important for CORS caching
-      
-      console.log(`[CORS] Set Access-Control-Allow-Origin: ${origin}`);
-      
-      // Handle preflight requests
-      if (req.method === 'OPTIONS') {
-        console.log(`[CORS] Preflight OPTIONS request from ${origin}`);
-        return res.status(204).end();
-      }
-    }
-  } else {
-    // No origin header (e.g., Postman, curl) - allow
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  
-  next();
-});
 
 // 📝 Logging
 app.use(morgan("combined"));
@@ -80,71 +76,12 @@ connectDB();
 // 🔌 Initialize Socket.io
 const io = initSocket(server);
 
-// 🔄 Final CORS override middleware - ensures CORS headers are always correct
-// This runs on every request, even after routes, to ensure headers are set correctly
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-    // Override any CORS headers that might have been set incorrectly
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
-  next();
-});
-
-// 🛣️ Routes with CORS override wrapper
+// 🛣️ Routes
 const authRoutes = require("./routes/authRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");
 
-// Wrapper middleware to ensure CORS headers are set correctly for all API routes
-// Override both res.json and res.end to catch all response methods
-const corsWrapper = (req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Store original methods
-  const originalJson = res.json.bind(res);
-  const originalEnd = res.end.bind(res);
-  const originalSend = res.send.bind(res);
-  
-  // Override res.json
-  res.json = function(data) {
-    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-      res.removeHeader('Access-Control-Allow-Origin'); // Remove existing header first
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
-    }
-    return originalJson(data);
-  };
-  
-  // Override res.end
-  res.end = function(chunk, encoding) {
-    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-      res.removeHeader('Access-Control-Allow-Origin');
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    return originalEnd(chunk, encoding);
-  };
-  
-  // Override res.send
-  res.send = function(body) {
-    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-      res.removeHeader('Access-Control-Allow-Origin');
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    return originalSend(body);
-  };
-  
-  next();
-};
-
-app.use("/api/auth", corsWrapper, authRoutes);
-app.use("/api/auth/shifts", corsWrapper, shiftRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/auth/shifts", shiftRoutes);
 
 // 🏠 Health check
 app.get("/health", (req, res) => {
@@ -158,13 +95,6 @@ app.get("/health", (req, res) => {
 
 // 🚫 404 handler
 app.use("*", (req, res) => {
-  // Override CORS headers before sending 404 response
-  const origin = req.headers.origin;
-  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -174,14 +104,6 @@ app.use("*", (req, res) => {
 // 🚨 Global error handler
 app.use((error, req, res, next) => {
   console.error("Global error:", error);
-  
-  // Override CORS headers in error response
-  const origin = req.headers.origin;
-  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-    res.removeHeader('Access-Control-Allow-Origin');
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
 
   res.status(error.status || 500).json({
     success: false,

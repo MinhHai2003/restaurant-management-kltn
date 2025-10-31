@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from '../../config/api';
 import { useSocket } from '../../hooks/useSocket';
 import SocketStatus from '../common/SocketStatus';
 
@@ -76,7 +77,7 @@ const ShiftManagement: React.FC = () => {
   const fetchShifts = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('http://localhost:5001/api/auth/shifts', {
+      const response = await fetch('${API_CONFIG.AUTH_API}/auth/shifts', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -102,7 +103,7 @@ const ShiftManagement: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('http://localhost:5001/api/auth/employees', {
+      const response = await fetch('${API_CONFIG.AUTH_API}/auth/employees', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,7 +129,7 @@ const ShiftManagement: React.FC = () => {
   const createShift = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('http://localhost:5001/api/auth/shifts', {
+      const response = await fetch('${API_CONFIG.AUTH_API}/auth/shifts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -168,7 +169,7 @@ const ShiftManagement: React.FC = () => {
   const assignEmployeeToShift = async (shiftId: string, employeeId: string) => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch(`http://localhost:5001/api/auth/shifts/${shiftId}/assign`, {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts/${shiftId}/assign`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -219,7 +220,7 @@ const ShiftManagement: React.FC = () => {
   const unassignEmployeeFromShift = async (shiftId: string, employeeId: string) => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch(`http://localhost:5001/api/auth/shifts/${shiftId}/unassign`, {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts/${shiftId}/unassign`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -270,7 +271,7 @@ const ShiftManagement: React.FC = () => {
   const updateShiftStatus = async (shiftId: string, status: Shift['status']) => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch(`http://localhost:5001/api/auth/shifts/${shiftId}/status`, {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts/${shiftId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -308,7 +309,7 @@ const ShiftManagement: React.FC = () => {
     if (confirm('Bạn có chắc muốn xóa ca làm việc này?')) {
       try {
         const token = localStorage.getItem('employeeToken');
-        const response = await fetch(`http://localhost:5001/api/auth/shifts/${shiftId}`, {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts/${shiftId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,

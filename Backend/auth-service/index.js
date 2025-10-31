@@ -18,12 +18,31 @@ app.set('trust proxy', true);
 
 // 🔒 Security middleware
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-  })
-);
+
+// CORS configuration - allow Vercel deployments
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Allow Vercel deployments (all *.vercel.app domains)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    callback(null, true); // Allow all origins for now (can restrict later)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id']
+};
+
+app.use(cors(corsOptions));
 
 // 📝 Logging
 app.use(morgan("combined"));

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrderSocket } from '../hooks/useOrderSocket';
+import { API_CONFIG } from '../config/api';
 import StaffNotifications from '../components/StaffNotifications';
 
 const EmployeeLoginPage: React.FC = () => {
@@ -72,7 +73,7 @@ const EmployeeLoginPage: React.FC = () => {
       }
 
       // Thử đăng nhập qua auth-service (nếu hoạt động)
-      const response = await fetch('http://localhost:5001/api/auth/login', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

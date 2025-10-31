@@ -56,7 +56,8 @@ const ProtectedEmployeeRoute: React.FC<ProtectedEmployeeRouteProps> = ({
 
         console.log('🔍 ProtectedEmployeeRoute: Validating token with server...');
         // Validate token với server (fallback)
-        const response = await fetch('http://localhost:5001/api/auth/profile', {
+        const { API_CONFIG } = await import('../config/api');
+        const response = await fetch(`${API_CONFIG.AUTH_API}/auth/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

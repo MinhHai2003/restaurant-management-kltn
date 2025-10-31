@@ -1,9 +1,11 @@
+import { API_CONFIG } from '../config/api';
+
 // Employee Authentication Helper - Sử dụng auth-service thật
 export const AdminAuthHelper = {
   // Đăng nhập nhân viên thật qua auth-service
   login: async (email: string, password: string) => {
     try {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +74,7 @@ export const AdminAuthHelper = {
     if (!token) return { valid: false };
 
     try {
-      const response = await fetch('http://localhost:5001/api/auth/profile', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

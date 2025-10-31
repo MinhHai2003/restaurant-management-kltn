@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from '../../config/api';
 
 interface Employee {
   _id: string;
@@ -43,7 +44,7 @@ const StaffManagement: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('http://localhost:5001/api/auth/employees', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -68,7 +69,7 @@ const StaffManagement: React.FC = () => {
   const updateEmployee = async (employeeId: string, updateData: Partial<Employee>) => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch(`http://localhost:5001/api/auth/employees/${employeeId}`, {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees/${employeeId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -103,7 +104,7 @@ const StaffManagement: React.FC = () => {
     if (confirm(`Bạn có chắc muốn xóa nhân viên "${employeeName}"? Hành động này không thể hoàn tác!`)) {
       try {
         const token = localStorage.getItem('employeeToken');
-        const response = await fetch(`http://localhost:5001/api/auth/employees/${employeeId}`, {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees/${employeeId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

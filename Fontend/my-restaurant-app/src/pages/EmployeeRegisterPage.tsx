@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_CONFIG } from '../config/api';
 
 const EmployeeRegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -137,7 +138,7 @@ const EmployeeRegisterPage: React.FC = () => {
         address: formData.address
       };
 
-      const response = await fetch('http://localhost:5001/api/auth/register', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

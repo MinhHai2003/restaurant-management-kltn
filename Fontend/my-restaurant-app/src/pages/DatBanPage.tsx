@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getSessionId } from '../services/cartService';
 import { useTableSocket } from '../hooks/useTableSocket';
 import QRPayment from '../components/QRPayment';
+import { API_CONFIG } from '../config/api';
 
 
 
@@ -178,7 +179,7 @@ const DatBanPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:5006/api/tables?limit=100');
+      const res = await fetch(`${API_CONFIG.TABLE_API}/tables?limit=100`);
       console.log('📥 [TABLES] API response status:', res.status);
       
       const data = await res.json();
@@ -205,7 +206,7 @@ const DatBanPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      let endpoint = 'http://localhost:5006/api/tables';
+      let endpoint = `${API_CONFIG.TABLE_API}/tables`;
       const params = new URLSearchParams();
 
       // Determine which endpoint to use based on search criteria
@@ -215,7 +216,7 @@ const DatBanPage: React.FC = () => {
       // If searching by time AND status is available (or no status filter), use search endpoint
       // If searching by time BUT status is NOT available, use regular endpoint for filtering
       if (hasTimeSearch && !hasStatusFilter) {
-        endpoint = 'http://localhost:5006/api/tables/search';
+        endpoint = `${API_CONFIG.TABLE_API}/tables/search`;
         params.append('date', formData.reservationDate);
         params.append('startTime', formData.startTime);
         params.append('endTime', formData.endTime);
@@ -389,7 +390,7 @@ const DatBanPage: React.FC = () => {
       console.log('🔗 [API] Headers:', headers);
       console.log('📋 [API] Reservation data:', reservationData);
 
-      const res = await fetch('http://localhost:5006/api/reservations', {
+      const res = await fetch(`${API_CONFIG.TABLE_API}/reservations`, {
         method: 'POST',
         headers,
         body: JSON.stringify(reservationData),

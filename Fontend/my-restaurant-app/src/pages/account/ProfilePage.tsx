@@ -60,7 +60,16 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/profile`;
+      // Debug: Log env variables
+      const customerApi = (import.meta as any).env?.VITE_CUSTOMER_API;
+      console.log('🔍 [PROFILE] ENV Variables:', {
+        VITE_CUSTOMER_API: customerApi,
+        fallback: 'http://localhost:5002/api',
+        willUse: customerApi || 'http://localhost:5002/api'
+      });
+
+      const apiUrl = `${customerApi || 'http://localhost:5002/api'}/customers/profile`;
+      console.log('🔍 [PROFILE] Fetching from:', apiUrl);
       const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,

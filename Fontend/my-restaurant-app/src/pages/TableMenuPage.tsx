@@ -8,6 +8,7 @@ import CassoPayment from '../components/CassoPayment';
 import orderService from '../services/orderService';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import RatingStars from '../components/RatingStars';
+import { API_CONFIG } from '../config/api';
 
 interface MenuItem {
   _id: string;
@@ -251,7 +252,7 @@ const TableMenuPage: React.FC = () => {
 
         // 1. Get table info from table service
         console.log('🍽️ [TABLE] Loading table info for:', tableNumber);
-        const tableResponse = await fetch(`http://localhost:5006/api/tables/number/${tableNumber}`);
+        const tableResponse = await fetch(`${API_CONFIG.TABLE_API}/tables/number/${tableNumber}`);
 
         if (!tableResponse.ok) {
           throw new Error('Không tìm thấy thông tin bàn');
@@ -265,7 +266,7 @@ const TableMenuPage: React.FC = () => {
 
         // 2. Check/create table session
         console.log('🍽️ [SESSION] Checking table session...');
-        const sessionResponse = await fetch(`http://localhost:5006/api/tables/${tableNumber}/session`);
+        const sessionResponse = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableNumber}/session`);
 
         if (sessionResponse.ok) {
           const sessionData = await sessionResponse.json();
@@ -276,7 +277,7 @@ const TableMenuPage: React.FC = () => {
         } else {
           // Create new session
           console.log('🆕 [SESSION] Creating new table session...');
-          const createSessionResponse = await fetch(`http://localhost:5006/api/tables/${tableNumber}/start-session`, {
+          const createSessionResponse = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableNumber}/start-session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -521,10 +522,10 @@ const TableMenuPage: React.FC = () => {
       console.log('🔄 [REFRESH] Loading session and orders for table:', tableNumber);
 
       // Get current table session
-      const sessionResponse = await fetch(`http://localhost:5006/api/tables/${tableNumber}/session`);
+      const sessionResponse = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableNumber}/session`);
 
       // Get unpaid orders for this table
-      const ordersResponse = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}`);
+      const ordersResponse = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}`);
 
       let currentSession = null;
       let unpaidOrders = [];
@@ -1550,7 +1551,7 @@ const TableMenuPage: React.FC = () => {
                 }
 
                 // End table session
-                const endSessionResponse = await fetch(`http://localhost:5006/api/tables/${tableNumber}/end-session`, {
+                const endSessionResponse = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableNumber}/end-session`, {
                   method: 'POST'
                 });
 

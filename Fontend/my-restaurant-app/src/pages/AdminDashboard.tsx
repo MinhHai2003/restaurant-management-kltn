@@ -7,6 +7,7 @@ import MenuManagement from '../components/admin/MenuManagement';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import { useTableSocket } from '../hooks/useTableSocket';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { API_CONFIG } from '../config/api';
 
 interface ApiReservation {
   _id: string;
@@ -703,7 +704,7 @@ const AdminDashboard: React.FC = () => {
 
   const loadTableStats = async () => {
     try {
-      const res = await fetch('http://localhost:5006/api/tables/stats');
+      const res = await fetch(`${API_CONFIG.TABLE_API}/tables/stats`);
       const data = await res.json();
       if (data.success) {
         setStats(prev => ({
@@ -721,7 +722,7 @@ const AdminDashboard: React.FC = () => {
 
   const loadTables = async () => {
     try {
-      const res = await fetch('http://localhost:5006/api/tables?limit=100');
+      const res = await fetch(`${API_CONFIG.TABLE_API}/tables?limit=100`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.data && data.data.tables) {
@@ -735,7 +736,7 @@ const AdminDashboard: React.FC = () => {
 
   const loadReservations = async () => {
     try {
-      const res = await fetch('http://localhost:5006/api/reservations/admin/all?limit=100');
+      const res = await fetch(`${API_CONFIG.TABLE_API}/reservations/admin/all?limit=100`);
       if (res.ok) {
         const data = await res.json();
 
@@ -795,7 +796,7 @@ const AdminDashboard: React.FC = () => {
       // Debug: Log data được gửi
       console.log('Creating table with data:', tableFormData);
 
-      const response = await fetch('http://localhost:5006/api/tables', {
+      const response = await fetch(`${API_CONFIG.TABLE_API}/tables`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -843,7 +844,7 @@ const AdminDashboard: React.FC = () => {
     setDeletingTable(tableId);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5006/api/tables/${tableId}`, {
+      const response = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -900,7 +901,7 @@ const AdminDashboard: React.FC = () => {
     setUpdatingTable(true);
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5006/api/tables/${editingTable._id}`, {
+      const response = await fetch(`${API_CONFIG.TABLE_API}/tables/${editingTable._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -944,7 +945,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const res = await fetch('http://localhost:5006/api/tables/admin/reset-maintenance', {
+      const res = await fetch(`${API_CONFIG.TABLE_API}/tables/admin/reset-maintenance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -966,7 +967,7 @@ const AdminDashboard: React.FC = () => {
 
   const updateReservationStatus = async (reservationId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:5006/api/reservations/admin/${reservationId}/status`, {
+      const res = await fetch(`${API_CONFIG.TABLE_API}/reservations/admin/${reservationId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -993,7 +994,7 @@ const AdminDashboard: React.FC = () => {
 
   const updateTableStatus = async (tableId: string, newStatus: string) => {
     try {
-      const res = await fetch(`http://localhost:5006/api/tables/${tableId}/status`, {
+      const res = await fetch(`${API_CONFIG.TABLE_API}/tables/${tableId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'

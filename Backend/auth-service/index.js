@@ -99,18 +99,47 @@ const authRoutes = require("./routes/authRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");
 
 // Wrapper middleware to ensure CORS headers are set correctly for all API routes
+// Override both res.json and res.end to catch all response methods
 const corsWrapper = (req, res, next) => {
-  const originalJson = res.json;
+  const origin = req.headers.origin;
+  
+  // Store original methods
+  const originalJson = res.json.bind(res);
+  const originalEnd = res.end.bind(res);
+  const originalSend = res.send.bind(res);
+  
+  // Override res.json
   res.json = function(data) {
-    const origin = req.headers.origin;
     if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      res.removeHeader('Access-Control-Allow-Origin'); // Remove existing header first
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
     }
-    return originalJson.call(this, data);
+    return originalJson(data);
   };
+  
+  // Override res.end
+  res.end = function(chunk, encoding) {
+    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      res.removeHeader('Access-Control-Allow-Origin');
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    return originalEnd(chunk, encoding);
+  };
+  
+  // Override res.send
+  res.send = function(body) {
+    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      res.removeHeader('Access-Control-Allow-Origin');
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    return originalSend(body);
+  };
+  
   next();
 };
 
@@ -145,6 +174,14 @@ app.use("*", (req, res) => {
 // 🚨 Global error handler
 app.use((error, req, res, next) => {
   console.error("Global error:", error);
+  
+  // Override CORS headers in error response
+  const origin = req.headers.origin;
+  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    res.removeHeader('Access-Control-Allow-Origin');
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
 
   res.status(error.status || 500).json({
     success: false,

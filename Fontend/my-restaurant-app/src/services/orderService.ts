@@ -66,9 +66,20 @@ class OrderService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Order creation failed:', errorData);
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        let errorData: any;
+        try {
+          const text = await response.text();
+          errorData = text ? JSON.parse(text) : { message: `HTTP ${response.status}` };
+        } catch {
+          errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        console.error('❌ Order creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          url: ORDER_API_BASE
+        });
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}: Failed to create order`);
       }
 
       const result = await response.json();

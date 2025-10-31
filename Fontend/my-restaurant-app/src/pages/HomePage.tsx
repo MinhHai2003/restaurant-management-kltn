@@ -28,7 +28,8 @@ const HomePage: React.FC = () => {
     const fetchMenuData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5003/api/menu');
+        const menuApiUrl = (import.meta as any).env?.VITE_MENU_API || 'http://localhost:5003/api';
+        const response = await fetch(`${menuApiUrl}/menu`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch menu data');

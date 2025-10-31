@@ -15,7 +15,7 @@ const RatingStars: React.FC<RatingStarsProps> = ({
   readonly = false,
   size = 'md',
   showText = false,
-  className = '',
+  className: _className = '',
 }) => {
   const sizeStyles = {
     sm: { fontSize: '0.875rem', starSize: '18px' },

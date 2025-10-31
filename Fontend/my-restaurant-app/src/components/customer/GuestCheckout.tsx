@@ -1,7 +1,36 @@
 import React, { useState } from 'react';
-import { cartService, type Cart, type GuestCheckoutData } from '../../services/cartService';
-import { toast } from 'react-hot-toast';
+import { cartService, type Cart } from '../../services/cartService';
 import { useNavigate } from 'react-router-dom';
+
+// Simple toast implementation
+const toast = {
+  error: (message: string) => alert(`❌ ${message}`),
+  success: (message: string) => alert(`✅ ${message}`),
+};
+
+interface GuestCheckoutData {
+  guestInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    address?: {
+      full: string;
+      district?: string;
+      city?: string;
+    };
+  };
+  payment: {
+    method: string;
+  };
+  delivery: {
+    type: string;
+    estimatedTime: number;
+  };
+  notes?: {
+    customer?: string;
+    kitchen?: string;
+  };
+}
 
 interface GuestCheckoutProps {
   cart: Cart | null;
@@ -231,7 +260,7 @@ const GuestCheckout: React.FC<GuestCheckoutProps> = ({ cart, onOrderSuccess }) =
                 name="deliveryType"
                 value="pickup"
                 checked={formData.deliveryType === 'pickup'}
-                onChange={(e) => setFormData(prev => ({ ...prev, deliveryType: e.target.value as 'pickup' }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, deliveryType: (e.target.value === 'pickup' ? 'pickup' : 'delivery') as 'pickup' | 'delivery' }))}
                 className="mr-2"
               />
               <span>Lấy tại cửa hàng</span>

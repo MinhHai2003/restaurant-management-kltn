@@ -30,7 +30,7 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
-  const [error, setError] = useState<string>('');
+  const [error, _setError] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'checking' | 'confirmed'>('pending');
   const [countdown, setCountdown] = useState(600); // 10 minutes
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
@@ -42,8 +42,9 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
       setLoading(true);
       console.log('🔍 [Casso Payment] Fetching payment instructions for order:', orderNumber);
       
+      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
       const response = await axios.get(
-        `http://localhost:5005/api/casso/payment-instructions/${orderNumber}`
+        `${orderApiUrl}/casso/payment-instructions/${orderNumber}`
       );
 
       console.log('📋 [Casso Payment] API Response:', response.data);
@@ -78,8 +79,9 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
       console.log('🔄 [Casso Payment] Order number:', orderNumber);
       console.log('🔄 [Casso Payment] Current payment status:', paymentStatus);
       
+      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
       const response = await axios.get(
-        `http://localhost:5005/api/casso/payment-status/${orderNumber}`
+        `${orderApiUrl}/casso/payment-status/${orderNumber}`
       );
 
       console.log('🔍 [Casso Payment] API Response:', response.data);
@@ -117,10 +119,11 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
         console.log('⏳ [Casso Payment] Payment status:', response.data.data?.paymentStatus);
         console.log('⏳ [Casso Payment] Full response data:', JSON.stringify(response.data, null, 2));
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: any; status?: number } };
       console.error('❌ [Casso Payment] Error checking payment status:', err);
-      console.error('❌ [Casso Payment] Error response:', err.response?.data);
-      console.error('❌ [Casso Payment] Error status:', err.response?.status);
+      console.error('❌ [Casso Payment] Error response:', error.response?.data);
+      console.error('❌ [Casso Payment] Error status:', error.response?.status);
       // Không set error, chỉ log warning
     }
   }, [orderNumber, checkInterval, onPaymentConfirmed, onClose, paymentStatus]);
@@ -222,50 +225,6 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
     checkPaymentStatus();
   };
 
-  // Bank code mapping (VietQR)
-  const getBankCode = (bankName: string): string => {
-    const bankMap: { [key: string]: string } = {
-      'Vietcombank': 'VCB',
-      'Techcombank': 'TCB',
-      'BIDV': 'BIDV',
-      'VietinBank': 'ICB',  // ✅ VietinBank = ICB (đã test thành công)
-      'Vietinbank': 'ICB',
-      'Agribank': 'AGR',
-      'MB Bank': 'MB',
-      'ACB': 'ACB',
-      'VPBank': 'VPB',
-      'Sacombank': 'STB',
-      'TPBank': 'TPB',
-      'HDBank': 'HDB',
-      'VIB': 'VIB',
-      'SHB': 'SHB',
-      'SeABank': 'SEAB',
-      'OCB': 'OCB',
-      'MSB': 'MSB',
-      'NAB': 'NAB',
-      'LienVietPostBank': 'LPB',
-      'PVcomBank': 'PVB',
-      'BacABank': 'BAB',
-      'VietBank': 'VBB',
-      'VietCapitalBank': 'BVB',
-      'SCB': 'SCB',
-      'KienLongBank': 'KLB',
-      'BaoVietBank': 'BVBANK',
-      'PGBank': 'PGB',
-      'NCB': 'NCB',
-      'ABBANK': 'ABB',
-    };
-
-    // Find matching bank code (case-insensitive, partial match)
-    for (const [name, code] of Object.entries(bankMap)) {
-      if (bankName.toLowerCase().includes(name.toLowerCase())) {
-        return code;
-      }
-    }
-
-    // Default fallback
-    return 'ICB';  // Default là VietinBank
-  };
 
   // Generate QR Code using VietQR API (copy từ QRPayment.tsx)
   const generateQRCode = () => {
@@ -594,7 +553,7 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
               src={generateQRCode()} 
               alt="QR Code Payment" 
               style={{ width: '280px', height: '280px' }}
-              onError={(e) => {
+              onError={(_e) => {
                 console.error('❌ [Casso Payment] Failed to load QR:', generateQRCode());
               }}
               onLoad={() => {

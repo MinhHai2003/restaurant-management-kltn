@@ -1,6 +1,7 @@
 import { getSessionId } from './cartService';
 
-const ORDER_API_BASE = 'http://localhost:5005/api/orders';
+const ORDER_API_ROOT = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+const ORDER_API_BASE = `${ORDER_API_ROOT}/orders`;
 
 interface OrderData {
   items: any[];
@@ -194,7 +195,7 @@ class OrderService {
     try {
       console.log('🔄 [OrderService] Updating order status:', { orderId, status, note });
       
-      const response = await fetch(`http://localhost:5005/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${ORDER_API_ROOT}/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: this.getHeaders(),
         body: JSON.stringify({ status, note }),
@@ -219,7 +220,7 @@ class OrderService {
     try {
       console.log('💳 [OrderService] Updating original orders for table payment:', tablePaymentOrderId);
       
-      const response = await fetch(`http://localhost:5005/api/admin/orders/table-payment/${tablePaymentOrderId}/update-original-orders`, {
+      const response = await fetch(`${ORDER_API_ROOT}/admin/orders/table-payment/${tablePaymentOrderId}/update-original-orders`, {
         method: 'PATCH',
         headers: this.getHeaders(),
       });

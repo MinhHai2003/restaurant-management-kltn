@@ -42,7 +42,7 @@ interface MenuResponse {
 }
 
 class MenuService {
-  private baseURL = 'http://localhost:5003/api';
+  private baseURL = (import.meta as any).env?.VITE_MENU_API || 'http://localhost:5003/api';
 
   // Get all menu items
   async getMenuItems(params?: {

@@ -56,7 +56,8 @@ export const useOrderSocket = () => {
 
     console.log('🔐 [useOrderSocket] Auth type:', authType);
 
-    const newSocket = io('http://localhost:5005', {
+    const socketUrl = (import.meta as any).env?.VITE_ORDER_SOCKET_URL || 'http://localhost:5005';
+    const newSocket = io(socketUrl, {
       auth: token ? { token, type: authType } : { type: 'guest' },
       transports: ['websocket', 'polling']
     });

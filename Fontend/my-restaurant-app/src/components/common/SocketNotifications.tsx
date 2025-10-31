@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSocketNotifications } from '../hooks/useSocket';
+import { useSocketNotifications } from '../../hooks/useSocket';
 
 interface NotificationProps {
   id: string;
@@ -147,7 +147,7 @@ const SocketNotifications: React.FC = () => {
       )}
 
       {/* Notifications */}
-      {notifications.map((notification) => (
+      {notifications.map((notification: { id: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; timestamp: Date }) => (
         <NotificationItem
           key={notification.id}
           id={notification.id}

@@ -27,18 +27,6 @@ const StaffNotifications: React.FC<StaffNotificationsProps> = ({
     return icons[role] || '👤';
   };
 
-  const getRoleColor = (role: string) => {
-    const colors: Record<string, string> = {
-      'admin': '#dc2626',
-      'manager': '#7c3aed', 
-      'waiter': '#059669',
-      'chef': '#ea580c',
-      'cashier': '#0891b2',
-      'delivery': '#9333ea',
-      'receptionist': '#db2777'
-    };
-    return colors[role] || '#6b7280';
-  };
 
   const getRelevantNotifications = () => {
     if (!notifications.length) return [];

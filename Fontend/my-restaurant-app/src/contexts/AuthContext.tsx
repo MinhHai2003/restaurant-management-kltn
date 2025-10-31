@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   // Base URL for customer service
-  const CUSTOMER_BASE_URL = 'http://localhost:5002/api/customers';
+  const CUSTOMER_BASE_URL = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers`;
 
   useEffect(() => {
     // Check if user is logged in on app start

@@ -44,7 +44,7 @@ export interface InventoryReport {
   generatedAt?: string;
 }
 
-const BASE_URL = 'http://localhost:5004/api/admin/inventory';
+const BASE_URL = `${((import.meta as any).env?.VITE_INVENTORY_API || 'http://localhost:5004/api')}/admin/inventory`;
 
 // Helper function to get admin token (giả sử token lưu trong localStorage)
 const getAuthHeaders = () => {

@@ -90,7 +90,8 @@ export const useTableSocket = () => {
       Notification.requestPermission();
     }
 
-    const newSocket = io('http://localhost:5006', {
+    const socketUrl = (import.meta as any).env?.VITE_TABLE_SOCKET_URL || 'http://localhost:5006';
+    const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
     });

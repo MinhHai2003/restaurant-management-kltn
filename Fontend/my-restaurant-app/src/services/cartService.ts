@@ -1,5 +1,5 @@
 // Cart Service for API calls with Session-based Guest Support
-const API_BASE_URL = 'http://localhost:5005/api/cart';
+const API_BASE_URL = `${((import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api')}/cart`;
 
 interface CartItem {
   _id: string;
@@ -269,6 +269,55 @@ class CartService {
       style: 'currency',
       currency: 'VND',
     }).format(price);
+  }
+
+  // Guest checkout
+  async guestCheckout(checkoutData: {
+    guestInfo: {
+      name: string;
+      email: string;
+      phone: string;
+      address?: {
+        full: string;
+        district?: string;
+        city?: string;
+      };
+    };
+    payment: {
+      method: string;
+    };
+    delivery: {
+      type: string;
+      estimatedTime: number;
+    };
+    notes?: {
+      customer?: string;
+      kitchen?: string;
+    };
+  }): Promise<{ success: boolean; data?: { order: any }; error?: string }> {
+    try {
+      const headers = this.getAuthHeaders();
+      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+      const response = await fetch(`${orderApiUrl}/orders/guest-checkout`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(checkoutData),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Guest checkout failed');
+      }
+
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('Guest checkout error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to checkout' 
+      };
+    }
   }
 
   // Check if user is authenticated (always true now with session fallback)

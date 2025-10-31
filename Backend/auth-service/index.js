@@ -94,12 +94,28 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🛣️ Routes
+// 🛣️ Routes with CORS override wrapper
 const authRoutes = require("./routes/authRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");
 
-app.use("/api/auth", authRoutes);
-app.use("/api/auth/shifts", shiftRoutes);
+// Wrapper middleware to ensure CORS headers are set correctly for all API routes
+const corsWrapper = (req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(data) {
+    const origin = req.headers.origin;
+    if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
+    }
+    return originalJson.call(this, data);
+  };
+  next();
+};
+
+app.use("/api/auth", corsWrapper, authRoutes);
+app.use("/api/auth/shifts", corsWrapper, shiftRoutes);
 
 // 🏠 Health check
 app.get("/health", (req, res) => {
@@ -113,6 +129,13 @@ app.get("/health", (req, res) => {
 
 // 🚫 404 handler
 app.use("*", (req, res) => {
+  // Override CORS headers before sending 404 response
+  const origin = req.headers.origin;
+  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
   res.status(404).json({
     success: false,
     message: "Route not found",

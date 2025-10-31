@@ -1,4 +1,5 @@
 import { chatbotCartTools } from './chatbotCartService';
+import { API_CONFIG } from '../config/api';
 
 export interface AIResponse {
   text: string;
@@ -69,8 +70,7 @@ async function fetchAllTables(): Promise<Table[]> {
     console.log('🔍 Fetching all tables with pagination handling...');
     
     // First, get the first page to know total pages
-    const tableApi = (import.meta as any).env?.VITE_TABLE_API || 'http://localhost:5006/api';
-    const firstPageResponse = await fetch(`${tableApi}/tables?page=1&limit=10`);
+    const firstPageResponse = await fetch(`${API_CONFIG.TABLE_API}/tables?page=1&limit=10`);
     if (!firstPageResponse.ok) {
       console.error('❌ Failed to fetch first page of tables');
       return [];
@@ -91,7 +91,7 @@ async function fetchAllTables(): Promise<Table[]> {
     // If there are more pages, fetch them
     if (pagination.pages > 1) {
       for (let page = 2; page <= pagination.pages; page++) {
-        const pageResponse = await fetch(`${tableApi}/tables?page=${page}&limit=10`);
+        const pageResponse = await fetch(`${API_CONFIG.TABLE_API}/tables?page=${page}&limit=10`);
         if (pageResponse.ok) {
           const pageData = await pageResponse.json();
           if (pageData.success && pageData.data.tables) {

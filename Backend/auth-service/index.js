@@ -20,6 +20,11 @@ app.set('trust proxy', true);
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
+  // Debug logging (remove in production if needed)
+  if (origin) {
+    console.log(`[CORS] Request origin: ${origin}`);
+  }
+  
   // Set CORS headers dynamically based on request origin
   if (origin) {
     // Allow localhost and Vercel domains
@@ -28,14 +33,18 @@ app.use((req, res, next) => {
       origin.includes('127.0.0.1') || 
       origin.includes('.vercel.app')
     ) {
+      // CRITICAL: Set the exact origin from the request
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
       res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
       
+      console.log(`[CORS] Set Access-Control-Allow-Origin: ${origin}`);
+      
       // Handle preflight requests
       if (req.method === 'OPTIONS') {
+        console.log(`[CORS] Preflight OPTIONS request from ${origin}`);
         return res.status(204).end();
       }
     }

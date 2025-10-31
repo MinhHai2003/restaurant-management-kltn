@@ -64,6 +64,9 @@ const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    trustProxy: false, // Disable trust proxy validation warning
+  },
 });
 
 // 👥 Employee management rate limiting

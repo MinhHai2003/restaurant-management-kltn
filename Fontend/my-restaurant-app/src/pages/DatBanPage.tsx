@@ -89,8 +89,8 @@ const DatBanPage: React.FC = () => {
   
   // Payment states
   const [showPayment, setShowPayment] = useState(false);
-  const [reservationData, setReservationData] = useState<any>(null);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [reservationData, _setReservationData] = useState<any>(null);
+  const [totalAmount, _setTotalAmount] = useState(0);
   
   // Constants
   const LOCATIONS = [

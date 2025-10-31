@@ -16,7 +16,7 @@ interface CustomerProfile {
 
 interface AccountLayoutProps {
   children: ReactNode;
-  activeTab: 'profile' | 'orders' | 'reservations' | 'addresses' | 'logout';
+  activeTab: 'profile' | 'orders' | 'reservations' | 'addresses' | 'recommendations' | 'logout';
 }
 
 const AccountLayout: React.FC<AccountLayoutProps> = ({ children, activeTab }) => {

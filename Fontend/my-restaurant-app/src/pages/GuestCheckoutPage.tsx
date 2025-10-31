@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cartService, type Cart } from '../services/cartService';
 import GuestCheckout from '../components/customer/GuestCheckout';
-import { toast } from 'react-hot-toast';
+
+// Simple toast implementation
+const toast = {
+  error: (message: string) => alert(`❌ ${message}`),
+  success: (message: string) => alert(`✅ ${message}`),
+};
 
 const GuestCheckoutPage: React.FC = () => {
   const navigate = useNavigate();

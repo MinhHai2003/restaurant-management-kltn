@@ -218,7 +218,7 @@ export async function processQuestion(question: string): Promise<string> {
   }
   
   // Step 4: Send question + real data + web search to AI
-  const apiResponse = await tryFreeAPIs(question, restaurantData, webSearchResults);
+  const apiResponse = await tryFreeAPIs(question, restaurantData, webSearchResults || undefined);
   if (apiResponse) {
     return apiResponse;
   }

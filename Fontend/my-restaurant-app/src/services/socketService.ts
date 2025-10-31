@@ -1,11 +1,5 @@
 import { io, Socket } from 'socket.io-client';
 
-interface SocketMessage {
-  id?: string;
-  message: string;
-  timestamp: Date;
-  type?: 'info' | 'success' | 'warning' | 'error';
-}
 
 interface ShiftNotification {
   shift: any;

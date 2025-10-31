@@ -20,15 +20,6 @@ interface CartItem {
   image?: string;
 }
 
-interface Cart {
-  items: CartItem[];
-  summary: {
-    total: number;
-    subtotal: number;
-    tax: number;
-    deliveryFee: number;
-  };
-}
 
 export interface ChatbotCartResult {
   success: boolean;

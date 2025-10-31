@@ -5,8 +5,7 @@ import Footer from '../components/layout/Footer';
 import { menuService } from '../services/menuService';
 import QRPayment from '../components/QRPayment';
 import CassoPayment from '../components/CassoPayment';
-import orderService, { type CreateOrderResponse } from '../services/orderService';
-import { useCart } from '../contexts/CartContext';
+import orderService from '../services/orderService';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import RatingStars from '../components/RatingStars';
 
@@ -83,7 +82,8 @@ const TableMenuPage: React.FC = () => {
 
   // Payment States
   const [showPayment, setShowPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_paymentMethod, _setPaymentMethod] = useState<'cash' | 'transfer' | null>(null);
   const [isSessionPayment, setIsSessionPayment] = useState(false); // Track if paying for entire session
   
   // Table Payment States
@@ -96,7 +96,7 @@ const TableMenuPage: React.FC = () => {
     phone: '',
     email: ''
   });
-  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showCustomerForm, _setShowCustomerForm] = useState(false);
 
   // Socket for real-time dine-in updates
   const { socket, isConnected } = useOrderSocket();
@@ -387,7 +387,7 @@ const TableMenuPage: React.FC = () => {
       });
     };
     socket.on('table_order_created', handleTableOrderCreated);
-    const handleTableSessionClosed = (data: any) => {
+    const handleTableSessionClosed = (_data: any) => {
       // Khi tab khác hoàn tất thanh toán bàn này → đóng phiên và quay về Home
       setShowPayment(false);
       setIsSessionPayment(false);
@@ -458,7 +458,7 @@ const TableMenuPage: React.FC = () => {
   };
 
   // Calculate total for all unpaid, non-cancelled orders of this table
-  const calculateTableTotal = async () => {
+  const _calculateTableTotal = async () => {
     const orders = await loadTableOrders();
     const unpaidOrders = orders.filter((order: any) =>
       order.payment?.status !== 'completed' &&
@@ -473,7 +473,7 @@ const TableMenuPage: React.FC = () => {
   };
 
   // Handle session payment (prepare all unpaid and non-cancelled orders of this table)
-  const handleSessionPayment = async () => {
+  const _handleSessionPayment = async () => {
     console.log('🔥 [SESSION PAYMENT] Starting - Table:', tableNumber);
 
     const orders = await loadTableOrders();

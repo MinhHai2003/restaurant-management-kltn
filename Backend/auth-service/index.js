@@ -80,6 +80,20 @@ connectDB();
 // 🔌 Initialize Socket.io
 const io = initSocket(server);
 
+// 🔄 Final CORS override middleware - ensures CORS headers are always correct
+// This runs on every request, even after routes, to ensure headers are set correctly
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  if (origin && (origin.includes('.vercel.app') || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    // Override any CORS headers that might have been set incorrectly
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  next();
+});
+
 // 🛣️ Routes
 const authRoutes = require("./routes/authRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");

@@ -15,12 +15,19 @@ const server = http.createServer(app);
 // 🔒 Trust proxy (required for Railway/reverse proxy)
 app.set('trust proxy', true);
 
-// CORS configuration - allow Vercel deployments (MUST be before helmet)
+// 🔒 Security middleware (configured to not interfere with CORS)
+app.use(helmet({
+  crossOriginResourcePolicy: false, // Disable to allow CORS override
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
+}));
+
+// CORS configuration - MUST be after helmet to override any conflicting headers
 // Use dynamic origin that always matches the request origin
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Debug logging (remove in production if needed)
+  // Debug logging
   if (origin) {
     console.log(`[CORS] Request origin: ${origin}`);
   }
@@ -33,12 +40,13 @@ app.use((req, res, next) => {
       origin.includes('127.0.0.1') || 
       origin.includes('.vercel.app')
     ) {
-      // CRITICAL: Set the exact origin from the request
+      // CRITICAL: Set the exact origin from the request (override any previous headers)
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
       res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+      res.setHeader('Vary', 'Origin'); // Important for CORS caching
       
       console.log(`[CORS] Set Access-Control-Allow-Origin: ${origin}`);
       
@@ -55,14 +63,6 @@ app.use((req, res, next) => {
   
   next();
 });
-
-// 🔒 Security middleware (after CORS to avoid header conflicts)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false,
-  // Don't modify CORS headers
-  contentSecurityPolicy: false, // Temporarily disable to avoid conflicts
-}));
 
 // 📝 Logging
 app.use(morgan("combined"));

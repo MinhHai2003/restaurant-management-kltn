@@ -33,7 +33,8 @@ const ReservationsPage: React.FC = () => {
       try {
         // Get user token for authentication
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5006/api/reservations`, {
+        const apiUrl = `${(import.meta as any).env?.VITE_TABLE_API || 'http://localhost:5006/api'}/reservations`;
+        const res = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -75,7 +76,8 @@ const ReservationsPage: React.FC = () => {
       // You can optimize by updating only the changed reservation
       // For now, refetch all
       const token = localStorage.getItem('token');
-      fetch(`http://localhost:5006/api/reservations`, {
+      const apiUrl = `${(import.meta as any).env?.VITE_TABLE_API || 'http://localhost:5006/api'}/reservations`;
+      fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

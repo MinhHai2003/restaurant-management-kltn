@@ -43,7 +43,8 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/customers/addresses`, {
+      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses`;
+      const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -95,9 +96,10 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      const baseUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses`;
       const url = editingAddress 
-        ? `http://localhost:5002/api/customers/addresses/${editingAddress._id}`
-        : `http://localhost:5002/api/customers/addresses`;
+        ? `${baseUrl}/${editingAddress._id}`
+        : baseUrl;
       
       const method = editingAddress ? 'PUT' : 'POST';
 
@@ -152,7 +154,8 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/customers/addresses/${addressId}`, {
+      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses/${addressId}`;
+      const response = await fetch(apiUrl, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +190,8 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/customers/addresses/${addressId}/default`, {
+      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses/${addressId}/default`;
+      const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

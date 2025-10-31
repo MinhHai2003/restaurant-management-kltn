@@ -11,9 +11,44 @@ const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 const server = http.createServer(app);
+
+// Trust proxy for Railway
+app.set('trust proxy', true);
+
+// CORS configuration - allow Vercel deployments
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Allow Vercel deployments (all *.vercel.app domains)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow specific production domain if needed
+    // if (origin === 'https://your-domain.com') {
+    //   return callback(null, true);
+    // }
+    
+    callback(null, true); // Allow all origins for now (can restrict later)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id']
+};
+
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:5173", // Frontend URL
+    origin: function (origin, callback) {
+      // Allow all origins for Socket.io (Vercel preview URLs are dynamic)
+      callback(null, true);
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -25,7 +60,7 @@ connectDB();
 
 // Security Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -175,7 +210,7 @@ app.use("/api/casso", require("./routes/cassoRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 // 404 Handler
-app.use("*", (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",

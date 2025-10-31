@@ -336,20 +336,35 @@ exports.updateOrderStatus = async (req, res) => {
 
       // Notify customer if exists
       if (order.customerId) {
+        // CRITICAL: Convert customerId to string to match socket room name
+        const customerIdStr = order.customerId.toString();
+        const customerRoom = `user_${customerIdStr}`;
+        
         console.log(
-          `🔔 [SOCKET] Emitting order_status_updated to user_${order.customerId}:`,
+          `🔔 [SOCKET] Emitting order_status_updated to ${customerRoom}:`,
           {
             type: "customer_order_status_updated",
             orderId: order._id,
             orderNumber: order.orderNumber,
             status: status,
+            customerId: customerIdStr,
             message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
           }
         );
 
-        req.io.to(`user_${order.customerId}`).emit("order_status_updated", {
+        // Emit to customer's room
+        req.io.to(customerRoom).emit("order_status_updated", {
           type: "customer_order_status_updated",
-          orderId: order._id,
+          orderId: order._id.toString(),
+          orderNumber: order.orderNumber,
+          status: status,
+          message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
+        });
+        
+        // Also emit customer_order_status_updated event for compatibility
+        req.io.to(customerRoom).emit("customer_order_status_updated", {
+          type: "customer_order_status_updated",
+          orderId: order._id.toString(),
           orderNumber: order.orderNumber,
           status: status,
           message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,

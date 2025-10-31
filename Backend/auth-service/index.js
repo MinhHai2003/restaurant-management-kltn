@@ -17,32 +17,36 @@ const server = http.createServer(app);
 app.set('trust proxy', true);
 
 // CORS configuration - allow Vercel deployments (MUST be before helmet)
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    // Allow localhost for development
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return callback(null, origin); // Return exact origin
+// Use dynamic origin that always matches the request origin
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers dynamically based on request origin
+  if (origin) {
+    // Allow localhost and Vercel domains
+    if (
+      origin.includes('localhost') || 
+      origin.includes('127.0.0.1') || 
+      origin.includes('.vercel.app')
+    ) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-session-id');
+      res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+      
+      // Handle preflight requests
+      if (req.method === 'OPTIONS') {
+        return res.status(204).end();
+      }
     }
-    
-    // Allow Vercel deployments (all *.vercel.app domains)
-    if (origin.includes('.vercel.app')) {
-      return callback(null, origin); // Return exact origin to match request
-    }
-    
-    callback(null, origin); // Return exact origin for all other origins
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-
-// Apply CORS
-app.use(cors(corsOptions));
+  } else {
+    // No origin header (e.g., Postman, curl) - allow
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  next();
+});
 
 // 🔒 Security middleware (after CORS to avoid header conflicts)
 app.use(helmet({

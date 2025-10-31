@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AccountLayout from '../../components/account/AccountLayout';
 import { useTableSocket } from '../../hooks/useTableSocket';
 import { useAuth } from '../../hooks/useAuth';
+import { API_CONFIG } from '../../config/api';
 
 interface Reservation {
   id: string;
@@ -33,7 +34,7 @@ const ReservationsPage: React.FC = () => {
       try {
         // Get user token for authentication
         const token = localStorage.getItem('token');
-        const apiUrl = `${(import.meta as any).env?.VITE_TABLE_API || 'http://localhost:5006/api'}/reservations`;
+        const apiUrl = `${API_CONFIG.TABLE_API}/reservations`;
         const res = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,

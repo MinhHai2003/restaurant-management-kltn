@@ -50,7 +50,22 @@ const socketAuth = async (socket, next) => {
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Allow localhost for development
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+          return callback(null, true);
+        }
+        
+        // Allow all Vercel deployments
+        if (origin.includes('.vercel.app')) {
+          return callback(null, true);
+        }
+        
+        callback(null, true); // Allow all origins
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },

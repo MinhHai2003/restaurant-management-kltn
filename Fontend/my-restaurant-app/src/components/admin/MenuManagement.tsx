@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from '../../config/api';
 
 interface Ingredient {
   name: string;
@@ -105,8 +106,8 @@ const MenuManagement: React.FC = () => {
 
   const fetchInventoryItems = async () => {
     try {
-      console.log('🔄 Fetching inventory from http://localhost:5004/api/inventory');
-      const response = await fetch('http://localhost:5004/api/inventory');
+      console.log(`🔄 Fetching inventory from ${API_CONFIG.INVENTORY_API}/inventory`);
+      const response = await fetch(`${API_CONFIG.INVENTORY_API}/inventory`);
       console.log('📡 Response status:', response.status);
       
       if (response.ok) {

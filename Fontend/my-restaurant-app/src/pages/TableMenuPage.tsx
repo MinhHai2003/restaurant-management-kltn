@@ -442,7 +442,7 @@ const TableMenuPage: React.FC = () => {
   // Load all orders for this table (not just session)
   const loadTableOrders = async () => {
     try {
-      const response = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}`, {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -652,7 +652,7 @@ const TableMenuPage: React.FC = () => {
         notes: orderNotes
       };
 
-      const response = await fetch('http://localhost:5004/api/orders/dine-in', {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -739,7 +739,7 @@ const TableMenuPage: React.FC = () => {
       console.log('🍽️ [ORDER] Submitting dine-in order:', orderData);
 
       // Submit to dine-in order endpoint
-      const response = await fetch('http://localhost:5005/api/orders/dine-in', {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -941,7 +941,7 @@ const TableMenuPage: React.FC = () => {
                         if (sessionPayMethod === 'cash') {
                           // Xử lý thanh toán tiền mặt như cũ
                           try {
-                            const res = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
+                            const res = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}/complete`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
@@ -1531,7 +1531,7 @@ const TableMenuPage: React.FC = () => {
                 alert(`Thanh toán tổng thành công! Tổng tiền: ${formatPrice(tableSession?.totalAmount || 0)}`);
 
                 // Mark all orders of this table as completed using new API
-                const markOrdersResponse = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
+                const markOrdersResponse = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}/complete`, {
                   method: 'PATCH',
                   headers: {
                     'Content-Type': 'application/json'
@@ -1603,7 +1603,7 @@ const TableMenuPage: React.FC = () => {
               // Sử dụng API /complete giống như thanh toán tiền mặt
               console.log('🔄 [TABLE PAYMENT] Completing table payment...');
               
-              const res = await fetch(`http://localhost:5005/api/orders/dine-in/table-number/${tableNumber}/complete`, {
+              const res = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}/complete`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOrderSocket } from '../../hooks/useOrderSocket';
 import OrderNotifications from '../OrderNotifications';
+import { API_CONFIG } from '../../config/api';
 
 interface MenuItem {
   _id: string;
@@ -68,7 +69,7 @@ const OrderingSystem: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5005/api/cart/add', {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/cart/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ const OrderingSystem: React.FC = () => {
       }
 
       // Checkout cart (convert cart to order)
-      const response = await fetch('http://localhost:5005/api/cart/checkout', {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/cart/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

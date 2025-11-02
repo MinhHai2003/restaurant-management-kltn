@@ -10,6 +10,7 @@ import type { Address } from '../services/customerService';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../contexts/CartContext';
 import type { Cart } from '../services/cartService';
+import { API_CONFIG } from '../config/api';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -173,7 +174,7 @@ const CheckoutPage: React.FC = () => {
             console.log('🔑 [FRONTEND DEBUG] Token exists:', !!token);
             
             if (token) {
-              const refreshResponse = await fetch('http://localhost:5005/api/cart/refresh', {
+              const refreshResponse = await fetch(`${API_CONFIG.ORDER_API}/cart/refresh`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`,

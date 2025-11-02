@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_CONFIG } from '../../config/api';
 
 interface MenuItemWithStock {
   _id: string;
@@ -53,7 +54,7 @@ const MenuWithInventory: React.FC<MenuWithInventoryProps> = ({ onAddToCart }) =>
         menuData.map(async (item: any) => {
           try {
             // Check if this menu item has a recipe and stock availability
-            const stockResponse = await fetch('http://localhost:5005/api/inventory-test/check-menu-stock', {
+            const stockResponse = await fetch(`${API_CONFIG.ORDER_API}/inventory-test/check-menu-stock`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

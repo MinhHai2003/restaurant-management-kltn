@@ -504,9 +504,9 @@ const AdminDashboard: React.FC = () => {
 
   const checkServices = async () => {
     const services = [
-      { name: 'orderService', url: 'http://localhost:5005/health' },
-      { name: 'menuService', url: 'http://localhost:5003/api/menu' }, // Menu service không có /health
-      { name: 'inventoryService', url: 'http://localhost:5004/api/inventory' } // Inventory service không có /health
+      { name: 'orderService', url: `${API_CONFIG.ORDER_API.replace('/api', '')}/health` },
+      { name: 'menuService', url: `${API_CONFIG.MENU_API}/menu` }, // Menu service không có /health
+      { name: 'inventoryService', url: `${API_CONFIG.INVENTORY_API}/inventory` } // Inventory service không có /health
     ];
 
     const statusChecks = await Promise.allSettled(
@@ -540,7 +540,7 @@ const AdminDashboard: React.FC = () => {
 
   const loadOrderDashboard = async () => {
     try {
-      const response = await fetch('http://localhost:5005/api/admin/orders/dashboard');
+      const response = await fetch(`${API_CONFIG.ORDER_API}/admin/orders/dashboard`);
       if (response.ok) {
         const data = await response.json();
         console.log('Order dashboard data:', data);
@@ -573,7 +573,7 @@ const AdminDashboard: React.FC = () => {
   const loadStatistics = async () => {
     setStatisticsLoading(true);
     try {
-      const response = await fetch('http://localhost:5005/api/admin/statistics', {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/admin/statistics`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       
@@ -607,7 +607,7 @@ const AdminDashboard: React.FC = () => {
         ...filters
       });
 
-      const response = await fetch(`http://localhost:5005/api/admin/orders?${queryParams}`);
+      const response = await fetch(`${API_CONFIG.ORDER_API}/admin/orders?${queryParams}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Orders list data:', data);
@@ -634,7 +634,7 @@ const AdminDashboard: React.FC = () => {
 
     setUpdatingOrderId(orderId);
     try {
-      const response = await fetch(`http://localhost:5005/api/admin/orders/${orderId}/status`, {
+      const response = await fetch(`${API_CONFIG.ORDER_API}/admin/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

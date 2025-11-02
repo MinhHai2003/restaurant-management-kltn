@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from '../../config/api';
 
 interface InventoryItem {
   _id: string;
@@ -26,7 +27,7 @@ const InventoryManagement: React.FC = () => {
 
   const loadInventoryData = async () => {
     try {
-      const res = await fetch('http://localhost:5004/api/inventory');
+      const res = await fetch(`${API_CONFIG.INVENTORY_API}/inventory`);
       const data = await res.json();
       
       // API returns array directly

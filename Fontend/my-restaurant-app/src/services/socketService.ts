@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { API_CONFIG } from '../config/api';
 
 
 interface ShiftNotification {
@@ -34,7 +35,7 @@ class SocketService {
           return;
         }
 
-        this.socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001', {
+        this.socket = io(API_CONFIG.SOCKET_URL, {
           auth: {
             token,
             type: userType

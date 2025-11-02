@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
 interface CassoPaymentProps {
   orderNumber: string;
@@ -42,7 +43,7 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
       setLoading(true);
       console.log('🔍 [Casso Payment] Fetching payment instructions for order:', orderNumber);
       
-      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+      const orderApiUrl = API_CONFIG.ORDER_API;
       const response = await axios.get(
         `${orderApiUrl}/casso/payment-instructions/${orderNumber}`
       );
@@ -79,7 +80,7 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
       console.log('🔄 [Casso Payment] Order number:', orderNumber);
       console.log('🔄 [Casso Payment] Current payment status:', paymentStatus);
       
-      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+      const orderApiUrl = API_CONFIG.ORDER_API;
       const response = await axios.get(
         `${orderApiUrl}/casso/payment-status/${orderNumber}`
       );

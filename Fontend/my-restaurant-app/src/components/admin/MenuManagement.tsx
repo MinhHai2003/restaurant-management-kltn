@@ -89,7 +89,7 @@ const MenuManagement: React.FC = () => {
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5003/api/menu');
+      const response = await fetch(`${API_CONFIG.MENU_API}/menu`);
       if (response.ok) {
         const data = await response.json();
         setMenuItems(data);
@@ -215,8 +215,8 @@ const MenuManagement: React.FC = () => {
       }
 
       const url = editingItem 
-        ? `http://localhost:5003/api/menu/${editingItem._id}`
-        : 'http://localhost:5003/api/menu';
+        ? `${API_CONFIG.MENU_API}/menu/${editingItem._id}`
+        : `${API_CONFIG.MENU_API}/menu`;
       
       const method = editingItem ? 'PUT' : 'POST';
 
@@ -269,7 +269,7 @@ const MenuManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5003/api/menu/${id}`, {
+      const response = await fetch(`${API_CONFIG.MENU_API}/menu/${id}`, {
         method: 'DELETE'
       });
 
@@ -297,7 +297,7 @@ const MenuManagement: React.FC = () => {
       formData.append('category', item.category);
       formData.append('available', (!item.available).toString());
 
-      const response = await fetch(`http://localhost:5003/api/menu/${item._id}`, {
+      const response = await fetch(`${API_CONFIG.MENU_API}/menu/${item._id}`, {
         method: 'PUT',
         body: formData
       });

@@ -391,7 +391,7 @@ const CheckoutPage: React.FC = () => {
       try {
         const menuItemId = cart.items[0].menuItemId || cart.items[0]._id;
         console.log('🧪 Using menu item ID:', menuItemId);
-        const testResponse = await fetch(`http://localhost:5003/api/menu/${menuItemId}`);
+        const testResponse = await fetch(`${API_CONFIG.MENU_API}/menu/${menuItemId}`);
         console.log('🧪 Menu API test response status:', testResponse.status);
         const testData = await testResponse.text();
         console.log('🧪 Menu API test response:', testData);

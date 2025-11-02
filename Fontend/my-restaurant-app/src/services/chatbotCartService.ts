@@ -1,5 +1,6 @@
 // Chat Bot Cart Service - Functions for chatbot to interact with cart
 import { cartService } from './cartService';
+import { API_CONFIG } from '../config/api';
 
 interface MenuItem {
   _id: string;
@@ -43,7 +44,7 @@ export async function searchMenuItem(query: string): Promise<ChatbotCartResult> 
   try {
     console.log('🔍 Chatbot searching for:', query);
     
-    const response = await fetch('http://localhost:5003/api/menu');
+    const response = await fetch(`${API_CONFIG.MENU_API}/menu`);
     if (!response.ok) {
       throw new Error('Failed to fetch menu');
     }
@@ -216,7 +217,7 @@ export async function getMenuSuggestions(category?: string): Promise<ChatbotCart
   try {
     console.log('🍽️ Chatbot getting menu suggestions for category:', category);
     
-    const response = await fetch('http://localhost:5003/api/menu');
+    const response = await fetch(`${API_CONFIG.MENU_API}/menu`);
     if (!response.ok) {
       throw new Error('Failed to fetch menu');
     }

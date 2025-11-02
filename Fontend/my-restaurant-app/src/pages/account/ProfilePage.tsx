@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AccountLayout from '../../components/account/AccountLayout';
+import { API_CONFIG } from '../../config/api';
 
 interface CustomerProfile {
   _id: string;
@@ -60,15 +61,7 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      // Debug: Log env variables
-      const customerApi = (import.meta as any).env?.VITE_CUSTOMER_API;
-      console.log('🔍 [PROFILE] ENV Variables:', {
-        VITE_CUSTOMER_API: customerApi,
-        fallback: 'http://localhost:5002/api',
-        willUse: customerApi || 'http://localhost:5002/api'
-      });
-
-      const apiUrl = `${customerApi || 'http://localhost:5002/api'}/customers/profile`;
+      const apiUrl = `${API_CONFIG.CUSTOMER_API}/customers/profile`;
       console.log('🔍 [PROFILE] Fetching from:', apiUrl);
       const response = await fetch(apiUrl, {
         headers: {
@@ -120,7 +113,7 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/profile`;
+      const apiUrl = `${API_CONFIG.CUSTOMER_API}/customers/profile`;
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {

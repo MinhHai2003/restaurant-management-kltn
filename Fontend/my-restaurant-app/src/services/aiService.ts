@@ -140,7 +140,7 @@ async function fetchRestaurantData(): Promise<RestaurantData> {
     console.log('📊 Fetching restaurant data from database...');
     
     // Test and fetch menu data
-    const rawMenuData = await testAPIEndpoint('http://localhost:5003/api/menu', 'Menu');
+    const rawMenuData = await testAPIEndpoint(`${API_CONFIG.MENU_API}/menu`, 'Menu');
     let menuData: MenuItem[] = [];
     if (rawMenuData && Array.isArray(rawMenuData)) {
       menuData = rawMenuData;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './useAuth';
+import { API_CONFIG } from '../config/api';
 
 interface ReservationSocketData {
   reservation: {
@@ -90,7 +91,7 @@ export const useTableSocket = () => {
       Notification.requestPermission();
     }
 
-    const socketUrl = (import.meta as any).env?.VITE_TABLE_SOCKET_URL || 'http://localhost:5006';
+    const socketUrl = API_CONFIG.TABLE_SOCKET_URL;
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       timeout: 20000,

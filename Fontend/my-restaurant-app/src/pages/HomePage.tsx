@@ -5,6 +5,7 @@ import Categories from '../components/ui/Categories';
 import ProductSection from '../components/ui/ProductSection';
 import ChatBotContainer from '../components/ChatBot/ChatBotContainer';
 import { useCart } from '../contexts/CartContext';
+import { API_CONFIG } from '../config/api';
 
 interface MenuItem {
   _id: string;
@@ -28,7 +29,7 @@ const HomePage: React.FC = () => {
     const fetchMenuData = async () => {
       try {
         setLoading(true);
-        const menuApiUrl = (import.meta as any).env?.VITE_MENU_API || 'http://localhost:5003/api';
+        const menuApiUrl = API_CONFIG.MENU_API;
         const response = await fetch(`${menuApiUrl}/menu`);
         
         if (!response.ok) {

@@ -1,6 +1,7 @@
 import { getSessionId } from './cartService';
+import { API_CONFIG } from '../config/api';
 
-const ORDER_API_ROOT = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+const ORDER_API_ROOT = API_CONFIG.ORDER_API;
 const ORDER_API_BASE = `${ORDER_API_ROOT}/orders`;
 
 interface OrderData {

@@ -77,7 +77,7 @@ const ReservationsPage: React.FC = () => {
       // You can optimize by updating only the changed reservation
       // For now, refetch all
       const token = localStorage.getItem('token');
-      const apiUrl = `${(import.meta as any).env?.VITE_TABLE_API || 'http://localhost:5006/api'}/reservations`;
+      const apiUrl = `${API_CONFIG.TABLE_API}/reservations`;
       fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,

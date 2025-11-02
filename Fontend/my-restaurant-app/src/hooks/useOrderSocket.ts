@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { API_CONFIG } from '../config/api';
 
 export interface Order {
   _id: string;
@@ -56,7 +57,7 @@ export const useOrderSocket = () => {
 
     console.log('🔐 [useOrderSocket] Auth type:', authType);
 
-    const socketUrl = (import.meta as any).env?.VITE_ORDER_SOCKET_URL || 'http://localhost:5005';
+    const socketUrl = API_CONFIG.ORDER_SOCKET_URL;
     const newSocket = io(socketUrl, {
       auth: token ? { token, type: authType } : { type: 'guest' },
       transports: ['websocket', 'polling']

@@ -1,4 +1,6 @@
-const API_BASE_URL = `${(import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api'}`;
+import { API_CONFIG } from '../config/api';
+
+const API_BASE_URL = API_CONFIG.ORDER_API;
 
 export interface ReviewData {
   menuItemId: string;

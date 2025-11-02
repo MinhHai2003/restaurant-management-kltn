@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import AccountLayout from '../../components/account/AccountLayout';
+import { API_CONFIG } from '../../config/api';
 
 interface Address {
   _id: string;
@@ -43,7 +44,7 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses`;
+      const apiUrl = `${API_CONFIG.CUSTOMER_API}/customers/addresses`;
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -96,7 +97,7 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses`;
+      const baseUrl = `${API_CONFIG.CUSTOMER_API}/customers/addresses`;
       const url = editingAddress 
         ? `${baseUrl}/${editingAddress._id}`
         : baseUrl;
@@ -154,7 +155,7 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses/${addressId}`;
+      const apiUrl = `${API_CONFIG.CUSTOMER_API}/customers/addresses/${addressId}`;
       const response = await fetch(apiUrl, {
         method: 'DELETE',
         headers: {
@@ -190,7 +191,7 @@ const AddressesPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers/addresses/${addressId}/default`;
+      const apiUrl = `${API_CONFIG.CUSTOMER_API}/customers/addresses/${addressId}/default`;
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: {

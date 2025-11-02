@@ -30,7 +30,7 @@ const OrderingSystem: React.FC = () => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await fetch('http://localhost:5003/api/menu');
+        const response = await fetch(`${API_CONFIG.MENU_API}/menu`);
         const data = await response.json();
         if (data.success) {
           setMenuItems(data.data.menuItems || []);

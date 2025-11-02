@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { API_CONFIG } from '../config/api';
 
 interface User {
   _id: string;
@@ -42,7 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   // Base URL for customer service
-  const CUSTOMER_BASE_URL = `${(import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api'}/customers`;
+  const CUSTOMER_BASE_URL = `${API_CONFIG.CUSTOMER_API}/customers`;
 
   useEffect(() => {
     // Check if user is logged in on app start

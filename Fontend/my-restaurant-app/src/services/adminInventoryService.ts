@@ -1,4 +1,5 @@
 // Admin Inventory Service - Tích hợp với backend admin API
+import { API_CONFIG } from '../config/api';
 
 export interface InventoryItem {
   _id: string;
@@ -44,7 +45,7 @@ export interface InventoryReport {
   generatedAt?: string;
 }
 
-const BASE_URL = `${((import.meta as any).env?.VITE_INVENTORY_API || 'http://localhost:5004/api')}/admin/inventory`;
+const BASE_URL = `${API_CONFIG.INVENTORY_API}/admin/inventory`;
 
 // Helper function to get admin token (giả sử token lưu trong localStorage)
 const getAuthHeaders = () => {

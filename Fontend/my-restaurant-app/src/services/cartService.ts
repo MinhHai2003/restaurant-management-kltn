@@ -1,5 +1,7 @@
 // Cart Service for API calls with Session-based Guest Support
-const API_BASE_URL = `${((import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api')}/cart`;
+import { API_CONFIG } from '../config/api';
+
+const API_BASE_URL = `${API_CONFIG.ORDER_API}/cart`;
 
 interface CartItem {
   _id: string;
@@ -297,7 +299,7 @@ class CartService {
   }): Promise<{ success: boolean; data?: { order: any }; error?: string }> {
     try {
       const headers = this.getAuthHeaders();
-      const orderApiUrl = (import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api';
+      const orderApiUrl = API_CONFIG.ORDER_API;
       const response = await fetch(`${orderApiUrl}/orders/guest-checkout`, {
         method: 'POST',
         headers,

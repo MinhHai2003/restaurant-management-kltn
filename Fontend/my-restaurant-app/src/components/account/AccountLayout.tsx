@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import type { ReactNode } from 'react';
+import { API_CONFIG } from '../../config/api';
 
 interface CustomerProfile {
   _id: string;
@@ -34,7 +35,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children, activeTab }) =>
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5002/api/customers/profile', {
+      const response = await fetch(`${API_CONFIG.CUSTOMER_API}/customers/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

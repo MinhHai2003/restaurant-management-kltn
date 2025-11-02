@@ -1,3 +1,5 @@
+import { API_CONFIG } from '../config/api';
+
 interface MenuItem {
   _id: string;
   name: string;
@@ -42,7 +44,7 @@ interface MenuResponse {
 }
 
 class MenuService {
-  private baseURL = (import.meta as any).env?.VITE_MENU_API || 'http://localhost:5003/api';
+  private baseURL = API_CONFIG.MENU_API;
 
   // Get all menu items
   async getMenuItems(params?: {

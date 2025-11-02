@@ -45,7 +45,7 @@ const MenuWithInventory: React.FC<MenuWithInventoryProps> = ({ onAddToCart }) =>
       setLoading(true);
       
       // Fetch menu items
-      const menuResponse = await fetch('http://localhost:5003/api/menu');
+      const menuResponse = await fetch(`${API_CONFIG.MENU_API}/menu`);
       if (!menuResponse.ok) throw new Error('Failed to fetch menu');
       const menuData = await menuResponse.json();
 

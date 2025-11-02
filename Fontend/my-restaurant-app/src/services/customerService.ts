@@ -1,5 +1,7 @@
 // Order Service API base URL
-const ORDER_API_BASE_URL = `${((import.meta as any).env?.VITE_ORDER_API || 'http://localhost:5005/api')}/orders`;
+import { API_CONFIG } from '../config/api';
+
+const ORDER_API_BASE_URL = `${API_CONFIG.ORDER_API}/orders`;
 
 export type Order = {
   _id: string;
@@ -82,7 +84,7 @@ async function getOrders(): Promise<{ success: boolean; data?: Order[]; error?: 
   }
 }
 // Customer Service for API calls
-const API_BASE_URL = `${((import.meta as any).env?.VITE_CUSTOMER_API || 'http://localhost:5002/api')}/customers`;
+const API_BASE_URL = `${API_CONFIG.CUSTOMER_API}/customers`;
 
 export type Address = {
   _id: string;

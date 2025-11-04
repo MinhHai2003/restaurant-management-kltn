@@ -40,19 +40,31 @@ export const useOrderSocket = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Priority: employeeToken first for admin/staff, then customer tokens. Fallback to guest.
-    const token = localStorage.getItem('employeeToken') || localStorage.getItem('token') || localStorage.getItem('customerToken') || '';
+    // Check if user is customer (has 'token' in localStorage and user data)
+    const customerToken = localStorage.getItem('token');
+    const customerUser = localStorage.getItem('user');
+    const employeeToken = localStorage.getItem('employeeToken');
+    
+    // Priority logic:
+    // 1. If customer is logged in (has token + user), use customer token
+    // 2. Otherwise, use employee token if exists
+    // 3. Fallback to guest
+    const token = (customerToken && customerUser) 
+      ? customerToken 
+      : (employeeToken || customerToken || localStorage.getItem('customerToken') || '');
 
     console.log('🔐 [useOrderSocket] Token selection debug:');
-    console.log('   - employeeToken:', localStorage.getItem('employeeToken') ? 'EXISTS' : 'NULL');
-    console.log('   - token:', localStorage.getItem('token') ? 'EXISTS' : 'NULL');
+    console.log('   - employeeToken:', employeeToken ? 'EXISTS' : 'NULL');
+    console.log('   - token (customer):', customerToken ? 'EXISTS' : 'NULL');
+    console.log('   - customerUser:', customerUser ? 'EXISTS' : 'NULL');
     console.log('   - customerToken:', localStorage.getItem('customerToken') ? 'EXISTS' : 'NULL');
     console.log('   - Selected token:', token ? 'EXISTS' : 'NULL');
+    console.log('   - Token source:', (customerToken && customerUser) ? 'CUSTOMER' : (employeeToken ? 'EMPLOYEE' : 'NONE'));
 
     // Không còn chặn khi thiếu token: cho phép kết nối guest tới order-service
 
     // Determine auth type based on which token we're using
-    const isEmployeeToken = token && localStorage.getItem('employeeToken') === token;
+    const isEmployeeToken = token && employeeToken === token;
     const authType = token ? (isEmployeeToken ? 'employee' : 'customer') : 'guest';
 
     console.log('🔐 [useOrderSocket] Auth type:', authType);

@@ -119,19 +119,21 @@ io.use((socket, next) => {
     );
 
     // Join user-specific room
-    socket.join(`user_${socket.userId}`);
+    const userRoom = `user_${socket.userId}`;
+    socket.join(userRoom);
+    console.log(`🔐 [SOCKET DEBUG] User ${socket.userId} joined room: ${userRoom}`);
 
     // Join role-specific rooms
     if (socket.userRole === "customer") {
       socket.join("customers");
       console.log(
-        `🔐 [SOCKET DEBUG] Customer ${socket.userId} joined customers room`
+        `🔐 [SOCKET DEBUG] Customer ${socket.userId} joined rooms: ${userRoom}, customers`
       );
     } else {
       socket.join("staff");
       socket.join(`role_${socket.userRole}`);
       console.log(
-        `🔐 [SOCKET DEBUG] Staff ${socket.userId} (${socket.userRole}) joined staff and role_${socket.userRole} rooms`
+        `🔐 [SOCKET DEBUG] Staff ${socket.userId} (${socket.userRole}) joined rooms: ${userRoom}, staff, role_${socket.userRole}`
       );
     }
 

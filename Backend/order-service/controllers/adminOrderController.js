@@ -361,19 +361,31 @@ exports.updateOrderStatus = async (req, res) => {
         // Convert ObjectId to string to match room name
         const customerIdStr = order.customerId.toString();
         const orderIdStr = order._id.toString();
+        const customerRoom = `user_${customerIdStr}`;
+        
+        // Debug: Check how many sockets are in this room
+        const roomSockets = req.io.sockets.adapter.rooms.get(customerRoom);
+        const socketCount = roomSockets ? roomSockets.size : 0;
         
         console.log(
-          `🔔 [SOCKET] Emitting order_status_updated to user_${customerIdStr}:`,
+          `🔔 [SOCKET] Emitting order_status_updated to ${customerRoom}:`,
           {
             type: "customer_order_status_updated",
             orderId: orderIdStr,
             orderNumber: order.orderNumber,
             status: status,
+            customerId: customerIdStr,
+            roomName: customerRoom,
+            socketsInRoom: socketCount,
             message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
           }
         );
 
-        req.io.to(`user_${customerIdStr}`).emit("order_status_updated", {
+        if (socketCount === 0) {
+          console.warn(`⚠️ [SOCKET] No sockets found in room ${customerRoom} - customer may not be connected`);
+        }
+
+        req.io.to(customerRoom).emit("order_status_updated", {
           type: "customer_order_status_updated",
           orderId: orderIdStr,
           orderNumber: order.orderNumber,
@@ -384,7 +396,7 @@ exports.updateOrderStatus = async (req, res) => {
           message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
         });
         
-        console.log(`✅ [SOCKET DEBUG] Emitted order_status_updated to customer room: user_${customerIdStr}`);
+        console.log(`✅ [SOCKET DEBUG] Emitted order_status_updated to ${customerRoom} (${socketCount} sockets in room)`);
       } else {
         console.log(
           `⚠️ [SOCKET] No customerId found for order ${order.orderNumber}, cannot notify customer`

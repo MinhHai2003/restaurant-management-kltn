@@ -141,15 +141,40 @@ const OrdersPage: React.FC = () => {
         
         console.log(`📢 Customer OrdersPage: Order ${data.orderId} status changed to: ${newStatus}`);
         
+        // Normalize IDs to strings for comparison
+        const targetOrderId = String(data.orderId);
+        
         // Update specific order status in the list - ưu tiên dùng order object nếu có
         setOrders(prevOrders => {
-          return prevOrders.map(order => {
-            if (order._id === data.orderId) {
+          let found = false;
+          const updated = prevOrders.map(order => {
+            // Compare both _id (string or ObjectId) and orderNumber
+            const orderIdStr = String(order._id);
+            const orderNumberMatch = order.orderNumber === data.orderNumber;
+            
+            if (orderIdStr === targetOrderId || orderNumberMatch) {
+              found = true;
+              console.log(`✅ Customer OrdersPage: Found order to update:`, {
+                orderId: order._id,
+                orderNumber: order.orderNumber,
+                oldStatus: order.status,
+                newStatus: newStatus
+              });
               // Nếu có full order object, dùng nó; nếu không chỉ update status
               return data.order ? { ...data.order, status: newStatus } : { ...order, status: newStatus };
             }
             return order;
           });
+          
+          if (!found) {
+            console.warn(`⚠️ Customer OrdersPage: Order not found in list:`, {
+              orderId: data.orderId,
+              orderNumber: data.orderNumber,
+              currentOrders: prevOrders.map(o => ({ id: o._id, number: o.orderNumber }))
+            });
+          }
+          
+          return updated;
         });
 
         // Show browser notification

@@ -52,6 +52,10 @@ const io = socketIo(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  transports: ['websocket', 'polling'], // Explicitly allow both transports
+  allowEIO3: true, // Allow Engine.IO v3 clients
+  pingTimeout: 60000, // Increase timeout for Railway
+  pingInterval: 25000,
 });
 const PORT = process.env.PORT || 5005;
 

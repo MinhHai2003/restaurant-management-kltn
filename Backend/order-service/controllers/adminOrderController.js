@@ -320,38 +320,46 @@ exports.updateOrderStatus = async (req, res) => {
 
     // 🔔 Emit real-time notifications for status update
     if (req.io) {
+      const orderIdStr = order._id.toString();
+      
       // Notify all admins about status change
       req.io
         .to("role_admin")
         .to("role_manager")
         .emit("order_status_updated", {
           type: "order_status_updated",
-          orderId: order._id,
+          orderId: orderIdStr,
           orderNumber: order.orderNumber,
           oldStatus: order.status,
           newStatus: status,
+          order: order, // Include full order object for frontend
           updatedBy: "admin",
           message: `Đơn hàng ${order.orderNumber} đã chuyển thành ${status}`,
         });
 
       // Notify customer if exists
       if (order.customerId) {
+        // Convert ObjectId to string to match room name
+        const customerIdStr = order.customerId.toString();
+        const orderIdStr = order._id.toString();
+        
         console.log(
-          `🔔 [SOCKET] Emitting order_status_updated to user_${order.customerId}:`,
+          `🔔 [SOCKET] Emitting order_status_updated to user_${customerIdStr}:`,
           {
             type: "customer_order_status_updated",
-            orderId: order._id,
+            orderId: orderIdStr,
             orderNumber: order.orderNumber,
             status: status,
             message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
           }
         );
 
-        req.io.to(`user_${order.customerId}`).emit("order_status_updated", {
+        req.io.to(`user_${customerIdStr}`).emit("order_status_updated", {
           type: "customer_order_status_updated",
-          orderId: order._id,
+          orderId: orderIdStr,
           orderNumber: order.orderNumber,
           status: status,
+          order: order, // Include full order object for frontend
           message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
         });
       } else {

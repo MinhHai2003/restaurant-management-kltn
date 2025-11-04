@@ -503,18 +503,29 @@ const AdminDashboard: React.FC = () => {
   }, [tableSocket, tableSocketConnected]);
 
   const checkServices = async () => {
+    // Debug: Log API config values
+    console.log('🔍 [SERVICE CHECK] API_CONFIG values:', {
+      ORDER_API: API_CONFIG.ORDER_API,
+      MENU_API: API_CONFIG.MENU_API,
+      INVENTORY_API: API_CONFIG.INVENTORY_API,
+    });
+
     const services = [
       { name: 'orderService', url: `${API_CONFIG.ORDER_API.replace('/api', '')}/health` },
       { name: 'menuService', url: `${API_CONFIG.MENU_API}/menu` }, // Menu service không có /health
       { name: 'inventoryService', url: `${API_CONFIG.INVENTORY_API}/inventory` } // Inventory service không có /health
     ];
 
+    // Debug: Log service URLs
+    console.log('🔍 [SERVICE CHECK] Checking URLs:', services.map(s => ({ name: s.name, url: s.url })));
+
     const statusChecks = await Promise.allSettled(
       services.map(async (service) => {
         try {
           const response = await fetch(service.url);
           return { name: service.name, status: response.ok };
-        } catch {
+        } catch (error) {
+          console.error(`❌ [SERVICE CHECK] Failed to check ${service.name} at ${service.url}:`, error);
           return { name: service.name, status: false };
         }
       })

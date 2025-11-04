@@ -23,12 +23,15 @@ import CategoryPage from './pages/CategoryPage'
 import SearchPage from './pages/SearchPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedEmployeeRoute from './components/ProtectedEmployeeRoute'
+import DebugEnvVariables from './components/DebugEnvVariables'
 import './App.css'
 
 function App() {
   return (
     <AuthProvider>
       <CartProvider>
+        {/* Debug: Show env variables - Remove after fixing */}
+        {import.meta.env.MODE === 'development' && <DebugEnvVariables />}
         <Router>
           <Routes>
             <Route path="/" element={<HomePage />} />

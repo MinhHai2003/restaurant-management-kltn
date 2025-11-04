@@ -58,6 +58,8 @@ export const useOrderSocket = () => {
     console.log('🔐 [useOrderSocket] Auth type:', authType);
 
     const socketUrl = API_CONFIG.ORDER_SOCKET_URL;
+    console.log('🔌 [useOrderSocket] Connecting to socket URL:', socketUrl);
+    console.log('🔌 [useOrderSocket] API_CONFIG.ORDER_SOCKET_URL:', API_CONFIG.ORDER_SOCKET_URL);
     const newSocket = io(socketUrl, {
       auth: token ? { token, type: authType } : { type: 'guest' },
       transports: ['websocket', 'polling']
@@ -65,7 +67,8 @@ export const useOrderSocket = () => {
 
     // Connection events
     newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
+      console.log('✅ [ORDER SOCKET] Connected:', newSocket.id);
+      console.log('✅ [ORDER SOCKET] Socket URL:', socketUrl);
       setIsConnected(true);
       setError(null);
     });
@@ -107,7 +110,7 @@ export const useOrderSocket = () => {
     });
 
     newSocket.on('order_status_updated', (data: { orderId: string; status: string; order?: Order }) => {
-      console.log('Order status updated:', data);
+      console.log('📢 [ORDER SOCKET] Received order_status_updated event:', data);
 
       if (data.order) {
         setOrders(prev => {

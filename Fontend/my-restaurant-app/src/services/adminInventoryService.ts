@@ -49,7 +49,8 @@ const BASE_URL = `${API_CONFIG.INVENTORY_API}/admin/inventory`;
 
 // Helper function to get admin token (giả sử token lưu trong localStorage)
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+  // Priority: employeeToken (from employee login) > adminToken > authToken
+  const token = localStorage.getItem('employeeToken') || localStorage.getItem('adminToken') || localStorage.getItem('authToken');
   return {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
@@ -258,7 +259,8 @@ export class AdminInventoryService {
 
   // ⚠️ Kiểm tra token hợp lệ
   static isAuthenticated(): boolean {
-    const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+    // Priority: employeeToken (from employee login) > adminToken > authToken
+    const token = localStorage.getItem('employeeToken') || localStorage.getItem('adminToken') || localStorage.getItem('authToken');
     return !!token;
   }
 

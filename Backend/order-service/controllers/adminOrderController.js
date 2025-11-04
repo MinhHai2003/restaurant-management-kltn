@@ -322,10 +322,27 @@ exports.updateOrderStatus = async (req, res) => {
     if (req.io) {
       const orderIdStr = order._id.toString();
       
-      // Notify all admins about status change
+      // Debug: Log before emitting
+      console.log(
+        "🔔 [SOCKET DEBUG] Emitting order_status_updated to admin/manager roles"
+      );
+      console.log("🔔 [SOCKET DEBUG] Order status update details:", {
+        orderId: orderIdStr,
+        orderNumber: order.orderNumber,
+        oldStatus: order.status,
+        newStatus: status,
+        hasCustomerId: !!order.customerId,
+      });
+      
+      // Notify all admins about status change (same as createOrder - emit to all staff roles)
       req.io
         .to("role_admin")
         .to("role_manager")
+        .to("role_waiter")
+        .to("role_chef")
+        .to("role_cashier")
+        .to("role_delivery")
+        .to("role_receptionist")
         .emit("order_status_updated", {
           type: "order_status_updated",
           orderId: orderIdStr,
@@ -336,6 +353,8 @@ exports.updateOrderStatus = async (req, res) => {
           updatedBy: "admin",
           message: `Đơn hàng ${order.orderNumber} đã chuyển thành ${status}`,
         });
+      
+      console.log("✅ [SOCKET DEBUG] Emitted order_status_updated to staff roles");
 
       // Notify customer if exists
       if (order.customerId) {
@@ -358,10 +377,14 @@ exports.updateOrderStatus = async (req, res) => {
           type: "customer_order_status_updated",
           orderId: orderIdStr,
           orderNumber: order.orderNumber,
-          status: status,
+          status: status, // Current status (after update)
+          newStatus: status, // Explicitly include newStatus for frontend
+          oldStatus: order.status, // Previous status (before update)
           order: order, // Include full order object for frontend
           message: `Đơn hàng ${order.orderNumber} đã cập nhật trạng thái: ${status}`,
         });
+        
+        console.log(`✅ [SOCKET DEBUG] Emitted order_status_updated to customer room: user_${customerIdStr}`);
       } else {
         console.log(
           `⚠️ [SOCKET] No customerId found for order ${order.orderNumber}, cannot notify customer`

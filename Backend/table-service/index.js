@@ -97,13 +97,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Security middleware
-app.use(helmet());
+// CORS configuration - MUST be before helmet() and other middleware
+app.use(cors(corsOptions));
+
+// Security middleware - configure helmet to not conflict with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false, // Disable CSP to allow CORS
+}));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 200, // Increased from 100 to 200 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -113,9 +120,6 @@ const limiter = rateLimit({
   },
 });
 app.use(limiter);
-
-// CORS configuration
-app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));

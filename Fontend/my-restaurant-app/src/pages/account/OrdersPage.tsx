@@ -128,14 +128,25 @@ const OrdersPage: React.FC = () => {
     if (socket && isConnected) {
       console.log('🔌 OrdersPage: Setting up Socket.io event listeners for customer...');
 
-      const handleOrderStatusUpdate = (data: { orderId: string; status: string; orderNumber?: string; message?: string }) => {
+      const handleOrderStatusUpdate = (data: { orderId: string; status?: string; newStatus?: string; order?: Order; orderNumber?: string; message?: string }) => {
         console.log('🔄 Customer OrdersPage: Order status updated via Socket.io:', data);
         
-        // Update specific order status in the list
+        // Priority: newStatus > order.status > status
+        const newStatus = data.newStatus || data.order?.status || data.status;
+        
+        if (!newStatus) {
+          console.warn('⚠️ Customer OrdersPage: No status found in socket event:', data);
+          return;
+        }
+        
+        console.log(`📢 Customer OrdersPage: Order ${data.orderId} status changed to: ${newStatus}`);
+        
+        // Update specific order status in the list - ưu tiên dùng order object nếu có
         setOrders(prevOrders => {
           return prevOrders.map(order => {
             if (order._id === data.orderId) {
-              return { ...order, status: data.status };
+              // Nếu có full order object, dùng nó; nếu không chỉ update status
+              return data.order ? { ...data.order, status: newStatus } : { ...order, status: newStatus };
             }
             return order;
           });
@@ -144,7 +155,7 @@ const OrdersPage: React.FC = () => {
         // Show browser notification
         if (Notification.permission === 'granted') {
           new Notification('Cập nhật đơn hàng!', {
-            body: data.message || `Đơn hàng ${data.orderNumber || data.orderId} đã được cập nhật: ${data.status}`,
+            body: data.message || `Đơn hàng ${data.orderNumber || data.orderId} đã được cập nhật: ${newStatus}`,
             icon: '/vite.svg'
           });
         }

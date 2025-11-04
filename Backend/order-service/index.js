@@ -66,16 +66,36 @@ connectDB();
 app.use(helmet());
 app.use(cors(corsOptions));
 
-// Rate Limiting
+// Rate Limiting - More lenient for production
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Increased from 200 to 500 requests per windowMs
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
   },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: {
+    trustProxy: false,
+  },
 });
-app.use(limiter);
+
+// Skip rate limiting for cart summary (high frequency endpoint)
+const skipRateLimit = (req) => {
+  // Skip rate limit for cart summary endpoint
+  if (req.path.includes('/cart/summary')) {
+    return true;
+  }
+  return false;
+};
+
+app.use((req, res, next) => {
+  if (skipRateLimit(req)) {
+    return next();
+  }
+  limiter(req, res, next);
+});
 
 // Body Parser
 app.use(express.json({ limit: "10mb" }));

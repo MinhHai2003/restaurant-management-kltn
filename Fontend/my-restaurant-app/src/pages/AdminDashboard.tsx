@@ -665,24 +665,48 @@ const AdminDashboard: React.FC = () => {
 
         if (data.success) {
           // Cập nhật trạng thái trong danh sách local
-          setOrdersList(prevOrders =>
-            prevOrders.map((order: Order) => {
-              if (order._id === orderId) {
-                // Nếu trạng thái đơn hàng là "completed" hoặc "delivered", tự động cập nhật trạng thái thanh toán thành "paid"
-                const updatedOrder = { ...order, status: newStatus };
-                if ((newStatus === 'completed' || newStatus === 'delivered') && order.payment?.status !== 'paid') {
-                  updatedOrder.payment = {
-                    ...order.payment,
-                    method: 'banking',
-                    status: 'paid'
-                  };
-                  console.log(`✅ Auto-updated payment method to 'banking' and status to 'paid' for ${newStatus} order ${order.orderNumber}`);
+          // Sử dụng dữ liệu từ server response nếu có, nếu không thì chỉ update status và giữ nguyên payment method
+          if (data.data && data.data.order) {
+            // Server đã trả về order đã được update, dùng dữ liệu đó
+            setOrdersList(prevOrders =>
+              prevOrders.map((order: Order) => {
+                if (order._id === orderId) {
+                  // Đảm bảo giữ nguyên payment method ban đầu nếu server trả về sai
+                  const originalPaymentMethod = order.payment?.method;
+                  const updatedOrder = { ...order, ...data.data.order };
+                  
+                  // Đảm bảo payment method không bị thay đổi
+                  if (originalPaymentMethod && updatedOrder.payment) {
+                    updatedOrder.payment.method = originalPaymentMethod;
+                  }
+                  
+                  return updatedOrder;
                 }
-                return updatedOrder;
-              }
-              return order;
-            })
-          );
+                return order;
+              })
+            );
+          } else {
+            // Fallback: chỉ update status, giữ nguyên payment method
+            setOrdersList(prevOrders =>
+              prevOrders.map((order: Order) => {
+                if (order._id === orderId) {
+                  const updatedOrder = { ...order, status: newStatus };
+                  // Nếu trạng thái đơn hàng là "completed" hoặc "delivered", chỉ cập nhật payment status, GIỮ NGUYÊN payment method
+                  if ((newStatus === 'completed' || newStatus === 'delivered') && order.payment?.status !== 'paid') {
+                    updatedOrder.payment = {
+                      ...order.payment,
+                      // GIỮ NGUYÊN payment method ban đầu, không thay đổi
+                      method: order.payment?.method || 'cash',
+                      status: 'paid'
+                    };
+                    console.log(`✅ Auto-updated payment status to 'paid' (method: ${updatedOrder.payment.method}) for ${newStatus} order ${order.orderNumber}`);
+                  }
+                  return updatedOrder;
+                }
+                return order;
+              })
+            );
+          }
 
           // Cập nhật pending orders count
           const updatedOrdersList = ordersList.map((order: Order) => {

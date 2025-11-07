@@ -32,6 +32,11 @@ interface TableInfo {
   capacity: number;
   location: string;
   status: string;
+  pricing?: {
+    basePrice: number;
+    peakHourMultiplier?: number;
+    weekendMultiplier?: number;
+  };
 }
 
 interface Order {
@@ -128,7 +133,10 @@ const TableMenuPage: React.FC = () => {
         return;
       }
 
-      const totalAmount = tableSession.orders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+      // Calculate total including table fee
+      const ordersTotal = tableSession.orders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+      const tableFee = tableInfo?.pricing?.basePrice || 0;
+      const totalAmount = ordersTotal + tableFee;
       const orderNumber = generateTablePaymentOrderNumber();
       
       console.log('💳 [TABLE PAYMENT] Creating order with orderService...', {
@@ -431,12 +439,15 @@ const TableMenuPage: React.FC = () => {
     }, 0);
   };
 
-  // Calculate session total (all orders in this session)
+  // Calculate session total (all orders in this session) + table fee
   const calculateSessionTotal = () => {
     if (!tableSession || !tableSession.orders) return 0;
-    return tableSession.orders.reduce((total: number, order: Order) => {
+    const ordersTotal = tableSession.orders.reduce((total: number, order: Order) => {
       return total + (order.pricing?.total || 0);
     }, 0);
+    // Add table fee (basePrice from tableInfo)
+    const tableFee = tableInfo?.pricing?.basePrice || 0;
+    return ordersTotal + tableFee;
   };
 
   // Load all orders for this table (not just session)
@@ -895,19 +906,57 @@ const TableMenuPage: React.FC = () => {
                     border: '1px solid #e2e8f0',
                     marginBottom: '12px'
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '8px'
-                    }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                        💰 Tổng tiền tất cả đơn:
-                      </span>
-                      <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#dc2626' }}>
-                        {formatPrice(tableSession.totalAmount)}
-                      </span>
-                    </div>
+                    {/* Breakdown: Orders total + Table fee */}
+                    {(() => {
+                      const ordersTotal = tableSession.orders.reduce((sum: number, order: Order) => 
+                        sum + (order.pricing?.total || 0), 0);
+                      const tableFee = tableInfo?.pricing?.basePrice || 0;
+                      const finalTotal = ordersTotal + tableFee;
+                      
+                      return (
+                        <>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '4px',
+                            fontSize: '13px',
+                            color: '#64748b'
+                          }}>
+                            <span>Tổng tiền đơn hàng:</span>
+                            <span>{formatPrice(ordersTotal)}</span>
+                          </div>
+                          {tableFee > 0 && (
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '4px',
+                              fontSize: '13px',
+                              color: '#64748b'
+                            }}>
+                              <span>Tiền bàn:</span>
+                              <span>{formatPrice(tableFee)}</span>
+                            </div>
+                          )}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginTop: '8px',
+                            paddingTop: '8px',
+                            borderTop: '1px solid #e2e8f0'
+                          }}>
+                            <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                              💰 Tổng tiền:
+                            </span>
+                            <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#dc2626' }}>
+                              {formatPrice(finalTotal)}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Chọn phương thức thanh toán tổng */}
                     <div style={{ display: 'flex', gap: '12px', margin: '8px 0 12px 0' }}>
@@ -947,7 +996,7 @@ const TableMenuPage: React.FC = () => {
                               body: JSON.stringify({
                                 paymentMethod: 'cash',
                                 paymentData: { method: 'cash' },
-                                totalAmount: tableSession?.totalAmount || 0
+                                totalAmount: calculateSessionTotal()
                               })
                             });
                             if (res.ok) {
@@ -1514,7 +1563,7 @@ const TableMenuPage: React.FC = () => {
       {/* QR Payment Modal */}
       {showPayment && (
         <QRPayment
-          amount={isSessionPayment ? (tableSession?.totalAmount || 0) : calculateTotal()}
+          amount={isSessionPayment ? calculateSessionTotal() : calculateTotal()}
           orderCode={isSessionPayment ? `SESSION-${tableNumber}-${Date.now()}` : sessionOrderNumber}
           orderInfo={isSessionPayment
             ? `Thanh toán tổng bàn ${tableNumber} - ${tableSession?.orders.length || 0} đơn`
@@ -1528,7 +1577,7 @@ const TableMenuPage: React.FC = () => {
             if (isSessionPayment) {
               // Handle session payment - mark all table orders as completed
               try {
-                alert(`Thanh toán tổng thành công! Tổng tiền: ${formatPrice(tableSession?.totalAmount || 0)}`);
+                alert(`Thanh toán tổng thành công! Tổng tiền: ${formatPrice(calculateSessionTotal())}`);
 
                 // Mark all orders of this table as completed using new API
                 const markOrdersResponse = await fetch(`${API_CONFIG.ORDER_API}/orders/dine-in/table-number/${tableNumber}/complete`, {
@@ -1539,7 +1588,7 @@ const TableMenuPage: React.FC = () => {
                   body: JSON.stringify({
                     paymentMethod: 'banking',
                     paymentData: paymentData,
-                    totalAmount: tableSession?.totalAmount || 0
+                    totalAmount: calculateSessionTotal()
                   })
                 });
 

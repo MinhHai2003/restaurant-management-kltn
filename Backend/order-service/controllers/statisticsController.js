@@ -78,14 +78,17 @@ const getStatistics = async (req, res) => {
     // Revenue data - Weekly (last 4 weeks including current week)
     const weeklyRevenue = [];
     for (let i = 3; i >= 0; i--) {
-      // Calculate week start (Monday) and end (Sunday)
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay() + 1 - (i * 7)); // Monday of the week
-      weekStart.setHours(0, 0, 0, 0);
+      // Calculate week start (Monday) and end (Sunday) in Vietnam timezone
+      const weekDateVN = new Date(todayVN.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const weekDay = weekDateVN.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
+      const mondayOffset = weekDay === 0 ? -6 : 1 - weekDay; // Adjust to Monday
       
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6); // Sunday of the week
-      weekEnd.setHours(23, 59, 59, 999);
+      const weekStartVN = new Date(weekDateVN.getTime() + mondayOffset * 24 * 60 * 60 * 1000);
+      weekStartVN.setUTCHours(0, 0, 0, 0);
+      
+      // Convert to UTC for MongoDB query
+      const weekStart = new Date(weekStartVN.getTime() - vietnamOffset);
+      const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
       
       console.log(`📊 Week ${4 - i}: ${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]}`);
       
@@ -111,8 +114,17 @@ const getStatistics = async (req, res) => {
     // Revenue data - Monthly (last 3 months including current month)
     const monthlyRevenue = [];
     for (let i = 2; i >= 0; i--) {
-      const monthStart = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthEnd = new Date(today.getFullYear(), today.getMonth() - i + 1, 1);
+      // Calculate month in Vietnam timezone
+      const monthDateVN = new Date(todayVN.getTime());
+      monthDateVN.setUTCMonth(todayVN.getUTCMonth() - i);
+      monthDateVN.setUTCDate(1);
+      monthDateVN.setUTCHours(0, 0, 0, 0);
+      
+      // Convert to UTC for MongoDB query
+      const monthStart = new Date(monthDateVN.getTime() - vietnamOffset);
+      const monthEnd = new Date(monthStart.getTime() + 32 * 24 * 60 * 60 * 1000); // Approximate, will be adjusted
+      monthEnd.setUTCMonth(monthStart.getUTCMonth() + 1);
+      monthEnd.setUTCDate(1);
       
       console.log(`📊 Month ${3 - i}: ${monthStart.toISOString().split('T')[0]} to ${monthEnd.toISOString().split('T')[0]}`);
       
@@ -218,14 +230,19 @@ const getStatistics = async (req, res) => {
     };
 
     // Calculate top dishes for different periods
-    console.log('📊 ===== STARTING TOPDISHES CALCULATION =====');
-    console.log('📊 Daily range:', today.toISOString(), 'to', new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString());
-    console.log('📊 Weekly range:', weekAgo.toISOString(), 'to', todayForced.toISOString());
-    console.log('📊 Monthly range:', monthAgo.toISOString(), 'to', todayForced.toISOString());
+    const endOfToday = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
+    const startOfWeek = new Date(todayStartUTC.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(Date.UTC(vnYear, vnMonth, 1, 0, 0, 0, 0));
+    const startOfMonthUTC = new Date(startOfMonth.getTime() - vietnamOffset);
     
-    const dailyTopDishes = await calculateTopDishes(today, new Date(today.getTime() + 24 * 60 * 60 * 1000), 'daily');
-    const weeklyTopDishes = await calculateTopDishes(weekAgo, todayForced, 'weekly');
-    const monthlyTopDishes = await calculateTopDishes(monthAgo, todayForced, 'monthly');
+    console.log('📊 ===== STARTING TOPDISHES CALCULATION =====');
+    console.log('📊 Daily range:', todayStartUTC.toISOString(), 'to', endOfToday.toISOString());
+    console.log('📊 Weekly range:', startOfWeek.toISOString(), 'to', endOfToday.toISOString());
+    console.log('📊 Monthly range:', startOfMonthUTC.toISOString(), 'to', endOfToday.toISOString());
+    
+    const dailyTopDishes = await calculateTopDishes(todayStartUTC, endOfToday, 'daily');
+    const weeklyTopDishes = await calculateTopDishes(startOfWeek, endOfToday, 'weekly');
+    const monthlyTopDishes = await calculateTopDishes(startOfMonthUTC, endOfToday, 'monthly');
     
     console.log('📊 ===== TOPDISHES CALCULATION COMPLETED =====');
     console.log('📊 Daily topDishes:', dailyTopDishes.length, 'items');
@@ -310,9 +327,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate reservation statistics for different periods
     console.log('📊 ===== STARTING RESERVATION STATS CALCULATION =====');
-    const dailyReservationStats = await calculateReservationStats(today, new Date(today.getTime() + 24 * 60 * 60 * 1000), 'daily');
-    const weeklyReservationStats = await calculateReservationStats(weekAgo, todayForced, 'weekly');
-    const monthlyReservationStats = await calculateReservationStats(monthAgo, todayForced, 'monthly');
+    const dailyReservationStats = await calculateReservationStats(todayStartUTC, endOfToday, 'daily');
+    const weeklyReservationStats = await calculateReservationStats(startOfWeek, endOfToday, 'weekly');
+    const monthlyReservationStats = await calculateReservationStats(startOfMonthUTC, endOfToday, 'monthly');
     
     console.log('📊 ===== RESERVATION STATS CALCULATION COMPLETED =====');
 
@@ -355,9 +372,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate order statistics for different periods
     console.log('📊 ===== STARTING ORDER STATS CALCULATION =====');
-    const dailyOrderStats = await calculateOrderStats(today, new Date(today.getTime() + 24 * 60 * 60 * 1000), 'daily');
-    const weeklyOrderStats = await calculateOrderStats(weekAgo, todayForced, 'weekly');
-    const monthlyOrderStats = await calculateOrderStats(monthAgo, todayForced, 'monthly');
+    const dailyOrderStats = await calculateOrderStats(todayStartUTC, endOfToday, 'daily');
+    const weeklyOrderStats = await calculateOrderStats(startOfWeek, endOfToday, 'weekly');
+    const monthlyOrderStats = await calculateOrderStats(startOfMonthUTC, endOfToday, 'monthly');
     
     console.log('📊 ===== ORDER STATS CALCULATION COMPLETED =====');
 
@@ -551,7 +568,7 @@ const getStatistics = async (req, res) => {
         { tableNumber: { $exists: true, $ne: null } }
       ],
       status: { $in: ['completed', 'delivered', 'confirmed', 'preparing', 'ready', 'ordered', 'cooking', 'served', 'dining'] },
-      createdAt: { $gte: monthAgo }
+      createdAt: { $gte: startOfMonthUTC }
     }).select('diningInfo tableNumber createdAt orderDate');
     
     console.log('📊 Table orders found:', tableOrders.length);
@@ -649,14 +666,13 @@ const getStatistics = async (req, res) => {
     
     // Daily utilization (today only)
     console.log('📊 Current date/time:', {
-      today: today,
-      todayISO: today.toISOString(),
-      todayStr: today.toISOString().split('T')[0],
-      todayLocal: today.toLocaleDateString('vi-VN'),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      todayVN: todayVN.toISOString(),
+      todayStartUTC: todayStartUTC.toISOString(),
+      todayStr: `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`,
+      timezone: 'UTC+7 (Vietnam)'
     });
     
-    const todayStrDaily = todayForced.toISOString().split('T')[0];
+    const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
     const todayReservations = reservations.filter(reservation => {
       const reservationDate = new Date(reservation.reservationDate).toISOString().split('T')[0];
       return reservationDate === todayStrDaily;
@@ -677,22 +693,32 @@ const getStatistics = async (req, res) => {
     tableUtilization.daily = calculateUtilizationForPeriod(todayReservations, 'today');
     
     // Weekly utilization (last 7 days)
-    const weekStart = new Date(todayForced.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const weekStartVN = new Date(todayVN.getTime() - 6 * 24 * 60 * 60 * 1000);
     const weekReservations = reservations.filter(reservation => {
       const reservationDate = new Date(reservation.reservationDate);
-      return reservationDate >= weekStart && reservationDate <= todayForced;
+      const resDateVN = new Date(Date.UTC(
+        reservationDate.getFullYear(),
+        reservationDate.getMonth(),
+        reservationDate.getDate()
+      ));
+      return resDateVN >= weekStartVN && resDateVN <= todayVN;
     });
     tableUtilization.weekly = calculateUtilizationForPeriod(weekReservations, 'week');
     
     // Monthly utilization (current month)
-    const monthStart = new Date(todayForced.getFullYear(), todayForced.getMonth(), 1);
-    const monthEnd = new Date(todayForced.getFullYear(), todayForced.getMonth() + 1, 0, 23, 59, 59);
+    const monthStartVN = new Date(Date.UTC(vnYear, vnMonth, 1, 0, 0, 0, 0));
+    const monthEndVN = new Date(Date.UTC(vnYear, vnMonth + 1, 0, 23, 59, 59));
     
-    console.log(`📊 Monthly range: ${monthStart.toISOString().split('T')[0]} to ${monthEnd.toISOString().split('T')[0]}`);
+    console.log(`📊 Monthly range: ${monthStartVN.toISOString().split('T')[0]} to ${monthEndVN.toISOString().split('T')[0]}`);
     
     const monthReservations = reservations.filter(reservation => {
       const reservationDate = new Date(reservation.reservationDate);
-      return reservationDate >= monthStart && reservationDate <= monthEnd;
+      const resDateVN = new Date(Date.UTC(
+        reservationDate.getFullYear(),
+        reservationDate.getMonth(),
+        reservationDate.getDate()
+      ));
+      return resDateVN >= monthStartVN && resDateVN <= monthEndVN;
     });
     tableUtilization.monthly = calculateUtilizationForPeriod(monthReservations, 'month');
     
@@ -784,9 +810,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate peak hours for different periods
     console.log('📊 ===== STARTING PEAK HOURS CALCULATION =====');
-    const dailyPeakHours = await calculatePeakHours(today, new Date(today.getTime() + 24 * 60 * 60 * 1000), 'daily');
-    const weeklyPeakHours = await calculatePeakHours(weekAgo, todayForced, 'weekly');
-    const monthlyPeakHours = await calculatePeakHours(monthAgo, todayForced, 'monthly');
+    const dailyPeakHours = await calculatePeakHours(todayStartUTC, endOfToday, 'daily');
+    const weeklyPeakHours = await calculatePeakHours(startOfWeek, endOfToday, 'weekly');
+    const monthlyPeakHours = await calculatePeakHours(startOfMonthUTC, endOfToday, 'monthly');
 
     console.log('📊 Final customer stats calculated for all periods');
     

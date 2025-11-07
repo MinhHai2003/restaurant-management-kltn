@@ -43,6 +43,7 @@ const getEmailTransporter = () => {
       secure:
         process.env.SMTP_SECURE === "true" ||
         parseInt(process.env.SMTP_PORT, 10) === 465,
+      requireTLS: parseInt(process.env.SMTP_PORT, 10) === 587, // Gmail requires TLS for port 587
       auth:
         process.env.SMTP_USER && process.env.SMTP_PASS
           ? {

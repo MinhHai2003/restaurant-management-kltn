@@ -1,6 +1,6 @@
 {
   "name": "customer-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Customer service for restaurant management system",
   "main": "index.js",
   "scripts": {

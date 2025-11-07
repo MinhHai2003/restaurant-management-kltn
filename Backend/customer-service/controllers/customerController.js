@@ -10,10 +10,10 @@ const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
 const ACCESS_TOKEN_EXPIRY = "24h"; // Longer for customers
 const REFRESH_TOKEN_EXPIRY = "30d"; // 30 days for customers
 
-// Email helpers - Initialize SendGrid
+// Email helpers - Initialize SendGrid (v2 - SendGrid API only, no SMTP)
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("[EMAIL] SendGrid API initialized");
+  console.log("[EMAIL] SendGrid API initialized - Using SendGrid API only (no SMTP)");
 } else {
   console.warn("[EMAIL] SENDGRID_API_KEY is not configured. Emails will be logged instead of sent.");
 }

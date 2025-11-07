@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 const Customer = require("../models/Customer");
 
 // Constants
@@ -10,82 +10,21 @@ const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
 const ACCESS_TOKEN_EXPIRY = "24h"; // Longer for customers
 const REFRESH_TOKEN_EXPIRY = "30d"; // 30 days for customers
 
-// Email helpers
-let emailTransporter;
-
-const getEmailTransporter = () => {
-  if (emailTransporter !== undefined) {
-    return emailTransporter;
-  }
-
-  console.log("[EMAIL] Initializing email transporter...");
-  console.log("[EMAIL] Environment variables:", {
-    SMTP_HOST: process.env.SMTP_HOST ? "SET" : "NOT SET",
-    SMTP_PORT: process.env.SMTP_PORT || "NOT SET",
-    SMTP_SECURE: process.env.SMTP_SECURE || "NOT SET",
-    SMTP_USER: process.env.SMTP_USER ? "SET" : "NOT SET",
-    SMTP_PASS: process.env.SMTP_PASS ? "SET (hidden)" : "NOT SET",
-    EMAIL_FROM: process.env.EMAIL_FROM || "NOT SET",
-  });
-
-  if (!process.env.SMTP_HOST) {
-    console.warn(
-      "[EMAIL] SMTP_HOST is not configured. Emails will be logged instead of sent."
-    );
-    emailTransporter = null;
-    return emailTransporter;
-  }
-
-  try {
-    const config = {
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT, 10) || 587,
-      secure:
-        process.env.SMTP_SECURE === "true" ||
-        parseInt(process.env.SMTP_PORT, 10) === 465,
-      requireTLS: parseInt(process.env.SMTP_PORT, 10) === 587, // Gmail requires TLS for port 587
-      connectionTimeout: 30000, // 30 seconds connection timeout (increased)
-      greetingTimeout: 30000, // 30 seconds greeting timeout (increased)
-      socketTimeout: 30000, // 30 seconds socket timeout (increased)
-      // Disable connection pooling - may cause issues with Railway
-      pool: false,
-      // Add debug option
-      debug: process.env.NODE_ENV !== 'production',
-      auth:
-        process.env.SMTP_USER && process.env.SMTP_PASS
-          ? {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            }
-          : undefined,
-    };
-
-    console.log("[EMAIL] Creating transporter with config:", {
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
-      hasAuth: !!config.auth,
-    });
-
-    emailTransporter = nodemailer.createTransport(config);
-    
-    console.log("[EMAIL] Transporter created successfully");
-  } catch (error) {
-    console.error("[EMAIL] Failed to initialize transporter:", error);
-    emailTransporter = null;
-  }
-
-  return emailTransporter;
-};
+// Email helpers - Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("[EMAIL] SendGrid API initialized");
+} else {
+  console.warn("[EMAIL] SENDGRID_API_KEY is not configured. Emails will be logged instead of sent.");
+}
 
 const nl2br = (value = "") => value.replace(/\n/g, "<br />");
 const stripHtml = (value = "") => value.replace(/<[^>]*>?/gm, "");
 
 const sendEmailWithFallback = async ({ to, subject, html, text }) => {
-  const transporter = getEmailTransporter();
-
-  if (!transporter) {
-    console.log("[EMAIL DEBUG] Simulated email send:", {
+  // Check if SendGrid API is configured
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log("[EMAIL] SENDGRID_API_KEY not configured. Simulated email send:", {
       to,
       subject,
       preview: stripHtml(html || text || ""),
@@ -94,47 +33,43 @@ const sendEmailWithFallback = async ({ to, subject, html, text }) => {
   }
 
   try {
-    const fromAddress =
-      process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@restaurant.local";
+    const fromAddress = process.env.EMAIL_FROM || "no-reply@restaurant.local";
     
-    console.log("[EMAIL] Attempting to send email:", {
+    console.log("[EMAIL] Attempting to send email via SendGrid API:", {
       from: fromAddress,
       to,
       subject,
-      smtpHost: process.env.SMTP_HOST,
-      smtpPort: process.env.SMTP_PORT,
     });
 
-    // Add timeout for email sending (60 seconds - increased for connection issues)
-    const sendEmailPromise = transporter.sendMail({
+    const msg = {
+      to,
       from: fromAddress,
-      to,
       subject,
-      html,
-      text,
-    });
+      text: text || stripHtml(html || ""),
+      html: html || text?.replace(/\n/g, "<br />") || "",
+    };
 
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Email sending timeout after 60 seconds"));
-      }, 60000);
-    });
+    const [response] = await sgMail.send(msg);
 
-    const info = await Promise.race([sendEmailPromise, timeoutPromise]);
-
-    console.log("[EMAIL] Email sent successfully:", {
-      messageId: info.messageId,
+    console.log("[EMAIL] Email sent successfully via SendGrid API:", {
+      statusCode: response.statusCode,
+      messageId: response.headers["x-message-id"],
       to,
       subject,
     });
 
-    return { delivered: true, info };
+    return { 
+      delivered: true, 
+      info: { 
+        messageId: response.headers["x-message-id"],
+        statusCode: response.statusCode,
+      } 
+    };
   } catch (error) {
-    console.error("[EMAIL] Failed to send email:", {
+    console.error("[EMAIL] Failed to send email via SendGrid API:", {
       error: error.message,
       code: error.code,
-      command: error.command,
-      response: error.response,
+      response: error.response?.body,
       to,
       subject,
     });
@@ -145,8 +80,7 @@ const sendEmailWithFallback = async ({ to, subject, html, text }) => {
       reason: error.message || "Unknown error",
       error: {
         code: error.code,
-        command: error.command,
-        response: error.response,
+        response: error.response?.body,
       }
     };
   }

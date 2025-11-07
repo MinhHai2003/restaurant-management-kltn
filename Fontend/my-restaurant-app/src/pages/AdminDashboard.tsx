@@ -371,11 +371,11 @@ const AdminDashboard: React.FC = () => {
     if (socket && isConnected) {
       console.log('🔌 AdminDashboard: Setting up Socket.io event listeners...');
 
-      const handleOrderStatusUpdate = (data: { orderId: string; status: string;[key: string]: unknown }) => {
+      const handleOrderStatusUpdate = (data: { orderId: string; status?: string; newStatus?: string; order?: Order;[key: string]: unknown }) => {
         console.log('🔄 AdminDashboard: Order status updated via Socket.io:', data);
         
-        // Kiểm tra và xử lý status hợp lệ
-        const validStatus = data.status && data.status !== 'undefined' ? data.status : 'pending';
+        // Priority: newStatus > order.status > status > fallback to pending
+        const validStatus = (data.newStatus || (data.order?.status) || data.status || 'pending') as string;
         const statusDisplay = {
           'pending': 'Chờ xử lý',
           'confirmed': 'Đã xác nhận', 
@@ -388,13 +388,15 @@ const AdminDashboard: React.FC = () => {
         
         console.log(`📢 Order ${data.orderId} status changed to: ${statusDisplay[validStatus as keyof typeof statusDisplay] || validStatus}`);
         
-        // Cập nhật trực tiếp trong ordersList
+        // Cập nhật trực tiếp trong ordersList - ưu tiên dùng order object nếu có
         setOrdersList(prevOrders => 
-          prevOrders.map(order => 
-            order._id === data.orderId 
-              ? { ...order, status: validStatus }
-              : order
-          )
+          prevOrders.map(order => {
+            if (order._id === data.orderId) {
+              // Nếu có full order object, dùng nó; nếu không chỉ update status
+              return data.order ? { ...data.order, status: validStatus } : { ...order, status: validStatus };
+            }
+            return order;
+          })
         );
         
         // Refresh dashboard stats
@@ -1190,44 +1192,6 @@ const AdminDashboard: React.FC = () => {
           gap: '16px',
           marginBottom: '32px'
         }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Tỷ lệ sử dụng bàn</h4>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#667eea' }}>{tableUtilizationRate}%</div>
-          </div>
-
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>❌</div>
-            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Tỷ lệ hủy</h4>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ef4444' }}>{cancellationRate}%</div>
-          </div>
-
-
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏰</div>
-            <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '14px' }}>Thời gian hiện tại</h4>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#6b7280' }}>
-              {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
         </div>
 
         {/* Recent Activity */}

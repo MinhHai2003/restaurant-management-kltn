@@ -1149,7 +1149,7 @@ const AdminDashboard: React.FC = () => {
           }}>
             <div style={{ position: 'absolute', top: '-20px', right: '-20px', fontSize: '80px', opacity: 0.1 }}>📝</div>
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Đặt bàn hôm nay</h3>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', opacity: 0.9 }}>Tổng đặt bàn </h3>
               <p style={{ margin: 0, fontSize: '36px', fontWeight: 'bold' }}>{stats.totalReservations}</p>
               <p style={{ margin: '8px 0 0 0', fontSize: '14px', opacity: 0.8 }}>
                 Đã hủy: {cancelledReservations}
@@ -2643,14 +2643,6 @@ const AdminDashboard: React.FC = () => {
             🦀 Món ăn bán chạy
           </h3>
           
-          {/* Debug info */}
-          <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
-            Debug: {statisticsData.topDishes?.[statisticsPeriod] ? `${statisticsData.topDishes[statisticsPeriod].length} items` : 'No data'} | 
-            Using fallback: {!statisticsData.topDishes?.[statisticsPeriod] || statisticsData.topDishes[statisticsPeriod].length === 0 ? 'Yes' : 'No'} |
-            Max orders: {statisticsData.topDishes?.[statisticsPeriod] ? Math.max(...statisticsData.topDishes[statisticsPeriod].map((d: any) => d.orders)) : 0} |
-            XAxis max: {xAxisMax}
-          </div>
-          
           <div style={{ height: '400px', width: '100%', minHeight: '400px', minWidth: '400px' }}>
             <ResponsiveContainer width="100%" height="100%" minHeight={400} minWidth={400}>
               <BarChart 
@@ -3034,16 +3026,26 @@ const AdminDashboard: React.FC = () => {
         padding: '0 24px'
       }}>
         <div style={{ display: 'flex', gap: '0' }}>
-          {[
-            { key: 'overview', label: '📊 Tổng quan', icon: '📊' },
-            { key: 'reservations', label: '📝 Đặt bàn', icon: '📝' },
-            { key: 'tables', label: '🪑 Quản lý bàn', icon: '🪑' },
-            { key: 'inventory', label: '📦 Nguyên liệu', icon: '📦' },
-            { key: 'orders', label: '🍽️ Đặt món', icon: '🍽️' },
-            { key: 'staff', label: '👥 Nhân sự', icon: '👥' },
-            { key: 'shifts', label: '📅 Phân ca', icon: '📅' },
-            { key: 'statistics', label: '📈 Thống kê', icon: '📈' }
-          ].map(tab => (
+          {(() => {
+            const employeeInfo = getEmployeeInfo();
+            const userRole = employeeInfo?.role;
+            const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+            
+            const allTabs = [
+              { key: 'overview', label: '📊 Tổng quan', icon: '📊', restricted: false },
+              { key: 'reservations', label: '📝 Đặt bàn', icon: '📝', restricted: false },
+              { key: 'tables', label: '🪑 Quản lý bàn', icon: '🪑', restricted: false },
+              { key: 'inventory', label: '📦 Nguyên liệu', icon: '📦', restricted: true },
+              { key: 'orders', label: '🍽️ Đặt món', icon: '🍽️', restricted: false },
+              { key: 'staff', label: '👥 Nhân sự', icon: '👥', restricted: true },
+              { key: 'shifts', label: '📅 Phân ca', icon: '📅', restricted: true },
+              { key: 'statistics', label: '📈 Thống kê', icon: '📈', restricted: true }
+            ];
+            
+            // Filter tabs based on role
+            const visibleTabs = allTabs.filter(tab => !tab.restricted || isAdminOrManager);
+            
+            return visibleTabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
@@ -3060,7 +3062,8 @@ const AdminDashboard: React.FC = () => {
             >
               {tab.label}
             </button>
-          ))}
+            ));
+          })()}
         </div>
       </div>
 
@@ -3086,18 +3089,44 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {!loading && !error && (
-          <>
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'reservations' && renderReservations()}
-            {activeTab === 'tables' && renderTableManagement()}
-            {activeTab === 'inventory' && <AdminInventoryManagement />}
-            {activeTab === 'orders' && renderOrderManagement()}
-            {activeTab === 'staff' && <StaffManagement />}
-            {activeTab === 'shifts' && <ShiftManagement />}
-            {activeTab === 'statistics' && renderStatistics()}
-          </>
-        )}
+        {!loading && !error && (() => {
+          const employeeInfo = getEmployeeInfo();
+          const userRole = employeeInfo?.role;
+          const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+          
+          // Redirect to overview if user tries to access restricted tabs
+          const restrictedTabs = ['inventory', 'staff', 'shifts', 'statistics'];
+          if (restrictedTabs.includes(activeTab) && !isAdminOrManager) {
+            // Redirect to overview if not admin/manager
+            if (activeTab !== 'overview') {
+              setTimeout(() => setActiveTab('overview'), 0);
+            }
+            return (
+              <div style={{ padding: '48px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                  Không có quyền truy cập
+                </h3>
+                <p style={{ color: '#6b7280', fontSize: '16px' }}>
+                  Chỉ quản trị viên và quản lý mới có thể truy cập chức năng này.
+                </p>
+              </div>
+            );
+          }
+          
+          return (
+            <>
+              {activeTab === 'overview' && renderOverview()}
+              {activeTab === 'reservations' && renderReservations()}
+              {activeTab === 'tables' && renderTableManagement()}
+              {activeTab === 'inventory' && isAdminOrManager && <AdminInventoryManagement />}
+              {activeTab === 'orders' && renderOrderManagement()}
+              {activeTab === 'staff' && isAdminOrManager && <StaffManagement />}
+              {activeTab === 'shifts' && isAdminOrManager && <ShiftManagement />}
+              {activeTab === 'statistics' && isAdminOrManager && renderStatistics()}
+            </>
+          );
+        })()}
       </div>
 
       {/* Modal tạo bàn mới */}

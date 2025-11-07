@@ -830,11 +830,19 @@ exports.getAllCustomersForAdmin = async (req, res) => {
 
 // 📧 Send promotional email to a customer
 exports.sendPromotionalEmail = async (req, res) => {
+  console.log("[EMAIL] Send promotional email called:", {
+    customerId: req.params.customerId,
+    body: req.body,
+  });
+
   try {
     const { customerId } = req.params;
     const { subject, body } = req.body || {};
 
+    console.log("[EMAIL] Request data:", { customerId, subject, body: body ? "present" : "missing" });
+
     if (!subject || !body) {
+      console.log("[EMAIL] Missing subject or body");
       return res.status(400).json({
         success: false,
         message: "Subject and body are required",
@@ -843,13 +851,21 @@ exports.sendPromotionalEmail = async (req, res) => {
 
     const customer = await Customer.findById(customerId);
     if (!customer) {
+      console.log("[EMAIL] Customer not found:", customerId);
       return res.status(404).json({
         success: false,
         message: "Customer not found",
       });
     }
 
+    console.log("[EMAIL] Customer found:", {
+      email: customer.email,
+      name: customer.name,
+      allowPromotions: customer.allowPromotions,
+    });
+
     if (!customer.allowPromotions) {
+      console.log("[EMAIL] Customer opted out of promotions");
       return res.status(403).json({
         success: false,
         message: "Customer has opted out of promotional emails",
@@ -866,11 +882,25 @@ exports.sendPromotionalEmail = async (req, res) => {
       </div>
     `;
 
+    console.log("[EMAIL] Calling sendEmailWithFallback:", {
+      to: customer.email,
+      subject,
+      hasHtml: !!htmlContent,
+      hasText: !!sanitizedBody,
+    });
+
     const emailResult = await sendEmailWithFallback({
       to: customer.email,
       subject,
       html: htmlContent,
       text: sanitizedBody,
+    });
+
+    console.log("[EMAIL] Email result:", {
+      delivered: emailResult.delivered,
+      simulated: emailResult.simulated,
+      reason: emailResult.reason,
+      error: emailResult.error,
     });
 
     if (emailResult.delivered) {

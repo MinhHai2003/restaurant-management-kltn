@@ -47,9 +47,10 @@ const getEmailTransporter = () => {
       connectionTimeout: 30000, // 30 seconds connection timeout (increased)
       greetingTimeout: 30000, // 30 seconds greeting timeout (increased)
       socketTimeout: 30000, // 30 seconds socket timeout (increased)
-      pool: true, // Use connection pooling
-      maxConnections: 1,
-      maxMessages: 3,
+      // Disable connection pooling - may cause issues with Railway
+      pool: false,
+      // Add debug option
+      debug: process.env.NODE_ENV !== 'production',
       auth:
         process.env.SMTP_USER && process.env.SMTP_PASS
           ? {

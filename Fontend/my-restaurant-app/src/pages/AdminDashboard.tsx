@@ -390,11 +390,24 @@ const AdminDashboard: React.FC = () => {
         console.log(`📢 Order ${data.orderId} status changed to: ${statusDisplay[validStatus as keyof typeof statusDisplay] || validStatus}`);
         
         // Cập nhật trực tiếp trong ordersList - ưu tiên dùng order object nếu có
+        // NHƯNG đảm bảo giữ nguyên payment method ban đầu
         setOrdersList(prevOrders => 
           prevOrders.map(order => {
             if (order._id === data.orderId) {
+              // Lưu payment method ban đầu
+              const originalPaymentMethod = order.payment?.method;
+              
               // Nếu có full order object, dùng nó; nếu không chỉ update status
-              return data.order ? { ...data.order, status: validStatus } : { ...order, status: validStatus };
+              const updatedOrder = data.order 
+                ? { ...data.order, status: validStatus } 
+                : { ...order, status: validStatus };
+              
+              // Đảm bảo payment method không bị thay đổi
+              if (originalPaymentMethod && updatedOrder.payment) {
+                updatedOrder.payment.method = originalPaymentMethod;
+              }
+              
+              return updatedOrder;
             }
             return order;
           })

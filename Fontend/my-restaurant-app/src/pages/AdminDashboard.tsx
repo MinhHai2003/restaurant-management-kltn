@@ -1186,13 +1186,6 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Additional Stats Row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px',
-          marginBottom: '32px'
-        }}>
-        </div>
 
         {/* Recent Activity */}
         <div style={{

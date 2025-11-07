@@ -81,6 +81,16 @@ const CheckoutPage: React.FC = () => {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState('');
 
+  // Promotion Code (for customer-specific codes)
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discount: number;
+    description?: string;
+  } | null>(null);
+
 
   // Load cart and addresses
   useEffect(() => {
@@ -298,7 +308,9 @@ const CheckoutPage: React.FC = () => {
       
       // Get coupon discount from cart (if any coupon applied)
       const couponDiscount = cart.summary.couponDiscount || 0;
-      const totalDiscount = loyaltyDiscount + couponDiscount;
+      // Get promotion code discount (if any promotion code applied)
+      const promoDiscount = appliedPromo?.discount || 0;
+      const totalDiscount = loyaltyDiscount + couponDiscount + promoDiscount;
       const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
       
       console.log('💰 [ORDER SUBMIT] Calculated pricing:', {
@@ -308,6 +320,7 @@ const CheckoutPage: React.FC = () => {
         adjustedDeliveryFee,
         loyaltyDiscount,
         couponDiscount,
+        promoDiscount,
         totalDiscount,
         finalTotal,
         membershipLevel
@@ -347,6 +360,8 @@ const CheckoutPage: React.FC = () => {
           deliveryFee: adjustedDeliveryFee,
           loyaltyDiscount,
           couponDiscount,
+          promoDiscount,
+          promotionCode: appliedPromo?.code,
           total: finalTotal,
           membershipLevel,
           breakdown: {
@@ -461,6 +476,49 @@ const CheckoutPage: React.FC = () => {
       setCouponError('Có lỗi xảy ra khi áp dụng mã giảm giá');
     } finally {
       setCouponLoading(false);
+    }
+  };
+
+  // Apply promotion code function
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Vui lòng nhập mã khuyến mãi');
+      return;
+    }
+
+    if (!cart || !cart.summary) {
+      setPromoError('Giỏ hàng trống');
+      return;
+    }
+
+    if (!user) {
+      setPromoError('Vui lòng đăng nhập để sử dụng mã khuyến mãi');
+      return;
+    }
+
+    try {
+      setPromoLoading(true);
+      setPromoError('');
+      
+      const subtotal = cart.summary.subtotal || 0;
+      const response = await customerService.validatePromotionCode(promoCode.trim().toUpperCase(), subtotal);
+      
+      if (response.success && response.data) {
+        setAppliedPromo({
+          code: response.data.code,
+          discount: response.data.discount,
+          description: response.data.description,
+        });
+        setPromoCode('');
+        alert(`Áp dụng mã khuyến mãi thành công! Tiết kiệm ${formatPrice(response.data.discount)}`);
+      } else {
+        setPromoError(response.error || 'Mã khuyến mãi không hợp lệ');
+      }
+    } catch (error) {
+      console.error('Apply promotion code error:', error);
+      setPromoError('Có lỗi xảy ra khi áp dụng mã khuyến mãi');
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -1125,6 +1183,129 @@ const CheckoutPage: React.FC = () => {
                   )}
                 </div>
 
+                {/* Promotion Code Form (Customer-specific) */}
+                {user && (
+                  <div style={{
+                    borderTop: '1px solid #f1f5f9',
+                    paddingTop: '20px',
+                    marginBottom: '20px'
+                  }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#1e293b' }}>
+                      🎁 Mã khuyến mãi của bạn
+                    </h4>
+                    {!appliedPromo ? (
+                      <>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1 }}>
+                            <input
+                              type="text"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value)}
+                              placeholder="Nhập mã khuyến mãi (VD: PROMO2024)"
+                              style={{
+                                width: '100%',
+                                padding: '12px',
+                                border: promoError ? '1px solid #ef4444' : '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                fontFamily: 'inherit'
+                              }}
+                              disabled={promoLoading}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleApplyPromoCode();
+                                }
+                              }}
+                            />
+                            {promoError && (
+                              <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                                {promoError}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleApplyPromoCode}
+                            disabled={promoLoading || !promoCode.trim()}
+                            style={{
+                              padding: '12px 20px',
+                              backgroundColor: promoLoading || !promoCode.trim() ? '#f1f5f9' : '#10b981',
+                              color: promoLoading || !promoCode.trim() ? '#9ca3af' : 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              cursor: promoLoading || !promoCode.trim() ? 'not-allowed' : 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {promoLoading ? 'Đang áp dụng...' : 'Áp dụng'}
+                          </button>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                          💡 Mã khuyến mãi được gửi qua email cho bạn
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{
+                        backgroundColor: '#dcfce7',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #16a34a'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <span style={{
+                              color: '#15803d',
+                              fontWeight: '600',
+                              fontSize: '14px'
+                            }}>
+                              ✅ Mã khuyến mãi đã áp dụng: {appliedPromo.code}
+                            </span>
+                            {appliedPromo.description && (
+                              <div style={{
+                                fontSize: '12px',
+                                color: '#166534',
+                                marginTop: '2px'
+                              }}>
+                                {appliedPromo.description}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{
+                              color: '#15803d',
+                              fontWeight: 'bold',
+                              fontSize: '16px'
+                            }}>
+                              -{formatPrice(appliedPromo.discount)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setAppliedPromo(null)}
+                              style={{
+                                padding: '4px 8px',
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div style={{
                   borderTop: '2px solid #f1f5f9',
                   paddingTop: '20px',
@@ -1150,9 +1331,10 @@ const CheckoutPage: React.FC = () => {
                         const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
                         const adjustedDeliveryFee = ['gold', 'platinum'].includes(membershipLevel) ? 0 : deliveryFee;
                         
-                        // Include both loyalty and coupon discounts
+                        // Include loyalty, coupon, and promotion code discounts
                         const couponDiscount = cart?.summary.couponDiscount || 0;
-                        const totalDiscount = loyaltyDiscount + couponDiscount;
+                        const promoDiscount = appliedPromo?.discount || 0;
+                        const totalDiscount = loyaltyDiscount + couponDiscount + promoDiscount;
                         const finalTotal = subtotal + tax + adjustedDeliveryFee - totalDiscount;
                         
                         return formatPrice(finalTotal);
@@ -1169,7 +1351,8 @@ const CheckoutPage: React.FC = () => {
                     const loyaltyDiscount = Math.round(subtotal * (membershipRates[membershipLevel] || 0));
                     const shippingSavings = ['gold', 'platinum'].includes(membershipLevel) ? deliveryFee : 0;
                     const couponDiscount = cart?.summary.couponDiscount || 0;
-                    const totalSavings = loyaltyDiscount + shippingSavings + couponDiscount;
+                    const promoDiscount = appliedPromo?.discount || 0;
+                    const totalSavings = loyaltyDiscount + shippingSavings + couponDiscount + promoDiscount;
                     
                     return totalSavings > 0 ? (
                       <div style={{
@@ -1234,6 +1417,18 @@ const CheckoutPage: React.FC = () => {
                               }}>
                                 <span>• Mã giảm giá:</span>
                                 <span style={{ fontWeight: '600' }}>{formatPrice(couponDiscount)}</span>
+                              </div>
+                            )}
+                            
+                            {promoDiscount > 0 && (
+                              <div style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                marginBottom: '6px',
+                                padding: '4px 0'
+                              }}>
+                                <span>• Mã khuyến mãi ({appliedPromo?.code}):</span>
+                                <span style={{ fontWeight: '600' }}>{formatPrice(promoDiscount)}</span>
                               </div>
                             )}
                             

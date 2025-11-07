@@ -256,6 +256,40 @@ class CustomerService {
       };
     }
   }
+
+  // Validate promotion code
+  async validatePromotionCode(code: string, subtotal: number): Promise<{
+    success: boolean;
+    data?: {
+      code: string;
+      discount: number;
+      discountType: string;
+      description?: string;
+      originalDiscount: number;
+      minOrder?: number;
+      maxDiscount?: number;
+    };
+    error?: string;
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/promotion-code/validate`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+      return { success: true, data: result.data };
+    } catch (error) {
+      console.error('❌ Lỗi trong customerService.validatePromotionCode:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to validate promotion code',
+      };
+    }
+  }
 }
 
 export const customerService = new CustomerService();

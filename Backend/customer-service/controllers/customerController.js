@@ -1138,6 +1138,121 @@ exports.createPromotionCodeForCustomer = async (req, res) => {
   }
 };
 
+// 🎟️ Validate and calculate promotion code discount
+exports.validatePromotionCode = async (req, res) => {
+  try {
+    const { code, subtotal } = req.body || {};
+    const customerId = req.customerId; // From authenticateCustomer middleware
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã khuyến mãi là bắt buộc",
+      });
+    }
+
+    if (subtotal === undefined || subtotal === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Tổng tiền đơn hàng là bắt buộc",
+      });
+    }
+
+    const normalizedCode = String(code).trim().toUpperCase();
+    const orderSubtotal = Number(subtotal);
+
+    if (Number.isNaN(orderSubtotal) || orderSubtotal < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Tổng tiền đơn hàng không hợp lệ",
+      });
+    }
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy thông tin khách hàng",
+      });
+    }
+
+    // Find active promotion code
+    const promotionCode = customer.promotionCodes.find(
+      (promo) => promo.code === normalizedCode && promo.isActive
+    );
+
+    if (!promotionCode) {
+      return res.status(404).json({
+        success: false,
+        message: "Mã khuyến mãi không tồn tại hoặc đã bị vô hiệu hóa",
+      });
+    }
+
+    // Check validity period
+    const now = new Date();
+    if (promotionCode.validFrom && new Date(promotionCode.validFrom) > now) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã khuyến mãi chưa có hiệu lực",
+      });
+    }
+
+    if (promotionCode.validTo && new Date(promotionCode.validTo) < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Mã khuyến mãi đã hết hạn",
+      });
+    }
+
+    // Check minimum order
+    if (promotionCode.minOrder && orderSubtotal < promotionCode.minOrder) {
+      return res.status(400).json({
+        success: false,
+        message: `Đơn hàng tối thiểu ${promotionCode.minOrder.toLocaleString('vi-VN')} VNĐ để sử dụng mã này`,
+        minOrder: promotionCode.minOrder,
+      });
+    }
+
+    // Calculate discount
+    let discountAmount = 0;
+    if (promotionCode.discountType === "percentage") {
+      discountAmount = Math.round((orderSubtotal * promotionCode.discount) / 100);
+      // Apply max discount if specified
+      if (promotionCode.maxDiscount && discountAmount > promotionCode.maxDiscount) {
+        discountAmount = promotionCode.maxDiscount;
+      }
+    } else {
+      // Fixed discount
+      discountAmount = promotionCode.discount;
+      // Don't exceed subtotal
+      if (discountAmount > orderSubtotal) {
+        discountAmount = orderSubtotal;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Mã khuyến mãi hợp lệ",
+      data: {
+        code: promotionCode.code,
+        discount: discountAmount,
+        discountType: promotionCode.discountType,
+        description: promotionCode.description,
+        originalDiscount: promotionCode.discount,
+        minOrder: promotionCode.minOrder,
+        maxDiscount: promotionCode.maxDiscount,
+      },
+    });
+  } catch (error) {
+    console.error("Validate promotion code error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi xác thực mã khuyến mãi",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register: exports.register,
   login: exports.login,
@@ -1154,4 +1269,5 @@ module.exports = {
   getAllCustomersForAdmin: exports.getAllCustomersForAdmin,
   sendPromotionalEmail: exports.sendPromotionalEmail,
   createPromotionCodeForCustomer: exports.createPromotionCodeForCustomer,
+  validatePromotionCode: exports.validatePromotionCode,
 };

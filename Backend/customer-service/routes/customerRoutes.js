@@ -34,6 +34,9 @@ router.delete(
 // 🏆 Loyalty Program
 router.get("/loyalty", authenticateCustomer, customerController.getLoyaltyInfo);
 
+// 🎟️ Promotion Code
+router.post("/promotion-code/validate", authenticateCustomer, customerController.validatePromotionCode);
+
 // 📧 Admin Tools
 router.post(
   "/:customerId/send-email",

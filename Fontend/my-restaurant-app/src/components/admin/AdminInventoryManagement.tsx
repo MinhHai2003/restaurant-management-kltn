@@ -199,7 +199,17 @@ const AdminInventoryManagement: React.FC = () => {
 
   // Load initial data
   useEffect(() => {
+    console.log('📦 [AdminInventoryManagement] Component mounted, checking auth...');
+    console.log('📦 [AdminInventoryManagement] localStorage check:', {
+      employeeToken: localStorage.getItem('employeeToken') ? 'EXISTS' : 'NULL',
+      adminToken: localStorage.getItem('adminToken') ? 'EXISTS' : 'NULL',
+      authToken: localStorage.getItem('authToken') ? 'EXISTS' : 'NULL',
+      employeeData: localStorage.getItem('employeeData') ? 'EXISTS' : 'NULL'
+    });
+    
     AdminInventoryService.requireAuth(); // Kiểm tra quyền admin
+    console.log('📦 [AdminInventoryManagement] Auth check passed, loading data...');
+    
     const initData = async () => {
       setLoading(true);
       try {

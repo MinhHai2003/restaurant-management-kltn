@@ -1077,112 +1077,6 @@ const CheckoutPage: React.FC = () => {
                   })()}
                 </div>
 
-                {/* Coupon Form */}
-                <div style={{
-                  borderTop: '1px solid #f1f5f9',
-                  paddingTop: '20px',
-                  marginBottom: '20px'
-                }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', color: '#1e293b' }}>
-                    🎫 Mã giảm giá
-                  </h4>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Nhập mã giảm giá (VD: WELCOME10)"
-                        style={{
-                          width: '100%',
-                          padding: '12px',
-                          border: couponError ? '1px solid #ef4444' : '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontFamily: 'inherit'
-                        }}
-                        disabled={couponLoading}
-                      />
-                      {couponError && (
-                        <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
-                          {couponError}
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={couponLoading || !couponCode.trim()}
-                      style={{
-                        padding: '12px 20px',
-                        backgroundColor: couponLoading || !couponCode.trim() ? '#f1f5f9' : '#3b82f6',
-                        color: couponLoading || !couponCode.trim() ? '#9ca3af' : 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        cursor: couponLoading || !couponCode.trim() ? 'not-allowed' : 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {couponLoading ? 'Đang áp dụng...' : 'Áp dụng'}
-                    </button>
-                  </div>
-                  
-                  {/* Hint về mã giảm giá */}
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                    💡 Thử: WELCOME10 (giảm 10%), SAVE50K (giảm 50k), FREESHIP (miễn phí ship)
-                  </div>
-                  
-                  {/* Hiển thị mã giảm giá đã áp dụng */}
-                  {cart?.summary?.couponDiscount && cart.summary.couponDiscount > 0 && (
-                    <div style={{
-                      backgroundColor: '#dcfce7',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      marginTop: '12px',
-                      border: '1px solid #16a34a'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <div>
-                          <span style={{
-                            color: '#15803d',
-                            fontWeight: '600',
-                            fontSize: '14px'
-                          }}>
-                            ✅ Mã giảm giá đã áp dụng
-                          </span>
-                          <div style={{
-                            fontSize: '12px',
-                            color: '#166534',
-                            marginTop: '2px'
-                          }}>
-                            {(() => {
-                              // Hiển thị tên mã dựa trên discount amount
-                              const discount = cart.summary.couponDiscount;
-                              if (discount === 50000) return 'Mã: SAVE50K';
-                              if (discount >= 10000 && discount <= 15000) return 'Mã: WELCOME10';
-                              if (discount === 30000) return 'Mã: FREESHIP';
-                              return 'Mã giảm giá';
-                            })()}
-                          </div>
-                        </div>
-                        <span style={{
-                          color: '#15803d',
-                          fontWeight: 'bold',
-                          fontSize: '16px'
-                        }}>
-                          -{formatPrice(cart.summary.couponDiscount)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Promotion Code Form (Customer-specific) */}
                 {user && (
                   <div style={{
@@ -1241,9 +1135,6 @@ const CheckoutPage: React.FC = () => {
                           >
                             {promoLoading ? 'Đang áp dụng...' : 'Áp dụng'}
                           </button>
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                          💡 Mã khuyến mãi được gửi qua email cho bạn
                         </div>
                       </>
                     ) : (

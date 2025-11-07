@@ -44,9 +44,12 @@ const getEmailTransporter = () => {
         process.env.SMTP_SECURE === "true" ||
         parseInt(process.env.SMTP_PORT, 10) === 465,
       requireTLS: parseInt(process.env.SMTP_PORT, 10) === 587, // Gmail requires TLS for port 587
-      connectionTimeout: 10000, // 10 seconds connection timeout
-      greetingTimeout: 10000, // 10 seconds greeting timeout
-      socketTimeout: 10000, // 10 seconds socket timeout
+      connectionTimeout: 30000, // 30 seconds connection timeout (increased)
+      greetingTimeout: 30000, // 30 seconds greeting timeout (increased)
+      socketTimeout: 30000, // 30 seconds socket timeout (increased)
+      pool: true, // Use connection pooling
+      maxConnections: 1,
+      maxMessages: 3,
       auth:
         process.env.SMTP_USER && process.env.SMTP_PASS
           ? {
@@ -101,7 +104,7 @@ const sendEmailWithFallback = async ({ to, subject, html, text }) => {
       smtpPort: process.env.SMTP_PORT,
     });
 
-    // Add timeout for email sending (30 seconds)
+    // Add timeout for email sending (60 seconds - increased for connection issues)
     const sendEmailPromise = transporter.sendMail({
       from: fromAddress,
       to,
@@ -112,8 +115,8 @@ const sendEmailWithFallback = async ({ to, subject, html, text }) => {
 
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error("Email sending timeout after 30 seconds"));
-      }, 30000);
+        reject(new Error("Email sending timeout after 60 seconds"));
+      }, 60000);
     });
 
     const info = await Promise.race([sendEmailPromise, timeoutPromise]);

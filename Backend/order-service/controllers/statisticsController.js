@@ -5,63 +5,71 @@ const getStatistics = async (req, res) => {
   try {
     console.log('📊 Statistics: Fetching comprehensive statistics...');
 
-    // Get date ranges - Use Vietnam timezone
+    // Get date ranges - Convert to Vietnam timezone (UTC+7) properly
     const now = new Date();
-    // Convert to Vietnam timezone (UTC+7) and get today's date
-    const vietnamTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-    const today = new Date(vietnamTime.getFullYear(), vietnamTime.getMonth(), vietnamTime.getDate());
+    const vietnamOffset = 7 * 60 * 60 * 1000; // UTC+7 in milliseconds
     
-    // Use current date + 1 day to fix timezone issue
-    const todayForced = new Date(today.getTime() + 24 * 60 * 60 * 1000); // Add 1 day
-    console.log('📊 USING CURRENT DATE + 1 DAY:', todayForced.toISOString().split('T')[0]);
-    console.log('📊 ORIGINAL TODAY:', today.toISOString().split('T')[0]);
+    // Get current date in Vietnam timezone
+    // Add 7 hours to UTC time to get Vietnam time
+    const vietnamTime = new Date(now.getTime() + vietnamOffset);
+    // Extract year, month, date from Vietnam time
+    const vnYear = vietnamTime.getUTCFullYear();
+    const vnMonth = vietnamTime.getUTCMonth();
+    const vnDate = vietnamTime.getUTCDate();
     
-    // Calculate proper week and month ranges
-    const weekAgo = new Date(todayForced.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(todayForced.getTime() - 30 * 24 * 60 * 60 * 1000);
-
+    // Create Date object for 00:00 Vietnam time
+    // 00:00 VN = 17:00 UTC (previous day)
+    const todayVN = new Date(Date.UTC(vnYear, vnMonth, vnDate, 0, 0, 0, 0));
+    // Convert to UTC: subtract 7 hours
+    const todayStartUTC = new Date(todayVN.getTime() - vietnamOffset);
+    
     console.log('📊 Date ranges:', { 
-      now: now.toISOString(),
+      nowUTC: now.toISOString(),
       vietnamTime: vietnamTime.toISOString(),
-      today: today.toISOString(),
-      todayStr: today.toISOString().split('T')[0],
-      weekAgo: weekAgo.toISOString(),
-      monthAgo: monthAgo.toISOString()
+      todayVN: todayVN.toISOString(),
+      todayStartUTC: todayStartUTC.toISOString(),
+      todayStr: `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`
     });
 
     // Get total orders count first
     const totalOrdersCount = await Order.countDocuments();
     console.log('📊 Total orders:', totalOrdersCount);
 
-    // Revenue data - Daily (last 7 days) - Simplified
+    // Revenue data - Daily (last 7 days) - Calculate with Vietnam timezone
     const dailyRevenue = [];
+    
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+      // Calculate date in Vietnam timezone (go back i days)
+      const dateVN = new Date(todayVN.getTime() - i * 24 * 60 * 60 * 1000);
+      const vnYear = dateVN.getUTCFullYear();
+      const vnMonth = dateVN.getUTCMonth();
+      const vnDate = dateVN.getUTCDate();
+      const dateVNStr = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
+      
+      // Convert to UTC for MongoDB query
+      // 00:00 VN = 17:00 UTC (previous day)
+      const startOfDayUTC = new Date(dateVN.getTime() - vietnamOffset);
+      const endOfDayUTC = new Date(startOfDayUTC.getTime() + 24 * 60 * 60 * 1000);
       
       try {
-        // Try both createdAt and orderDate for more accurate results
+        // Query using UTC timestamps that correspond to Vietnam day
         const orders = await Order.find({
-          $or: [
-            { createdAt: { $gte: startOfDay, $lt: endOfDay } },
-            { orderDate: { $gte: startOfDay, $lt: endOfDay } }
-          ],
+          createdAt: { $gte: startOfDayUTC, $lt: endOfDayUTC },
           status: { $in: ['completed', 'delivered'] }
         });
         
         const revenue = orders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
         
         dailyRevenue.push({
-          date: date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+          date: `${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`, // Format: MM-DD
           revenue: revenue
         });
         
-        console.log(`📊 Day ${i}: ${orders.length} orders, ${revenue} revenue`);
+        console.log(`📊 Day ${i} (${dateVNStr} VN): ${orders.length} orders, ${revenue} revenue (UTC: ${startOfDayUTC.toISOString()} to ${endOfDayUTC.toISOString()})`);
       } catch (error) {
         console.error(`📊 Error for day ${i}:`, error);
         dailyRevenue.push({
-          date: date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
+          date: `${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`,
           revenue: 0
         });
       }

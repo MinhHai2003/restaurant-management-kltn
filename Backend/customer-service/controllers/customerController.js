@@ -863,6 +863,12 @@ exports.sendPromotionalEmail = async (req, res) => {
       simulated: emailResult.simulated || false,
     };
 
+    // Add SendGrid specific info if available
+    if (emailResult.info) {
+      responseEmailInfo.messageId = emailResult.info.messageId;
+      responseEmailInfo.statusCode = emailResult.info.statusCode;
+    }
+
     if (!emailResult.delivered) {
       if (emailResult.reason) {
         responseEmailInfo.reason = emailResult.reason;
@@ -874,10 +880,10 @@ exports.sendPromotionalEmail = async (req, res) => {
 
     // Return appropriate status code based on delivery status
     if (!emailResult.delivered && !emailResult.simulated) {
-      // Real SMTP error occurred
+      // Real SendGrid error occurred
       return res.status(500).json({
         success: false,
-        message: "Không thể gửi email. Vui lòng kiểm tra cấu hình SMTP.",
+        message: "Không thể gửi email. Vui lòng kiểm tra cấu hình SendGrid.",
         data: responseEmailInfo,
       });
     }
@@ -885,8 +891,8 @@ exports.sendPromotionalEmail = async (req, res) => {
     res.json({
       success: true,
       message: emailResult.delivered
-        ? "Email đã được gửi thành công"
-        : "SMTP chưa cấu hình. Email chỉ được ghi log (simulated)",
+        ? "Email đã được gửi thành công đến SendGrid. Vui lòng kiểm tra hộp thư (bao gồm thư mục Spam)."
+        : "SendGrid chưa cấu hình. Email chỉ được ghi log (simulated)",
       data: responseEmailInfo,
     });
   } catch (error) {

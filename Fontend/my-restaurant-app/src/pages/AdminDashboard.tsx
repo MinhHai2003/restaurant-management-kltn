@@ -1082,27 +1082,6 @@ const AdminDashboard: React.FC = () => {
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '4px' }}>Trạng thái hệ thống</div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: tableSocketConnected ? '#10b981' : '#ef4444'
-                  }}></div>
-                  <span style={{ fontSize: '12px' }}>Bàn & Đặt bàn</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: isConnected ? '#10b981' : '#ef4444'
-                  }}></div>
-                  <span style={{ fontSize: '12px' }}>Đơn hàng</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -1198,23 +1177,6 @@ const AdminDashboard: React.FC = () => {
             <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
               🕐 Hoạt động gần đây
             </h3>
-            <button
-              onClick={() => {
-                Promise.all([loadReservations(), loadTableStats(), loadTables()]);
-              }}
-              style={{
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              🔄 Làm mới
-            </button>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1372,47 +1334,6 @@ const AdminDashboard: React.FC = () => {
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>
           📝 Quản lý đặt bàn & Trạng thái bàn
         </h2>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {/* Socket status indicator */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: tableSocketConnected ? '#dcfce7' : '#fee2e2',
-            color: tableSocketConnected ? '#059669' : '#dc2626',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '500'
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: tableSocketConnected ? '#10b981' : '#ef4444'
-            }}></div>
-            {tableSocketConnected ? 'Real-time ON' : 'Disconnected'}
-          </div>
-
-          {/* Manual refresh button */}
-          <button
-            onClick={() => {
-              console.log('🔄 Manual refresh triggered');
-              Promise.all([loadReservations(), loadTableStats(), loadTables()]);
-            }}
-            style={{
-              background: '#059669',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontWeight: '500',
-              fontSize: '14px'
-            }}
-          >
-            🔄 Refresh
-          </button>
 
           <button style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1866,22 +1787,6 @@ const AdminDashboard: React.FC = () => {
             <p style={{ color: '#666', margin: '4px 0 0 0', fontSize: '14px' }}>
               Xem và quản lý đơn hàng từ khách hàng
             </p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              onClick={checkServices}
-              style={{
-                backgroundColor: '#52c41a',
-                color: 'white',
-                border: 'none',
-                padding: '8px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              🔄 Làm mới
-            </button>
           </div>
         </div>
 

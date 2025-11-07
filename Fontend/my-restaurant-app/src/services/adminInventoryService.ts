@@ -260,15 +260,30 @@ export class AdminInventoryService {
   // ⚠️ Kiểm tra token hợp lệ
   static isAuthenticated(): boolean {
     // Priority: employeeToken (from employee login) > adminToken > authToken
-    const token = localStorage.getItem('employeeToken') || localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+    const employeeToken = localStorage.getItem('employeeToken');
+    const adminToken = localStorage.getItem('adminToken');
+    const authToken = localStorage.getItem('authToken');
+    const token = employeeToken || adminToken || authToken;
+    
+    console.log('🔐 [AdminInventoryService] Auth check:', {
+      employeeToken: employeeToken ? 'EXISTS' : 'NULL',
+      adminToken: adminToken ? 'EXISTS' : 'NULL',
+      authToken: authToken ? 'EXISTS' : 'NULL',
+      hasToken: !!token
+    });
+    
     return !!token;
   }
 
   // 🔒 Redirect nếu không có quyền
   static requireAuth(): void {
     if (!this.isAuthenticated()) {
+      console.error('❌ [AdminInventoryService] Authentication failed - no token found');
       alert('Bạn cần đăng nhập với quyền admin để truy cập chức năng này!');
-      window.location.href = '/login';
+      // Redirect to employee login instead of customer login
+      window.location.href = '/employee-login';
+    } else {
+      console.log('✅ [AdminInventoryService] Authentication successful');
     }
   }
 }

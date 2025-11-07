@@ -148,6 +148,58 @@ const customerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    lastPromotionEmailAt: Date,
+    promotionCodes: [
+      {
+        code: {
+          type: String,
+          required: true,
+        },
+        discount: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+        discountType: {
+          type: String,
+          enum: ["percentage", "fixed"],
+          default: "percentage",
+        },
+        minOrder: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+        maxDiscount: {
+          type: Number,
+          min: 0,
+        },
+        description: String,
+        validFrom: Date,
+        validTo: Date,
+        createdBy: String,
+        createdByRole: String,
+        createdByEmail: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+        sentViaEmail: {
+          type: Boolean,
+          default: false,
+        },
+        emailSentAt: Date,
+        usageCount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

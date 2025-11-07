@@ -44,7 +44,8 @@ const StaffManagement: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees`, {
+      // Request với limit lớn để lấy tất cả nhân viên
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees?limit=1000`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -54,6 +55,7 @@ const StaffManagement: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setEmployees(data.data.employees || []);
+        console.log(`✅ Loaded ${data.data.employees?.length || 0} employees (Total: ${data.data.pagination?.total || 0})`);
       } else {
         setError('Không thể tải danh sách nhân viên');
       }

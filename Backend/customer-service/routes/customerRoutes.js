@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const customerController = require("../controllers/customerController");
 const authenticateCustomer = require("../middleware/authenticateCustomer");
+const authenticateEmployee = require("../middleware/authenticateEmployee");
 
 // 🔐 Authentication Routes
 router.post("/register", customerController.register);
@@ -33,10 +34,26 @@ router.delete(
 // 🏆 Loyalty Program
 router.get("/loyalty", authenticateCustomer, customerController.getLoyaltyInfo);
 
+// 📧 Admin Tools
+router.post(
+  "/:customerId/send-email",
+  authenticateEmployee(["admin", "manager"]),
+  customerController.sendPromotionalEmail
+);
+router.post(
+  "/:customerId/promotion-code",
+  authenticateEmployee(["admin", "manager"]),
+  customerController.createPromotionCodeForCustomer
+);
+
 // 🔗 Inter-Service Communication (for other microservices)
 router.get("/:customerId/info", customerController.getCustomerInfo);
 
 // 📊 Admin Routes (for statistics)
-router.get("/admin/all", customerController.getAllCustomersForAdmin);
+router.get(
+  "/admin/all",
+  authenticateEmployee(["admin", "manager"]),
+  customerController.getAllCustomersForAdmin
+);
 
 module.exports = router;

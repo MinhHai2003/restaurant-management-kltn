@@ -4,6 +4,7 @@ import AdminInventoryManagement from '../components/admin/AdminInventoryManageme
 import StaffManagement from '../components/admin/StaffManagement';
 import ShiftManagement from '../components/admin/ShiftManagement';
 import MenuManagement from '../components/admin/MenuManagement';
+import CustomerManagement from '../components/admin/CustomerManagement';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import { useTableSocket } from '../hooks/useTableSocket';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -30,7 +31,7 @@ interface ApiReservation {
   createdAt?: string;
 }
 
-type TabType = 'overview' | 'reservations' | 'tables' | 'inventory' | 'staff' | 'shifts' | 'statistics' | 'orders';
+type TabType = 'overview' | 'reservations' | 'tables' | 'inventory' | 'staff' | 'shifts' | 'statistics' | 'orders' | 'customers';
 
 interface StatisticsData {
   revenue: {
@@ -1335,18 +1336,17 @@ const AdminDashboard: React.FC = () => {
           📝 Quản lý đặt bàn & Trạng thái bàn
         </h2>
 
-          <button style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '12px 24px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            📊 Xuất báo cáo
-          </button>
-        </div>
+        <button style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          fontWeight: '600'
+        }}>
+          📊 Xuất báo cáo
+        </button>
       </div>
 
       {/* Reservations Section */}
@@ -2942,6 +2942,7 @@ const AdminDashboard: React.FC = () => {
               { key: 'tables', label: '🪑 Quản lý bàn', icon: '🪑', restricted: false },
               { key: 'inventory', label: '📦 Nguyên liệu', icon: '📦', restricted: true },
               { key: 'orders', label: '🍽️ Đặt món', icon: '🍽️', restricted: false },
+              { key: 'customers', label: '👤 Khách hàng', icon: '👤', restricted: true },
               { key: 'staff', label: '👥 Nhân sự', icon: '👥', restricted: true },
               { key: 'shifts', label: '📅 Phân ca', icon: '📅', restricted: true },
               { key: 'statistics', label: '📈 Thống kê', icon: '📈', restricted: true }
@@ -3000,7 +3001,7 @@ const AdminDashboard: React.FC = () => {
           const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
           
           // Redirect to overview if user tries to access restricted tabs
-          const restrictedTabs = ['inventory', 'staff', 'shifts', 'statistics'];
+          const restrictedTabs = ['inventory', 'staff', 'shifts', 'statistics', 'customers'];
           if (restrictedTabs.includes(activeTab) && !isAdminOrManager) {
             // Redirect to overview if not admin/manager
             if (activeTab !== 'overview') {
@@ -3026,6 +3027,7 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'tables' && renderTableManagement()}
               {activeTab === 'inventory' && isAdminOrManager && <AdminInventoryManagement />}
               {activeTab === 'orders' && renderOrderManagement()}
+              {activeTab === 'customers' && isAdminOrManager && <CustomerManagement />}
               {activeTab === 'staff' && isAdminOrManager && <StaffManagement />}
               {activeTab === 'shifts' && isAdminOrManager && <ShiftManagement />}
               {activeTab === 'statistics' && isAdminOrManager && renderStatistics()}

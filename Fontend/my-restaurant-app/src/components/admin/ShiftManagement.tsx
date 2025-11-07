@@ -77,7 +77,7 @@ const ShiftManagement: React.FC = () => {
   const fetchShifts = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('${API_CONFIG.AUTH_API}/auth/shifts', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -103,7 +103,7 @@ const ShiftManagement: React.FC = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('${API_CONFIG.AUTH_API}/auth/employees', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/employees`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ const ShiftManagement: React.FC = () => {
   const createShift = async () => {
     try {
       const token = localStorage.getItem('employeeToken');
-      const response = await fetch('${API_CONFIG.AUTH_API}/auth/shifts', {
+      const response = await fetch(`${API_CONFIG.AUTH_API}/auth/shifts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

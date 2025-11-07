@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
+const nodemailer = require("nodemailer");
 const Customer = require("../models/Customer");
 
 // Constants
@@ -8,6 +9,73 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
 const ACCESS_TOKEN_EXPIRY = "24h"; // Longer for customers
 const REFRESH_TOKEN_EXPIRY = "30d"; // 30 days for customers
+
+// Email helpers
+let emailTransporter;
+
+const getEmailTransporter = () => {
+  if (emailTransporter !== undefined) {
+    return emailTransporter;
+  }
+
+  if (!process.env.SMTP_HOST) {
+    console.warn(
+      "[EMAIL] SMTP_HOST is not configured. Emails will be logged instead of sent."
+    );
+    emailTransporter = null;
+    return emailTransporter;
+  }
+
+  try {
+    emailTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT, 10) || 587,
+      secure:
+        process.env.SMTP_SECURE === "true" ||
+        parseInt(process.env.SMTP_PORT, 10) === 465,
+      auth:
+        process.env.SMTP_USER && process.env.SMTP_PASS
+          ? {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            }
+          : undefined,
+    });
+  } catch (error) {
+    console.error("[EMAIL] Failed to initialize transporter:", error);
+    emailTransporter = null;
+  }
+
+  return emailTransporter;
+};
+
+const nl2br = (value = "") => value.replace(/\n/g, "<br />");
+const stripHtml = (value = "") => value.replace(/<[^>]*>?/gm, "");
+
+const sendEmailWithFallback = async ({ to, subject, html, text }) => {
+  const transporter = getEmailTransporter();
+
+  if (!transporter) {
+    console.log("[EMAIL DEBUG] Simulated email send:", {
+      to,
+      subject,
+      preview: stripHtml(html || text || ""),
+    });
+    return { delivered: false, simulated: true };
+  }
+
+  const fromAddress =
+    process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@restaurant.local";
+  const info = await transporter.sendMail({
+    from: fromAddress,
+    to,
+    subject,
+    html,
+    text,
+  });
+
+  return { delivered: true, info };
+};
 
 // Helper functions
 const generateTokens = (customerId) => {
@@ -679,14 +747,16 @@ exports.getCustomerInfo = async (req, res) => {
 exports.getAllCustomersForAdmin = async (req, res) => {
   try {
     const customers = await Customer.find({})
-      .select('_id name email phone loyaltyPoints membershipLevel totalOrders totalSpent isActive createdAt updatedAt lastLogin')
+      .select(
+        "_id name email phone loyaltyPoints membershipLevel totalOrders totalSpent isActive createdAt updatedAt lastLogin promotionCodes allowPromotions lastPromotionEmailAt"
+      )
       .sort({ createdAt: -1 });
 
     res.json({
       success: true,
       data: {
         customers: customers,
-        total: customers.length
+        total: customers.length,
       },
     });
   } catch (error) {
@@ -694,6 +764,315 @@ exports.getAllCustomersForAdmin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch customers",
+      error: error.message,
+    });
+  }
+};
+
+// 📧 Send promotional email to a customer
+exports.sendPromotionalEmail = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const { subject, body } = req.body || {};
+
+    if (!subject || !body) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject and body are required",
+      });
+    }
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    if (!customer.allowPromotions) {
+      return res.status(403).json({
+        success: false,
+        message: "Customer has opted out of promotional emails",
+      });
+    }
+
+    const sanitizedBody = stripHtml(body);
+
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #1f2937;">
+        <p>Xin chào ${customer.name || "bạn"},</p>
+        <p>${nl2br(sanitizedBody)}</p>
+        <p style="margin-top: 24px;">Trân trọng,<br/>Đội ngũ Nhà hàng</p>
+      </div>
+    `;
+
+    const emailResult = await sendEmailWithFallback({
+      to: customer.email,
+      subject,
+      html: htmlContent,
+      text: sanitizedBody,
+    });
+
+    if (emailResult.delivered) {
+      customer.lastPromotionEmailAt = new Date();
+      await customer.save();
+    }
+
+    const responseEmailInfo = {
+      delivered: emailResult.delivered,
+      simulated: emailResult.simulated || false,
+    };
+
+    if (!emailResult.delivered && emailResult.reason) {
+      responseEmailInfo.reason = emailResult.reason;
+    }
+
+    res.json({
+      success: true,
+      message: emailResult.delivered
+        ? "Email đã được gửi thành công"
+        : "SMTP chưa cấu hình. Email chỉ được ghi log (simulated)",
+      data: responseEmailInfo,
+    });
+  } catch (error) {
+    console.error("Send promotional email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send promotional email",
+      error: error.message,
+    });
+  }
+};
+
+// 🎁 Create promotion code for a customer
+exports.createPromotionCodeForCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const {
+      code,
+      discount,
+      discountType,
+      minOrder,
+      maxDiscount,
+      description,
+      validFrom,
+      validTo,
+      sendEmail = true,
+      emailSubject,
+      emailBody,
+    } = req.body || {};
+
+    if (!code || discount === undefined || discount === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Code và discount là bắt buộc",
+      });
+    }
+
+    const normalizedCode = String(code).trim().toUpperCase();
+    const discountValue = Number(discount);
+
+    if (Number.isNaN(discountValue) || discountValue < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Discount phải là số không âm",
+      });
+    }
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    const existingCode = customer.promotionCodes.find(
+      (promo) => promo.code === normalizedCode && promo.isActive
+    );
+
+    if (existingCode) {
+      return res.status(409).json({
+        success: false,
+        message: "Mã khuyến mãi đã tồn tại cho khách hàng này",
+      });
+    }
+
+    const discountTypeValue =
+      discountType === "fixed" || discountType === "percentage"
+        ? discountType
+        : "percentage";
+
+    const minOrderValue =
+      minOrder !== undefined && minOrder !== null
+        ? Number(minOrder)
+        : 0;
+
+    if (Number.isNaN(minOrderValue) || minOrderValue < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Giá trị đơn tối thiểu không hợp lệ",
+      });
+    }
+
+    const maxDiscountValue =
+      maxDiscount !== undefined && maxDiscount !== null
+        ? Number(maxDiscount)
+        : undefined;
+
+    if (
+      discountTypeValue === "percentage" &&
+      maxDiscountValue !== undefined &&
+      (Number.isNaN(maxDiscountValue) || maxDiscountValue < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Giảm tối đa không hợp lệ",
+      });
+    }
+
+    const validFromDate = validFrom ? new Date(validFrom) : new Date();
+    const validToDate = validTo ? new Date(validTo) : undefined;
+
+    if (Number.isNaN(validFromDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Ngày bắt đầu không hợp lệ",
+      });
+    }
+
+    if (validToDate && Number.isNaN(validToDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Ngày kết thúc không hợp lệ",
+      });
+    }
+
+    if (validToDate && validToDate < validFromDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Ngày kết thúc phải sau ngày bắt đầu",
+      });
+    }
+
+    const promotionEntry = {
+      code: normalizedCode,
+      discount: discountValue,
+      discountType: discountTypeValue,
+      minOrder: minOrderValue,
+      maxDiscount:
+        discountTypeValue === "percentage" ? maxDiscountValue || 0 : undefined,
+      description: description ? stripHtml(description) : undefined,
+      validFrom: validFromDate,
+      validTo: validToDate,
+      createdBy: req.employeeId ? String(req.employeeId) : undefined,
+      createdByRole: req.employeeRole,
+      createdByEmail: req.employeeEmail,
+      createdAt: new Date(),
+      isActive: true,
+      sentViaEmail: false,
+    };
+
+    let emailResult = null;
+
+    if (sendEmail && customer.allowPromotions) {
+      const promoSubject =
+        emailSubject || `Mã khuyến mãi dành riêng cho bạn: ${normalizedCode}`;
+      const sanitizedCustomEmailBody = emailBody
+        ? stripHtml(emailBody)
+        : null;
+      const sanitizedDescription = description
+        ? stripHtml(description)
+        : "Chúc bạn có trải nghiệm tuyệt vời cùng chúng tôi!";
+
+      const defaultEmailBody = `
+        <p>Xin chào ${customer.name || "bạn"},</p>
+        <p>Nhà hàng gửi tặng bạn mã khuyến mãi <strong>${normalizedCode}</strong> với ưu đãi ${
+        discountTypeValue === "percentage"
+          ? `${discountValue}%`
+          : `${discountValue.toLocaleString("vi-VN")} VNĐ`
+      }.</p>
+        <p>Mã có hiệu lực từ ${validFromDate.toLocaleDateString(
+          "vi-VN"
+        )}${
+        validToDate
+          ? ` đến ${validToDate.toLocaleDateString("vi-VN")}`
+          : ""
+      }.</p>
+        <p>${minOrderValue > 0
+          ? `Áp dụng cho đơn hàng từ ${minOrderValue.toLocaleString("vi-VN")} VNĐ.`
+          : ""}
+        ${
+          discountTypeValue === "percentage" && maxDiscountValue
+            ? `Giảm tối đa ${maxDiscountValue.toLocaleString("vi-VN")} VNĐ.`
+            : ""
+        }</p>
+        <p>${sanitizedDescription}</p>
+        <p style="margin-top: 24px;">Trân trọng,<br/>Đội ngũ Nhà hàng</p>
+      `;
+
+      emailResult = await sendEmailWithFallback({
+        to: customer.email,
+        subject: promoSubject,
+        html: sanitizedCustomEmailBody
+          ? nl2br(sanitizedCustomEmailBody)
+          : defaultEmailBody,
+        text: sanitizedCustomEmailBody || stripHtml(defaultEmailBody),
+      });
+
+      if (emailResult.delivered) {
+        promotionEntry.sentViaEmail = true;
+        promotionEntry.emailSentAt = new Date();
+        customer.lastPromotionEmailAt = new Date();
+      }
+    } else if (sendEmail && !customer.allowPromotions) {
+      emailResult = {
+        delivered: false,
+        simulated: true,
+        reason: "Customer has opted out of promotional emails",
+      };
+    } else {
+      emailResult = {
+        delivered: false,
+        simulated: true,
+        reason: "Email sending disabled for this request",
+      };
+    }
+
+    customer.promotionCodes.push(promotionEntry);
+    await customer.save();
+
+    const createdPromotion =
+      customer.promotionCodes[customer.promotionCodes.length - 1];
+    const promotionPlain =
+      typeof createdPromotion.toObject === "function"
+        ? createdPromotion.toObject()
+        : createdPromotion;
+
+    res.status(201).json({
+      success: true,
+      message: "Đã tạo mã khuyến mãi cho khách hàng",
+      data: {
+        promotion: promotionPlain,
+        email: emailResult
+          ? {
+              delivered: !!emailResult.delivered,
+              simulated: emailResult.simulated || false,
+              reason: emailResult.reason,
+            }
+          : {
+              delivered: false,
+              simulated: true,
+              reason: "Email sending disabled",
+            },
+      },
+    });
+  } catch (error) {
+    console.error("Create promotion code error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create promotion code",
       error: error.message,
     });
   }
@@ -713,4 +1092,6 @@ module.exports = {
   getLoyaltyInfo: exports.getLoyaltyInfo,
   getCustomerInfo: exports.getCustomerInfo,
   getAllCustomersForAdmin: exports.getAllCustomersForAdmin,
+  sendPromotionalEmail: exports.sendPromotionalEmail,
+  createPromotionCodeForCustomer: exports.createPromotionCodeForCustomer,
 };

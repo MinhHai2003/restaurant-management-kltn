@@ -155,6 +155,8 @@ const QuantityModal: React.FC<{
 };
 
 const AdminInventoryManagement: React.FC = () => {
+  console.log('📦 [AdminInventoryManagement] Component rendering...');
+  
   // States chính
   const [stats, setStats] = useState<InventoryStats>({
     totalItems: 0,

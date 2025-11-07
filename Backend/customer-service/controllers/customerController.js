@@ -18,6 +18,16 @@ const getEmailTransporter = () => {
     return emailTransporter;
   }
 
+  console.log("[EMAIL] Initializing email transporter...");
+  console.log("[EMAIL] Environment variables:", {
+    SMTP_HOST: process.env.SMTP_HOST ? "SET" : "NOT SET",
+    SMTP_PORT: process.env.SMTP_PORT || "NOT SET",
+    SMTP_SECURE: process.env.SMTP_SECURE || "NOT SET",
+    SMTP_USER: process.env.SMTP_USER ? "SET" : "NOT SET",
+    SMTP_PASS: process.env.SMTP_PASS ? "SET (hidden)" : "NOT SET",
+    EMAIL_FROM: process.env.EMAIL_FROM || "NOT SET",
+  });
+
   if (!process.env.SMTP_HOST) {
     console.warn(
       "[EMAIL] SMTP_HOST is not configured. Emails will be logged instead of sent."
@@ -27,7 +37,7 @@ const getEmailTransporter = () => {
   }
 
   try {
-    emailTransporter = nodemailer.createTransport({
+    const config = {
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT, 10) || 587,
       secure:
@@ -40,7 +50,18 @@ const getEmailTransporter = () => {
               pass: process.env.SMTP_PASS,
             }
           : undefined,
+    };
+
+    console.log("[EMAIL] Creating transporter with config:", {
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      hasAuth: !!config.auth,
     });
+
+    emailTransporter = nodemailer.createTransport(config);
+    
+    console.log("[EMAIL] Transporter created successfully");
   } catch (error) {
     console.error("[EMAIL] Failed to initialize transporter:", error);
     emailTransporter = null;
@@ -64,17 +85,54 @@ const sendEmailWithFallback = async ({ to, subject, html, text }) => {
     return { delivered: false, simulated: true };
   }
 
-  const fromAddress =
-    process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@restaurant.local";
-  const info = await transporter.sendMail({
-    from: fromAddress,
-    to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    const fromAddress =
+      process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@restaurant.local";
+    
+    console.log("[EMAIL] Attempting to send email:", {
+      from: fromAddress,
+      to,
+      subject,
+      smtpHost: process.env.SMTP_HOST,
+      smtpPort: process.env.SMTP_PORT,
+    });
 
-  return { delivered: true, info };
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    console.log("[EMAIL] Email sent successfully:", {
+      messageId: info.messageId,
+      to,
+      subject,
+    });
+
+    return { delivered: true, info };
+  } catch (error) {
+    console.error("[EMAIL] Failed to send email:", {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      to,
+      subject,
+    });
+    
+    return { 
+      delivered: false, 
+      simulated: false,
+      reason: error.message || "Unknown error",
+      error: {
+        code: error.code,
+        command: error.command,
+        response: error.response,
+      }
+    };
+  }
 };
 
 // Helper functions
@@ -824,8 +882,23 @@ exports.sendPromotionalEmail = async (req, res) => {
       simulated: emailResult.simulated || false,
     };
 
-    if (!emailResult.delivered && emailResult.reason) {
-      responseEmailInfo.reason = emailResult.reason;
+    if (!emailResult.delivered) {
+      if (emailResult.reason) {
+        responseEmailInfo.reason = emailResult.reason;
+      }
+      if (emailResult.error) {
+        responseEmailInfo.error = emailResult.error;
+      }
+    }
+
+    // Return appropriate status code based on delivery status
+    if (!emailResult.delivered && !emailResult.simulated) {
+      // Real SMTP error occurred
+      return res.status(500).json({
+        success: false,
+        message: "Không thể gửi email. Vui lòng kiểm tra cấu hình SMTP.",
+        data: responseEmailInfo,
+      });
     }
 
     res.json({

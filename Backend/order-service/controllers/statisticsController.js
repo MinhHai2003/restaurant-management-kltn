@@ -297,12 +297,22 @@ const getStatistics = async (req, res) => {
           console.log(`📊 Retrieved ${allReservations.length} reservations from table-service`);
           
           // Filter reservations in this period
+          // reservationDate is stored as UTC in MongoDB
+          // startDate and endDate are already in UTC (converted from VN timezone)
           const reservationsInPeriod = allReservations.filter(reservation => {
             const reservationDate = new Date(reservation.reservationDate);
             const createdAt = new Date(reservation.createdAt);
-            return (reservationDate >= startDate && reservationDate <= endDate) ||
-                   (createdAt >= startDate && createdAt <= endDate);
+            // Check if reservation falls within the UTC date range
+            // Use < endDate (not <=) to exclude the end boundary
+            return (reservationDate >= startDate && reservationDate < endDate) ||
+                   (createdAt >= startDate && createdAt < endDate);
           });
+          
+          console.log(`📊 Filtering reservations: startDate=${startDate.toISOString()}, endDate=${endDate.toISOString()}`);
+          console.log(`📊 Sample reservation dates:`, allReservations.slice(0, 3).map(r => ({
+            reservationDate: new Date(r.reservationDate).toISOString(),
+            createdAt: new Date(r.createdAt).toISOString()
+          })));
           
           console.log(`📊 Found ${reservationsInPeriod.length} reservations in ${periodName} period`);
           

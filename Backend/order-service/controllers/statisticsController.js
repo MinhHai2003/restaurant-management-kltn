@@ -739,46 +739,50 @@ const getStatistics = async (req, res) => {
     };
     
     // Daily utilization (today only)
-    // Use UTC range (same as weekly/monthly) instead of string comparison
-    // This avoids timezone issues that cause daily to be empty
-    const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
-    console.log(`📊 Filtering for today: ${todayStrDaily} (VN time)`);
-    console.log(`📊 UTC range: ${todayStartUTC.toISOString()} to ${todayEndUTC.toISOString()}`);
+    // Compare by Vietnam date (YYYY-MM-DD) using dayjs with timezone
+    const dayjs = require('dayjs');
+    const utc = require('dayjs/plugin/utc');
+    const tz = require('dayjs/plugin/timezone');
+    dayjs.extend(utc);
+    dayjs.extend(tz);
+    
+    const todayVN = dayjs().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
+    console.log(`📊 Filtering for today: ${todayVN} (VN time)`);
     
     // Valid statuses for table utilization
     const VALID_STATUSES = new Set(['pending', 'confirmed', 'completed', 'seated', 'dining', 'approved', 'booked', 'ready']);
     
-    // Filter by UTC range (same approach as weekly/monthly)
+    // Filter by Vietnam date string comparison
     const todayReservations = reservations.filter(reservation => {
       if (!reservation?.reservationDate) {
         return false;
       }
       
-      // Check UTC timestamp range (same as weekly/monthly)
-      const resDate = new Date(reservation.reservationDate);
-      const inRange = resDate >= todayStartUTC && resDate < todayEndUTC;
+      // Convert reservation date to Vietnam timezone and compare date string
+      const resVN = dayjs(reservation.reservationDate).tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
+      const dateMatch = resVN === todayVN;
       
       // Check status (exclude cancelled, include valid statuses)
       const status = String(reservation.status || '').toLowerCase();
       const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
       
-      return inRange && statusOk;
+      return dateMatch && statusOk;
     });
     
     // Log all reservations and their match status for debugging
-    console.log(`📊 Checking ${reservations.length} reservations against today's UTC range:`);
+    console.log(`📊 Checking ${reservations.length} reservations against today's VN date (${todayVN}):`);
     if (reservations.length > 0) {
       reservations.slice(0, 10).forEach((reservation, idx) => {
         if (!reservation.reservationDate) {
           console.log(`  ${idx + 1}. No reservationDate`);
           return;
         }
-        const resDate = new Date(reservation.reservationDate);
-        const inRange = resDate >= todayStartUTC && resDate < todayEndUTC;
+        const resVN = dayjs(reservation.reservationDate).tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
+        const dateMatch = resVN === todayVN;
         const status = String(reservation.status || '').toLowerCase();
         const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
         const isIncluded = todayReservations.includes(reservation);
-        console.log(`  ${idx + 1}. Date: ${resDate.toISOString()}, InRange: ${inRange}, StatusOK: ${statusOk}, Included: ${isIncluded}, Status: ${reservation.status}, Time: ${reservation.timeSlot?.startTime}-${reservation.timeSlot?.endTime}`);
+        console.log(`  ${idx + 1}. Reservation VN date: ${resVN}, Today VN: ${todayVN}, DateMatch: ${dateMatch}, StatusOK: ${statusOk}, Included: ${isIncluded}, Status: ${reservation.status}, Time: ${reservation.timeSlot?.startTime}-${reservation.timeSlot?.endTime}`);
       });
     } else {
       console.log(`  No reservations found in database`);

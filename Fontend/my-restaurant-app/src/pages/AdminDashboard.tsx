@@ -2772,6 +2772,15 @@ const AdminDashboard: React.FC = () => {
                   if (chartData.length > 0) {
                     console.log(`📊 First 3 data points:`, chartData.slice(0, 3));
                     console.log(`📊 Last 3 data points:`, chartData.slice(-3));
+                    // Log all utilization values to see if they're all 0
+                    const allUtilizations = chartData.map(d => d.utilization);
+                    const maxUtilization = Math.max(...allUtilizations);
+                    const nonZeroCount = allUtilizations.filter(v => v > 0).length;
+                    console.log(`📊 Utilization values - Max: ${maxUtilization}, Non-zero count: ${nonZeroCount}/${allUtilizations.length}`);
+                    console.log(`📊 All utilization values:`, allUtilizations);
+                    if (maxUtilization === 0) {
+                      console.warn(`⚠️ All utilization values are 0! Backend may not be finding any reservations.`);
+                    }
                   } else {
                     console.warn(`📊 No data for ${statisticsPeriod} period!`);
                   }

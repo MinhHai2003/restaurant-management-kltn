@@ -718,21 +718,32 @@ const getStatistics = async (req, res) => {
       }
       
       // Convert to array format - Show total reservation count
-      return hours.map(hour => {
+      const result = hours.map(hour => {
         const reservationCount = hourlyUtilization[hour];
-        console.log(`📊 Hour ${hour}:00 - ${reservationCount} reservations`);
-        console.log(`📊 DEBUG: Returning data for ${hour}:00 - utilization: ${reservationCount}`);
-        
         return {
-        hour: `${hour}:00`,
+          hour: `${hour}:00`,
           utilization: reservationCount // Show total reservation count
         };
       });
+      
+      // Log summary
+      const totalReservations = Object.values(hourlyUtilization).reduce((sum, count) => sum + count, 0);
+      const hoursWithReservations = Object.entries(hourlyUtilization).filter(([hour, count]) => count > 0).length;
+      console.log(`📊 ${periodName} summary: Total reservations counted: ${totalReservations}, Hours with reservations: ${hoursWithReservations}/24`);
+      if (totalReservations === 0 && periodReservations.length > 0) {
+        console.warn(`⚠️ ${periodName}: Found ${periodReservations.length} reservations but none were counted! Check status and timeSlot.`);
+        console.warn(`⚠️ Sample reservation statuses:`, periodReservations.slice(0, 3).map(r => ({ status: r.status, hasTimeSlot: !!r.timeSlot })));
+      }
+      
+      return result;
     };
     
     // Daily utilization (today only)
     // Filter reservations by date string (YYYY-MM-DD) that corresponds to today in VN
     const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
+    console.log(`📊 Filtering for today: Looking for date string "${todayStrDaily}" (VN time)`);
+    console.log(`📊 UTC range: ${todayStartUTC.toISOString()} to ${todayEndUTC.toISOString()}`);
+    
     const todayReservations = reservations.filter(reservation => {
       const resDate = new Date(reservation.reservationDate);
       // Extract date string (YYYY-MM-DD) from reservation date
@@ -742,7 +753,14 @@ const getStatistics = async (req, res) => {
       const dateStrMatch = resDateStr === todayStrDaily;
       const timestampMatch = resDate >= todayStartUTC && resDate < todayEndUTC;
       
-      return dateStrMatch || timestampMatch;
+      const matches = dateStrMatch || timestampMatch;
+      
+      // Log first few matches/non-matches for debugging
+      if (reservations.indexOf(reservation) < 5) {
+        console.log(`📊 Reservation check: resDateStr="${resDateStr}", todayStr="${todayStrDaily}", dateStrMatch=${dateStrMatch}, timestampMatch=${timestampMatch}, finalMatch=${matches}`);
+      }
+      
+      return matches;
     });
     
     console.log('📊 Current date/time:', {

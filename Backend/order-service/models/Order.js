@@ -428,6 +428,22 @@ OrderSchema.pre("save", function (next) {
       this.orderNumber = this.constructor.generateOrderNumber();
     }
 
+    // Set orderDate to current time in Vietnam timezone (UTC+7)
+    // We need to store the Vietnam time correctly in MongoDB
+    // MongoDB stores dates in UTC, so we need to adjust
+    if (!this.orderDate) {
+      const now = new Date(); // This is already in UTC when stored in MongoDB
+      // To represent Vietnam time (UTC+7), we need to subtract 7 hours from UTC
+      // so that when MongoDB stores it as UTC, it represents the correct Vietnam time
+      const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
+      // Get current UTC time
+      const utcNow = new Date(now.getTime());
+      // Subtract 7 hours so that when displayed as Vietnam time, it's correct
+      // Example: If it's 10:00 AM in Vietnam (03:00 AM UTC), we store 03:00 AM UTC
+      // When querying, we add 7 hours back to get 10:00 AM Vietnam time
+      this.orderDate = new Date(utcNow.getTime() - vietnamOffset);
+    }
+
     // Set initial timeline
     if (!this.timeline.length) {
       this.timeline.push({

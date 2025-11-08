@@ -200,33 +200,7 @@ reservationSchema.index({ reservationDate: 1 });
 reservationSchema.index({ status: 1 });
 reservationSchema.index({ "timeSlot.startTime": 1 });
 
-// Generate reservation number
-reservationSchema.pre("save", function (next) {
-  console.log("Pre-save hook called for reservation");
-
-  if (!this.reservationNumber) {
-    const date = new Date();
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
-    const random = Math.floor(Math.random() * 900000) + 100000;
-    this.reservationNumber = `RSV-${dateStr}-${random}`;
-    console.log("Generated reservation number:", this.reservationNumber);
-  }
-
-  // Update timeline
-  if (this.isModified("status")) {
-    this.timeline.push({
-      status: this.status,
-      timestamp: new Date(),
-      note: `Status changed to ${this.status}`,
-    });
-  }
-
-  // Update last modified
-  this.lastModified = new Date();
-
-  console.log("Pre-save hook completed");
-  next();
-});
+// Generate reservation number (merged with main pre-save middleware below)
 
 // Methods
 reservationSchema.methods.canBeCancelled = function () {
@@ -277,9 +251,42 @@ reservationSchema.pre("save", function (next) {
   if (!this.reservationNumber) {
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
-    const timeStr = Date.now().toString().slice(-6);
-    this.reservationNumber = `RES-${dateStr}-${timeStr}`;
+    const random = Math.floor(Math.random() * 900000) + 100000;
+    this.reservationNumber = `RSV-${dateStr}-${random}`;
   }
+
+  // Set reservationDate to Vietnam timezone (UTC+7)
+  // We need to store the Vietnam time correctly in MongoDB
+  if (this.isNew && this.reservationDate) {
+    // If reservationDate is already a Date object, convert it
+    const reservationDate = new Date(this.reservationDate);
+    // Get the date components (year, month, day) in Vietnam time
+    // The reservationDate should represent a date in Vietnam timezone
+    // We subtract 7 hours so that when MongoDB stores it as UTC, it represents the correct Vietnam date
+    const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
+    // Extract date components (year, month, day) from the reservation date
+    // Set to midnight in Vietnam time, then convert to UTC for storage
+    const dateStr = reservationDate.toISOString().split('T')[0]; // Get YYYY-MM-DD
+    const vietnamMidnight = new Date(dateStr + 'T00:00:00.000+07:00'); // Midnight in Vietnam time
+    // Store as UTC equivalent (subtract 7 hours)
+    this.reservationDate = new Date(vietnamMidnight.getTime() - vietnamOffset);
+  }
+
+  // Update timeline
+  if (this.isModified("status")) {
+    if (!this.timeline) {
+      this.timeline = [];
+    }
+    this.timeline.push({
+      status: this.status,
+      timestamp: new Date(),
+      note: `Status changed to ${this.status}`,
+    });
+  }
+
+  // Update last modified
+  this.lastModified = new Date();
+
   next();
 });
 

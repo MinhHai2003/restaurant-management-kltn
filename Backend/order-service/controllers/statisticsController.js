@@ -297,20 +297,35 @@ const getStatistics = async (req, res) => {
           console.log(`📊 Retrieved ${allReservations.length} reservations from table-service`);
           
           // Filter reservations in this period
-          // reservationDate is stored as UTC in MongoDB
-          // startDate and endDate are already in UTC (converted from VN timezone)
+          // reservationDate is stored as UTC date (00:00:00 UTC of that date)
+          // When user selects "2025-11-09" in VN, it's stored as "2025-11-09T00:00:00.000Z"
+          // But we need to check if this date falls within the VN day range
+          // VN day "2025-11-09" = UTC range from 2025-11-08T17:00:00Z to 2025-11-09T17:00:00Z
           const reservationsInPeriod = allReservations.filter(reservation => {
             const reservationDate = new Date(reservation.reservationDate);
             const createdAt = new Date(reservation.createdAt);
-            // Check if reservation falls within the UTC date range
-            // Use < endDate (not <=) to exclude the end boundary
-            return (reservationDate >= startDate && reservationDate < endDate) ||
-                   (createdAt >= startDate && createdAt < endDate);
+            
+            // Extract date string (YYYY-MM-DD) from reservationDate
+            const resDateStr = reservationDate.toISOString().split('T')[0];
+            
+            // Extract date string from startDate and endDate (VN dates)
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const endDateStr = endDate.toISOString().split('T')[0];
+            
+            // Check if reservation date string falls within the date range
+            // Also check by UTC timestamp for more accuracy
+            const dateMatch = resDateStr >= startDateStr && resDateStr <= endDateStr;
+            const timestampMatch = (reservationDate >= startDate && reservationDate < endDate) ||
+                                   (createdAt >= startDate && createdAt < endDate);
+            
+            return dateMatch || timestampMatch;
           });
           
           console.log(`📊 Filtering reservations: startDate=${startDate.toISOString()}, endDate=${endDate.toISOString()}`);
-          console.log(`📊 Sample reservation dates:`, allReservations.slice(0, 3).map(r => ({
+          console.log(`📊 Date strings: startDateStr=${startDate.toISOString().split('T')[0]}, endDateStr=${endDate.toISOString().split('T')[0]}`);
+          console.log(`📊 Sample reservation dates:`, allReservations.slice(0, 5).map(r => ({
             reservationDate: new Date(r.reservationDate).toISOString(),
+            reservationDateStr: new Date(r.reservationDate).toISOString().split('T')[0],
             createdAt: new Date(r.createdAt).toISOString()
           })));
           
@@ -702,12 +717,18 @@ const getStatistics = async (req, res) => {
     };
     
     // Daily utilization (today only)
-    // Filter reservations by UTC date range that corresponds to today in VN
+    // Filter reservations by date string (YYYY-MM-DD) that corresponds to today in VN
     const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
     const todayReservations = reservations.filter(reservation => {
       const resDate = new Date(reservation.reservationDate);
-      // Check if reservation date falls within today's UTC range
-      return resDate >= todayStartUTC && resDate < todayEndUTC;
+      // Extract date string (YYYY-MM-DD) from reservation date
+      const resDateStr = resDate.toISOString().split('T')[0];
+      
+      // Check both date string match and UTC timestamp range
+      const dateStrMatch = resDateStr === todayStrDaily;
+      const timestampMatch = resDate >= todayStartUTC && resDate < todayEndUTC;
+      
+      return dateStrMatch || timestampMatch;
     });
     
     console.log('📊 Current date/time:', {
@@ -727,9 +748,18 @@ const getStatistics = async (req, res) => {
     // Weekly utilization (last 7 days)
     const weekStartVN = new Date(todayVNMidnight.getTime() - 6 * 24 * 60 * 60 * 1000);
     const weekStartVN_UTC = new Date(weekStartVN.getTime() - vietnamOffset);
+    const weekStartDateStr = weekStartVN.toISOString().split('T')[0];
+    const todayDateStr = todayVNMidnight.toISOString().split('T')[0];
+    
     const weekReservations = reservations.filter(reservation => {
       const resDate = new Date(reservation.reservationDate);
-      return resDate >= weekStartVN_UTC && resDate < todayEndUTC;
+      const resDateStr = resDate.toISOString().split('T')[0];
+      
+      // Check both date string range and UTC timestamp range
+      const dateStrMatch = resDateStr >= weekStartDateStr && resDateStr <= todayDateStr;
+      const timestampMatch = resDate >= weekStartVN_UTC && resDate < todayEndUTC;
+      
+      return dateStrMatch || timestampMatch;
     });
     tableUtilization.weekly = calculateUtilizationForPeriod(weekReservations, 'week');
     
@@ -739,12 +769,26 @@ const getStatistics = async (req, res) => {
     const nextMonthVN = new Date(Date.UTC(vnYear, vnMonth + 1, 1, 0, 0, 0, 0));
     const monthEndVN_UTC = new Date(nextMonthVN.getTime() - vietnamOffset);
     
+    const monthStartDateStr = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-01`;
+    const monthEndDateStr = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
+    
     console.log(`📊 Monthly range (VN): ${monthStartVN.toISOString().split('T')[0]} to ${nextMonthVN.toISOString().split('T')[0]}`);
     console.log(`📊 Monthly range (UTC): ${monthStartVN_UTC.toISOString()} to ${monthEndVN_UTC.toISOString()}`);
+    console.log(`📊 Monthly date strings: ${monthStartDateStr} to ${monthEndDateStr}`);
     
     const monthReservations = reservations.filter(reservation => {
       const resDate = new Date(reservation.reservationDate);
-      return resDate >= monthStartVN_UTC && resDate < monthEndVN_UTC;
+      const resDateStr = resDate.toISOString().split('T')[0];
+      
+      // Check if reservation is in current month by date string
+      const resYear = parseInt(resDateStr.split('-')[0]);
+      const resMonth = parseInt(resDateStr.split('-')[1]);
+      const dateStrMatch = resYear === vnYear && resMonth === (vnMonth + 1);
+      
+      // Also check UTC timestamp range
+      const timestampMatch = resDate >= monthStartVN_UTC && resDate < monthEndVN_UTC;
+      
+      return dateStrMatch || timestampMatch;
     });
     tableUtilization.monthly = calculateUtilizationForPeriod(monthReservations, 'month');
     

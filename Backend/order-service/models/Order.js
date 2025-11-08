@@ -428,31 +428,12 @@ OrderSchema.pre("save", function (next) {
       this.orderNumber = this.constructor.generateOrderNumber();
     }
 
-    // Set orderDate to current time in Vietnam timezone (UTC+7)
-    // MongoDB stores dates in UTC, so we need to adjust
-    // Strategy: Store the UTC time that represents the current Vietnam time
+    // Set orderDate to current time (UTC)
+    // MongoDB stores dates in UTC - this is correct
+    // When displaying, format on frontend with timezone "Asia/Ho_Chi_Minh"
+    // When querying for statistics, convert VN timezone to UTC range
     if (!this.orderDate) {
-      const now = new Date(); // Current UTC time
-      const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
-      
-      // Get current time in Vietnam (add 7 hours to UTC)
-      const vietnamNow = new Date(now.getTime() + vietnamOffset);
-      
-      // Extract date components from Vietnam time
-      const vnYear = vietnamNow.getUTCFullYear();
-      const vnMonth = vietnamNow.getUTCMonth();
-      const vnDate = vietnamNow.getUTCDate();
-      const vnHours = vietnamNow.getUTCHours();
-      const vnMinutes = vietnamNow.getUTCMinutes();
-      const vnSeconds = vietnamNow.getUTCSeconds();
-      const vnMilliseconds = vietnamNow.getUTCMilliseconds();
-      
-      // Create a Date object representing Vietnam time as if it were UTC
-      // This way, when MongoDB stores it, it will represent the correct Vietnam time
-      const vietnamTimeAsUTC = new Date(Date.UTC(vnYear, vnMonth, vnDate, vnHours, vnMinutes, vnSeconds, vnMilliseconds));
-      
-      // Subtract 7 hours to get the UTC equivalent that represents Vietnam time
-      this.orderDate = new Date(vietnamTimeAsUTC.getTime() - vietnamOffset);
+      this.orderDate = new Date(); // Store as UTC (MongoDB default)
     }
 
     // Set initial timeline

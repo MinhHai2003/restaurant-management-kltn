@@ -684,27 +684,37 @@ const getStatistics = async (req, res) => {
       });
       
       // Process reservations for this period
+      // Include all statuses: completed, confirmed, pending, seated, dining
       if (Array.isArray(periodReservations)) {
+        console.log(`📊 Processing ${periodReservations.length} reservations for ${periodName}`);
         periodReservations.forEach((reservation, index) => {
-          if (reservation.status === 'completed' || reservation.status === 'confirmed') {
+          // Include all active statuses, not just completed/confirmed
+          const validStatuses = ['completed', 'confirmed', 'pending', 'seated', 'dining'];
+          if (validStatuses.includes(reservation.status)) {
             const startTime = reservation.timeSlot?.startTime;
             if (startTime) {
               const startHour = parseInt(startTime.split(':')[0]);
               const endTime = reservation.timeSlot?.endTime;
               const endHour = endTime ? parseInt(endTime.split(':')[0]) : startHour + 2;
               
-              console.log(`📊 Reservation ${index + 1}: Table ${reservation.table?.tableNumber}, Time: ${startTime}-${endTime}, Hours: ${startHour}-${endHour}`);
+              console.log(`📊 Reservation ${index + 1}: Table ${reservation.table?.tableNumber}, Status: ${reservation.status}, Time: ${startTime}-${endTime}, Hours: ${startHour}-${endHour}`);
               
               // Count reservations for all hours within the reservation time slot
               for (let hour = startHour; hour <= endHour; hour++) {
-                if (hourlyUtilization[hour] !== undefined) {
+                if (hour >= 0 && hour <= 23 && hourlyUtilization[hour] !== undefined) {
                   hourlyUtilization[hour]++;
                   console.log(`    ✅ Added 1 reservation to hour ${hour}:00 (total: ${hourlyUtilization[hour]})`);
                 }
               }
+            } else {
+              console.log(`📊 Reservation ${index + 1}: Missing timeSlot.startTime`);
             }
+          } else {
+            console.log(`📊 Reservation ${index + 1}: Status '${reservation.status}' not included`);
           }
         });
+      } else {
+        console.log(`📊 No reservations array for ${periodName}`);
       }
       
       // Convert to array format - Show total reservation count
@@ -744,8 +754,25 @@ const getStatistics = async (req, res) => {
     });
     
     console.log(`📊 Filtering for today (${todayStrDaily} VN):`);
-    console.log(`📊 Total reservations: ${reservations.length}`);
-    console.log(`📊 Today's reservations (UTC range): ${todayReservations.length}`);
+    console.log(`📊 Total reservations from API: ${reservations.length}`);
+    
+    // Debug: Show sample reservations and their dates
+    if (reservations.length > 0) {
+      console.log(`📊 Sample reservations (first 5):`);
+      reservations.slice(0, 5).forEach((res, idx) => {
+        const resDate = new Date(res.reservationDate);
+        const resDateStr = resDate.toISOString().split('T')[0];
+        console.log(`  ${idx + 1}. Date: ${resDateStr}, Status: ${res.status}, Table: ${res.table?.tableNumber}, Time: ${res.timeSlot?.startTime}-${res.timeSlot?.endTime}`);
+      });
+    }
+    
+    console.log(`📊 Today's reservations after filter: ${todayReservations.length}`);
+    if (todayReservations.length > 0) {
+      console.log(`📊 Today's reservations details:`);
+      todayReservations.forEach((res, idx) => {
+        console.log(`  ${idx + 1}. Date: ${new Date(res.reservationDate).toISOString().split('T')[0]}, Status: ${res.status}, Table: ${res.table?.tableNumber}, Time: ${res.timeSlot?.startTime}-${res.timeSlot?.endTime}`);
+      });
+    }
     
     tableUtilization.daily = calculateUtilizationForPeriod(todayReservations, 'today');
     

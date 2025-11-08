@@ -1,12 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const customerController = require("../controllers/customerController");
+const passwordResetController = require("../controllers/passwordResetController");
 const authenticateCustomer = require("../middleware/authenticateCustomer");
 const authenticateEmployee = require("../middleware/authenticateEmployee");
 
 // 🔐 Authentication Routes
 router.post("/register", customerController.register);
 router.post("/login", customerController.login);
+
+// 🔑 Password Reset Routes
+router.post("/password/forgot", passwordResetController.requestReset);
+router.post("/password/verify-otp", passwordResetController.verifyOtp);
+router.post("/password/reset", passwordResetController.resetPassword);
 
 // 👤 Profile Routes
 router.get("/profile", authenticateCustomer, customerController.getProfile);

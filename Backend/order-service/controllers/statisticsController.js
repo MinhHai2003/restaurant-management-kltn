@@ -779,24 +779,31 @@ const getStatistics = async (req, res) => {
         console.log(`📊 Sample orders for ${periodName} peak hours:`);
         orders.slice(0, 5).forEach((order, index) => {
           const orderTime = order.createdAt || order.orderDate;
-          const hour = orderTime ? new Date(orderTime).getHours() : 'N/A';
-          console.log(`  ${index + 1}. Order ${order.orderNumber}: createdAt=${order.createdAt?.toISOString()}, hour=${hour}`);
+          if (orderTime) {
+            // Convert UTC to Vietnam time (UTC+7)
+            const vnTime = new Date(orderTime.getTime() + vietnamOffset);
+            const hourVN = vnTime.getUTCHours();
+            console.log(`  ${index + 1}. Order ${order.orderNumber}: UTC=${orderTime.toISOString()}, VN hour=${hourVN}`);
+          }
         });
       }
 
-      // Initialize hourly counts for all 24 hours
+      // Initialize hourly counts for all 24 hours (Vietnam time)
       const hourlyCounts = {};
       for (let hour = 0; hour <= 23; hour++) {
         hourlyCounts[hour] = 0;
       }
 
-      // Count orders by hour based on createdAt
+      // Count orders by hour based on Vietnam timezone
       orders.forEach(order => {
         const orderTime = order.createdAt || order.orderDate;
         if (orderTime) {
-          const hour = new Date(orderTime).getHours();
-          if (hour >= 0 && hour <= 23) {
-            hourlyCounts[hour]++;
+          // Convert UTC time to Vietnam time (UTC+7)
+          // orderTime is UTC, add 7 hours to get VN time
+          const vnTime = new Date(orderTime.getTime() + vietnamOffset);
+          const hourVN = vnTime.getUTCHours(); // Get hour in VN timezone
+          if (hourVN >= 0 && hourVN <= 23) {
+            hourlyCounts[hourVN]++;
           }
         }
       });

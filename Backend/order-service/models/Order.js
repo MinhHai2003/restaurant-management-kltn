@@ -429,19 +429,30 @@ OrderSchema.pre("save", function (next) {
     }
 
     // Set orderDate to current time in Vietnam timezone (UTC+7)
-    // We need to store the Vietnam time correctly in MongoDB
     // MongoDB stores dates in UTC, so we need to adjust
+    // Strategy: Store the UTC time that represents the current Vietnam time
     if (!this.orderDate) {
-      const now = new Date(); // This is already in UTC when stored in MongoDB
-      // To represent Vietnam time (UTC+7), we need to subtract 7 hours from UTC
-      // so that when MongoDB stores it as UTC, it represents the correct Vietnam time
+      const now = new Date(); // Current UTC time
       const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
-      // Get current UTC time
-      const utcNow = new Date(now.getTime());
-      // Subtract 7 hours so that when displayed as Vietnam time, it's correct
-      // Example: If it's 10:00 AM in Vietnam (03:00 AM UTC), we store 03:00 AM UTC
-      // When querying, we add 7 hours back to get 10:00 AM Vietnam time
-      this.orderDate = new Date(utcNow.getTime() - vietnamOffset);
+      
+      // Get current time in Vietnam (add 7 hours to UTC)
+      const vietnamNow = new Date(now.getTime() + vietnamOffset);
+      
+      // Extract date components from Vietnam time
+      const vnYear = vietnamNow.getUTCFullYear();
+      const vnMonth = vietnamNow.getUTCMonth();
+      const vnDate = vietnamNow.getUTCDate();
+      const vnHours = vietnamNow.getUTCHours();
+      const vnMinutes = vietnamNow.getUTCMinutes();
+      const vnSeconds = vietnamNow.getUTCSeconds();
+      const vnMilliseconds = vietnamNow.getUTCMilliseconds();
+      
+      // Create a Date object representing Vietnam time as if it were UTC
+      // This way, when MongoDB stores it, it will represent the correct Vietnam time
+      const vietnamTimeAsUTC = new Date(Date.UTC(vnYear, vnMonth, vnDate, vnHours, vnMinutes, vnSeconds, vnMilliseconds));
+      
+      // Subtract 7 hours to get the UTC equivalent that represents Vietnam time
+      this.orderDate = new Date(vietnamTimeAsUTC.getTime() - vietnamOffset);
     }
 
     // Set initial timeline

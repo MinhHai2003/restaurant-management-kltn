@@ -53,8 +53,13 @@ const getStatistics = async (req, res) => {
       
       try {
         // Query using UTC timestamps that correspond to Vietnam day
+        // Priority: orderDate (correct timezone) > createdAt > payment.paidAt
         const orders = await Order.find({
-          createdAt: { $gte: startOfDayUTC, $lt: endOfDayUTC },
+          $or: [
+            { orderDate: { $gte: startOfDayUTC, $lt: endOfDayUTC } },
+            { createdAt: { $gte: startOfDayUTC, $lt: endOfDayUTC } },
+            { 'payment.paidAt': { $gte: startOfDayUTC, $lt: endOfDayUTC } }
+          ],
           status: { $in: ['completed', 'delivered'] }
         });
         
@@ -92,11 +97,12 @@ const getStatistics = async (req, res) => {
       
       console.log(`📊 Week ${4 - i}: ${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]}`);
       
-      // Try both createdAt and orderDate for more accurate results
+      // Priority: orderDate (correct timezone) > createdAt > payment.paidAt
       const orders = await Order.find({
         $or: [
+          { orderDate: { $gte: weekStart, $lte: weekEnd } },
           { createdAt: { $gte: weekStart, $lte: weekEnd } },
-          { orderDate: { $gte: weekStart, $lte: weekEnd } }
+          { 'payment.paidAt': { $gte: weekStart, $lte: weekEnd } }
         ],
         status: { $in: ['completed', 'delivered'] }
       });
@@ -128,11 +134,12 @@ const getStatistics = async (req, res) => {
       
       console.log(`📊 Month ${3 - i}: ${monthStart.toISOString().split('T')[0]} to ${monthEnd.toISOString().split('T')[0]}`);
       
-      // Try both createdAt and orderDate for more accurate results
+      // Priority: orderDate (correct timezone) > createdAt > payment.paidAt
       const orders = await Order.find({
         $or: [
+          { orderDate: { $gte: monthStart, $lt: monthEnd } },
           { createdAt: { $gte: monthStart, $lt: monthEnd } },
-          { orderDate: { $gte: monthStart, $lt: monthEnd } }
+          { 'payment.paidAt': { $gte: monthStart, $lt: monthEnd } }
         ],
         status: { $in: ['completed', 'delivered'] }
       });
@@ -163,11 +170,13 @@ const getStatistics = async (req, res) => {
       console.log(`📊 ===== CALCULATING TOP DISHES FOR ${periodName.toUpperCase()} =====`);
       console.log(`📊 Date range: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
       
+      // Priority: orderDate (correct timezone) > createdAt > payment.paidAt
       const orders = await Order.find({
-      status: { $in: ['completed', 'delivered'] },
+        status: { $in: ['completed', 'delivered'] },
         $or: [
+          { orderDate: { $gte: startDate, $lte: endDate } },
           { createdAt: { $gte: startDate, $lte: endDate } },
-          { orderDate: { $gte: startDate, $lte: endDate } }
+          { 'payment.paidAt': { $gte: startDate, $lte: endDate } }
         ]
       });
 
@@ -337,25 +346,29 @@ const getStatistics = async (req, res) => {
     const calculateOrderStats = async (startDate, endDate, periodName) => {
       console.log(`📊 Calculating order stats for ${periodName}: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
       
+      // Priority: orderDate (correct timezone) > createdAt > payment.paidAt
       const totalOrders = await Order.countDocuments({
         $or: [
+          { orderDate: { $gte: startDate, $lte: endDate } },
           { createdAt: { $gte: startDate, $lte: endDate } },
-          { orderDate: { $gte: startDate, $lte: endDate } }
+          { 'payment.paidAt': { $gte: startDate, $lte: endDate } }
         ]
       });
       
       const completedOrders = await Order.countDocuments({
         $or: [
+          { orderDate: { $gte: startDate, $lte: endDate } },
           { createdAt: { $gte: startDate, $lte: endDate } },
-          { orderDate: { $gte: startDate, $lte: endDate } }
+          { 'payment.paidAt': { $gte: startDate, $lte: endDate } }
         ],
         status: { $in: ['completed', 'delivered'] }
       });
       
       const cancelledOrders = await Order.countDocuments({
         $or: [
+          { orderDate: { $gte: startDate, $lte: endDate } },
           { createdAt: { $gte: startDate, $lte: endDate } },
-          { orderDate: { $gte: startDate, $lte: endDate } }
+          { 'payment.paidAt': { $gte: startDate, $lte: endDate } }
         ],
         status: 'cancelled'
       });
@@ -562,13 +575,17 @@ const getStatistics = async (req, res) => {
     }
     
     // Get orders data for table utilization calculation
+    // Priority: orderDate (correct timezone) > createdAt
     const tableOrders = await Order.find({
       $or: [
         { 'diningInfo.tableInfo.tableNumber': { $exists: true, $ne: null } },
         { tableNumber: { $exists: true, $ne: null } }
       ],
       status: { $in: ['completed', 'delivered', 'confirmed', 'preparing', 'ready', 'ordered', 'cooking', 'served', 'dining'] },
-      createdAt: { $gte: startOfMonthUTC }
+      $or: [
+        { orderDate: { $gte: startOfMonthUTC } },
+        { createdAt: { $gte: startOfMonthUTC } }
+      ]
     }).select('diningInfo tableNumber createdAt orderDate');
     
     console.log('📊 Table orders found:', tableOrders.length);

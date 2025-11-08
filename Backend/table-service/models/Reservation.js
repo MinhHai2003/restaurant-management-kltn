@@ -256,19 +256,23 @@ reservationSchema.pre("save", function (next) {
   }
 
   // Set reservationDate to Vietnam timezone (UTC+7)
-  // We need to store the Vietnam time correctly in MongoDB
+  // MongoDB stores dates in UTC, so we need to adjust
   if (this.isNew && this.reservationDate) {
     // If reservationDate is already a Date object, convert it
     const reservationDate = new Date(this.reservationDate);
-    // Get the date components (year, month, day) in Vietnam time
-    // The reservationDate should represent a date in Vietnam timezone
-    // We subtract 7 hours so that when MongoDB stores it as UTC, it represents the correct Vietnam date
     const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
-    // Extract date components (year, month, day) from the reservation date
-    // Set to midnight in Vietnam time, then convert to UTC for storage
-    const dateStr = reservationDate.toISOString().split('T')[0]; // Get YYYY-MM-DD
-    const vietnamMidnight = new Date(dateStr + 'T00:00:00.000+07:00'); // Midnight in Vietnam time
-    // Store as UTC equivalent (subtract 7 hours)
+    
+    // Get the date string (YYYY-MM-DD) - this represents the date in Vietnam timezone
+    const dateStr = reservationDate.toISOString().split('T')[0];
+    
+    // Create midnight in Vietnam time (00:00:00 VN = 17:00:00 UTC previous day)
+    // Parse as if it's Vietnam time, then convert to UTC equivalent
+    const [year, month, day] = dateStr.split('-').map(Number);
+    
+    // Create Date object for midnight Vietnam time
+    const vietnamMidnight = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    
+    // Subtract 7 hours to get UTC equivalent that represents Vietnam midnight
     this.reservationDate = new Date(vietnamMidnight.getTime() - vietnamOffset);
   }
 

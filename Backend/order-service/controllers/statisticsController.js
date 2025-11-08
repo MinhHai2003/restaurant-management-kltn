@@ -665,7 +665,11 @@ const getStatistics = async (req, res) => {
       monthly: [] // By hour for this month (aggregated)
     };
     
-    const hours = [10, 11, 12, 13, 14, 15, 18, 19, 20, 21, 22];
+    // Full hours from 00:00 to 23:00 (all 24 hours included)
+    const hours = [];
+    for (let hour = 0; hour <= 23; hour++) {
+      hours.push(hour);
+    }
     
     // Helper function to calculate utilization for a specific period
     const calculateUtilizationForPeriod = (periodReservations, periodName) => {

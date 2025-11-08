@@ -28,11 +28,6 @@ const getStatistics = async (req, res) => {
     const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
     
     // Date ranges calculated
-      todayVNMidnight: todayVNMidnight.toISOString(),
-      todayStartUTC: todayStartUTC.toISOString(),
-      todayEndUTC: todayEndUTC.toISOString(),
-      todayStr: `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`
-    });
 
     // Get total orders count first
     const totalOrdersCount = await Order.countDocuments();

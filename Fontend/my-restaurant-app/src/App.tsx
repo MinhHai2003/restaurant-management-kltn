@@ -30,8 +30,9 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <Router>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
+          <div className="app-shell">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/dang-nhap" element={<LoginPage />} />
@@ -113,6 +114,7 @@ function App() {
               </ProtectedRoute>
             } />
           </Routes>
+          </div>
         </Router>
       </CartProvider>
     </AuthProvider>

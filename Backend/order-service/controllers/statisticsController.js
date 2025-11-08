@@ -453,25 +453,8 @@ const getStatistics = async (req, res) => {
       
       const reservationResponse = await axios.get(apiUrl);
       
-      console.log('📊 API Response status:', reservationResponse.status);
-      console.log('📊 API Response data:', JSON.stringify(reservationResponse.data, null, 2));
-      
       if (reservationResponse.data?.success) {
         reservations = reservationResponse.data.data?.reservations || [];
-        console.log('📊 All reservations found from Table Service:', reservations.length);
-        console.log('📊 Reservations data type:', typeof reservations, Array.isArray(reservations));
-        
-        // Keep all reservations for different periods
-        console.log('📊 All reservations found:', reservations.length);
-        
-        // Debug: Log all reservation dates
-        console.log('📊 All reservation dates:');
-        reservations.forEach((reservation, index) => {
-          const reservationDate = new Date(reservation.reservationDate).toISOString().split('T')[0];
-          console.log(`  ${index + 1}. Reservation date: ${reservationDate}, Original: ${reservation.reservationDate}`);
-        });
-      } else {
-        console.log('📊 No reservations found from Table Service API');
       }
     } catch (error) {
       console.log('📊 Could not fetch reservations from Table Service:', error.message);
@@ -686,8 +669,7 @@ const getStatistics = async (req, res) => {
       // Process reservations for this period
       // Include all statuses: completed, confirmed, pending, seated, dining
       if (Array.isArray(periodReservations)) {
-        console.log(`📊 Processing ${periodReservations.length} reservations for ${periodName}`);
-        periodReservations.forEach((reservation, index) => {
+        periodReservations.forEach((reservation) => {
           // Include all active statuses, not just completed/confirmed
           const validStatuses = ['completed', 'confirmed', 'pending', 'seated', 'dining'];
           if (validStatuses.includes(reservation.status)) {
@@ -697,24 +679,15 @@ const getStatistics = async (req, res) => {
               const endTime = reservation.timeSlot?.endTime;
               const endHour = endTime ? parseInt(endTime.split(':')[0]) : startHour + 2;
               
-              console.log(`📊 Reservation ${index + 1}: Table ${reservation.table?.tableNumber}, Status: ${reservation.status}, Time: ${startTime}-${endTime}, Hours: ${startHour}-${endHour}`);
-              
               // Count reservations for all hours within the reservation time slot
               for (let hour = startHour; hour <= endHour; hour++) {
                 if (hour >= 0 && hour <= 23 && hourlyUtilization[hour] !== undefined) {
                   hourlyUtilization[hour]++;
-                  console.log(`    ✅ Added 1 reservation to hour ${hour}:00 (total: ${hourlyUtilization[hour]})`);
                 }
               }
-            } else {
-              console.log(`📊 Reservation ${index + 1}: Missing timeSlot.startTime`);
             }
-          } else {
-            console.log(`📊 Reservation ${index + 1}: Status '${reservation.status}' not included`);
           }
         });
-      } else {
-        console.log(`📊 No reservations array for ${periodName}`);
       }
       
       // Convert to array format - Show total reservation count
@@ -726,13 +699,10 @@ const getStatistics = async (req, res) => {
         };
       });
       
-      // Log summary
+      // Log summary (only if there's an issue)
       const totalReservations = Object.values(hourlyUtilization).reduce((sum, count) => sum + count, 0);
-      const hoursWithReservations = Object.entries(hourlyUtilization).filter(([hour, count]) => count > 0).length;
-      console.log(`📊 ${periodName} summary: Total reservations counted: ${totalReservations}, Hours with reservations: ${hoursWithReservations}/24`);
       if (totalReservations === 0 && periodReservations.length > 0) {
-        console.warn(`⚠️ ${periodName}: Found ${periodReservations.length} reservations but none were counted! Check status and timeSlot.`);
-        console.warn(`⚠️ Sample reservation statuses:`, periodReservations.slice(0, 3).map(r => ({ status: r.status, hasTimeSlot: !!r.timeSlot })));
+        console.warn(`⚠️ ${periodName}: Found ${periodReservations.length} reservations but none were counted!`);
       }
       
       return result;
@@ -747,7 +717,6 @@ const getStatistics = async (req, res) => {
     dayjs.extend(tz);
     
     const todayVN = dayjs().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
-    console.log(`📊 Filtering for today: ${todayVN} (VN time)`);
     
     // Valid statuses for table utilization
     const VALID_STATUSES = new Set(['pending', 'confirmed', 'completed', 'seated', 'dining', 'approved', 'booked', 'ready']);
@@ -762,60 +731,13 @@ const getStatistics = async (req, res) => {
       const resVN = dayjs(reservation.reservationDate).tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
       const dateMatch = resVN === todayVN;
       
-      // Check status (exclude cancelled, include valid statuses)
+      // Check status (exclude cancelled)
       const status = String(reservation.status || '').toLowerCase();
-      const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
+      const statusOk = status !== 'cancelled';
       
       return dateMatch && statusOk;
     });
     
-    // Log all reservations and their match status for debugging
-    console.log(`📊 Checking ${reservations.length} reservations against today's VN date (${todayVN}):`);
-    if (reservations.length > 0) {
-      reservations.slice(0, 10).forEach((reservation, idx) => {
-        if (!reservation.reservationDate) {
-          console.log(`  ${idx + 1}. No reservationDate`);
-          return;
-        }
-        const resVN = dayjs(reservation.reservationDate).tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
-        const dateMatch = resVN === todayVN;
-        const status = String(reservation.status || '').toLowerCase();
-        const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
-        const isIncluded = todayReservations.includes(reservation);
-        console.log(`  ${idx + 1}. Reservation VN date: ${resVN}, Today VN: ${todayVN}, DateMatch: ${dateMatch}, StatusOK: ${statusOk}, Included: ${isIncluded}, Status: ${reservation.status}, Time: ${reservation.timeSlot?.startTime}-${reservation.timeSlot?.endTime}`);
-      });
-    } else {
-      console.log(`  No reservations found in database`);
-    }
-    
-    console.log('📊 Current date/time:', {
-      todayVNMidnight: todayVNMidnight.toISOString(),
-      todayStartUTC: todayStartUTC.toISOString(),
-      todayEndUTC: todayEndUTC.toISOString(),
-      todayStr: todayStrDaily,
-      timezone: 'UTC+7 (Vietnam)'
-    });
-    
-    console.log(`📊 Filtering for today (${todayStrDaily} VN):`);
-    console.log(`📊 Total reservations from API: ${reservations.length}`);
-    
-    // Debug: Show sample reservations and their dates
-    if (reservations.length > 0) {
-      console.log(`📊 Sample reservations (first 5):`);
-      reservations.slice(0, 5).forEach((res, idx) => {
-        const resDate = new Date(res.reservationDate);
-        const resDateStr = resDate.toISOString().split('T')[0];
-        console.log(`  ${idx + 1}. Date: ${resDateStr}, Status: ${res.status}, Table: ${res.table?.tableNumber}, Time: ${res.timeSlot?.startTime}-${res.timeSlot?.endTime}`);
-      });
-    }
-    
-    console.log(`📊 Today's reservations after filter: ${todayReservations.length}`);
-    if (todayReservations.length > 0) {
-      console.log(`📊 Today's reservations details:`);
-      todayReservations.forEach((res, idx) => {
-        console.log(`  ${idx + 1}. Date: ${new Date(res.reservationDate).toISOString().split('T')[0]}, Status: ${res.status}, Table: ${res.table?.tableNumber}, Time: ${res.timeSlot?.startTime}-${res.timeSlot?.endTime}`);
-      });
-    }
     
     tableUtilization.daily = calculateUtilizationForPeriod(todayReservations, 'today');
     

@@ -600,18 +600,48 @@ const AdminDashboard: React.FC = () => {
   const loadStatistics = async () => {
     setStatisticsLoading(true);
     try {
+      // Try multiple token sources for admin authentication
+      const token = localStorage.getItem('employeeToken') || 
+                    localStorage.getItem('adminToken') || 
+                    localStorage.getItem('token');
+      
       const response = await fetch(`${API_CONFIG.ORDER_API}/admin/statistics`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to load statistics');
+        throw new Error(`Failed to load statistics: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
       console.log('📊 Statistics loaded:', data);
       console.log('📊 Statistics data structure:', data.data);
       console.log('📊 Top dishes data:', data.data?.topDishes);
+      
+      // Debug table utilization specifically
+      console.log('📊 Table utilization from API:', data.data?.tableUtilization);
+      if (data.data?.tableUtilization) {
+        console.log('📊 Daily table utilization:', data.data.tableUtilization.daily);
+        console.log('📊 Weekly table utilization:', data.data.tableUtilization.weekly);
+        console.log('📊 Monthly table utilization:', data.data.tableUtilization.monthly);
+        
+        // Check if arrays are empty or have data
+        ['daily', 'weekly', 'monthly'].forEach(period => {
+          const periodData = data.data.tableUtilization[period];
+          if (Array.isArray(periodData)) {
+            console.log(`📊 ${period} has ${periodData.length} hours of data`);
+            if (periodData.length > 0) {
+              console.log(`📊 ${period} sample (first 3):`, periodData.slice(0, 3));
+              console.log(`📊 ${period} sample (last 3):`, periodData.slice(-3));
+            }
+          } else {
+            console.warn(`📊 ${period} is not an array:`, periodData);
+          }
+        });
+      } else {
+        console.warn('📊 No tableUtilization data in API response!');
+      }
+      
       setStatisticsData(data.data);
     } catch (error) {
       console.error('Error loading statistics:', error);
@@ -2735,7 +2765,20 @@ const AdminDashboard: React.FC = () => {
           </h3>
           <div style={{ height: '300px', width: '100%', minHeight: '300px', minWidth: '400px' }}>
             <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={400}>
-              <LineChart data={statisticsData.tableUtilization?.[statisticsPeriod] || []} key={statisticsPeriod}>
+              <LineChart 
+                data={(() => {
+                  const chartData = statisticsData.tableUtilization?.[statisticsPeriod] || [];
+                  console.log(`📊 Rendering chart for ${statisticsPeriod} with ${chartData.length} data points`);
+                  if (chartData.length > 0) {
+                    console.log(`📊 First 3 data points:`, chartData.slice(0, 3));
+                    console.log(`📊 Last 3 data points:`, chartData.slice(-3));
+                  } else {
+                    console.warn(`📊 No data for ${statisticsPeriod} period!`);
+                  }
+                  return chartData;
+                })()} 
+                key={statisticsPeriod}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis 
                   dataKey="hour" 

@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 // Get comprehensive statistics for admin dashboard
 const getStatistics = async (req, res) => {
   try {
-    console.log('📊 Statistics: Fetching comprehensive statistics...');
+    // Statistics: Fetching comprehensive statistics
 
     // Get date ranges - Convert to Vietnam timezone (UTC+7) properly
     const now = new Date(); // Current UTC time
@@ -27,9 +27,7 @@ const getStatistics = async (req, res) => {
     // End of today in VN = 17:00 UTC today
     const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
     
-    console.log('📊 Date ranges:', { 
-      nowUTC: now.toISOString(),
-      vietnamNow: vietnamNow.toISOString(),
+    // Date ranges calculated
       todayVNMidnight: todayVNMidnight.toISOString(),
       todayStartUTC: todayStartUTC.toISOString(),
       todayEndUTC: todayEndUTC.toISOString(),
@@ -38,7 +36,7 @@ const getStatistics = async (req, res) => {
 
     // Get total orders count first
     const totalOrdersCount = await Order.countDocuments();
-    console.log('📊 Total orders:', totalOrdersCount);
+    // Total orders fetched
 
     // Revenue data - Daily (last 7 days) - Calculate with Vietnam timezone
     const dailyRevenue = [];
@@ -77,7 +75,7 @@ const getStatistics = async (req, res) => {
           revenue: revenue
         });
         
-        console.log(`📊 Day ${i} (${dateVNStr} VN): ${orders.length} orders, ${revenue} revenue (UTC: ${startOfDayUTC.toISOString()} to ${endOfDayUTC.toISOString()})`);
+        // Day calculated
       } catch (error) {
         console.error(`📊 Error for day ${i}:`, error);
         dailyRevenue.push({

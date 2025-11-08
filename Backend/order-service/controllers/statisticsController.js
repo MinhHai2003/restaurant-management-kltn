@@ -739,29 +739,50 @@ const getStatistics = async (req, res) => {
     };
     
     // Daily utilization (today only)
-    // Filter reservations by date string (YYYY-MM-DD) that corresponds to today in VN
+    // Use UTC range (same as weekly/monthly) instead of string comparison
+    // This avoids timezone issues that cause daily to be empty
     const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
-    console.log(`📊 Filtering for today: Looking for date string "${todayStrDaily}" (VN time)`);
+    console.log(`📊 Filtering for today: ${todayStrDaily} (VN time)`);
     console.log(`📊 UTC range: ${todayStartUTC.toISOString()} to ${todayEndUTC.toISOString()}`);
     
+    // Valid statuses for table utilization
+    const VALID_STATUSES = new Set(['pending', 'confirmed', 'completed', 'seated', 'dining', 'approved', 'booked', 'ready']);
+    
+    // Filter by UTC range (same approach as weekly/monthly)
     const todayReservations = reservations.filter(reservation => {
-      const resDate = new Date(reservation.reservationDate);
-      // Extract date string (YYYY-MM-DD) from reservation date
-      const resDateStr = resDate.toISOString().split('T')[0];
-      
-      // Check both date string match and UTC timestamp range
-      const dateStrMatch = resDateStr === todayStrDaily;
-      const timestampMatch = resDate >= todayStartUTC && resDate < todayEndUTC;
-      
-      const matches = dateStrMatch || timestampMatch;
-      
-      // Log first few matches/non-matches for debugging
-      if (reservations.indexOf(reservation) < 5) {
-        console.log(`📊 Reservation check: resDateStr="${resDateStr}", todayStr="${todayStrDaily}", dateStrMatch=${dateStrMatch}, timestampMatch=${timestampMatch}, finalMatch=${matches}`);
+      if (!reservation?.reservationDate) {
+        return false;
       }
       
-      return matches;
+      // Check UTC timestamp range (same as weekly/monthly)
+      const resDate = new Date(reservation.reservationDate);
+      const inRange = resDate >= todayStartUTC && resDate < todayEndUTC;
+      
+      // Check status (exclude cancelled, include valid statuses)
+      const status = String(reservation.status || '').toLowerCase();
+      const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
+      
+      return inRange && statusOk;
     });
+    
+    // Log all reservations and their match status for debugging
+    console.log(`📊 Checking ${reservations.length} reservations against today's UTC range:`);
+    if (reservations.length > 0) {
+      reservations.slice(0, 10).forEach((reservation, idx) => {
+        if (!reservation.reservationDate) {
+          console.log(`  ${idx + 1}. No reservationDate`);
+          return;
+        }
+        const resDate = new Date(reservation.reservationDate);
+        const inRange = resDate >= todayStartUTC && resDate < todayEndUTC;
+        const status = String(reservation.status || '').toLowerCase();
+        const statusOk = status !== 'cancelled' && (VALID_STATUSES.has(status) || true);
+        const isIncluded = todayReservations.includes(reservation);
+        console.log(`  ${idx + 1}. Date: ${resDate.toISOString()}, InRange: ${inRange}, StatusOK: ${statusOk}, Included: ${isIncluded}, Status: ${reservation.status}, Time: ${reservation.timeSlot?.startTime}-${reservation.timeSlot?.endTime}`);
+      });
+    } else {
+      console.log(`  No reservations found in database`);
+    }
     
     console.log('📊 Current date/time:', {
       todayVNMidnight: todayVNMidnight.toISOString(),

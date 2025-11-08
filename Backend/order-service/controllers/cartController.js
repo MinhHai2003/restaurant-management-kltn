@@ -3,6 +3,16 @@ const Cart = require("../models/Cart");
 const menuApiClient = require("../services/menuApiClient");
 const customerApiClient = require("../services/customerApiClient");
 
+// Helper function to find cart by customerId or sessionId
+const findCart = async (customerId, sessionId) => {
+  if (customerId) {
+    return await Cart.findOne({ customerId });
+  } else if (sessionId) {
+    return await Cart.findOne({ sessionId, customerId: null });
+  }
+  return null;
+};
+
 // 🛒 Get Cart
 exports.getCart = async (req, res) => {
   try {
@@ -143,7 +153,7 @@ exports.updateCartItem = async (req, res) => {
     const { itemId } = req.params;
     const { quantity } = req.body;
 
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -182,7 +192,7 @@ exports.removeFromCart = async (req, res) => {
   try {
     const { itemId } = req.params;
 
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -219,7 +229,7 @@ exports.removeFromCart = async (req, res) => {
 // 🗑️ Clear Cart
 exports.clearCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -258,7 +268,7 @@ exports.applyCoupon = async (req, res) => {
 
     const { couponCode } = req.body;
 
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -315,7 +325,7 @@ exports.applyCoupon = async (req, res) => {
 // 🎫 Remove Coupon
 exports.removeCoupon = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -354,7 +364,7 @@ exports.updateDelivery = async (req, res) => {
 
     const { type, addressId, address, estimatedTime } = req.body;
 
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -451,7 +461,7 @@ exports.checkoutCart = async (req, res) => {
   try {
     const { payment, notes } = req.body;
 
-    const cart = await Cart.findOne({ customerId: req.customerId });
+    const cart = await findCart(req.customerId, req.sessionId);
     if (!cart || cart.isEmpty) {
       return res.status(400).json({
         success: false,

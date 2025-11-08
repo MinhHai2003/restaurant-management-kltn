@@ -301,10 +301,14 @@ exports.updateOrderStatus = async (req, res) => {
     
     // Nếu trạng thái đơn hàng là "completed" hoặc "delivered", tự động cập nhật trạng thái thanh toán thành "paid"
     if ((status === 'completed' || status === 'delivered') && order.payment?.status !== 'paid') {
-      order.payment.method = 'banking'; // Cập nhật phương thức thanh toán
+      // Giữ nguyên phương thức thanh toán gốc, chỉ cập nhật trạng thái
+      const originalPaymentMethod = order.payment?.method || null;
       order.payment.status = 'paid';
       order.payment.paidAt = new Date();
-      console.log(`✅ [ADMIN ORDER] Auto-updated payment method to 'banking' and status to 'paid' for ${status} order ${order.orderNumber}`);
+      if (originalPaymentMethod) {
+        order.payment.method = originalPaymentMethod;
+      }
+      console.log(`✅ [ADMIN ORDER] Auto-updated payment status to 'paid' (kept method: ${originalPaymentMethod || 'unchanged'}) for ${status} order ${order.orderNumber}`);
     }
     
     order.timeline.push({
@@ -467,7 +471,7 @@ exports.updateTablePaymentOrders = async (req, res) => {
 
     for (const originalOrder of originalOrders) {
       // Cập nhật payment method và status
-      originalOrder.payment.method = 'banking'; // Cập nhật phương thức thanh toán
+      // Giữ nguyên phương thức thanh toán gốc; chỉ cập nhật trạng thái và thông tin giao dịch
       originalOrder.payment.status = 'paid';
       originalOrder.payment.transactionId = tablePaymentOrder.payment.transactionId;
       originalOrder.payment.paidAt = tablePaymentOrder.payment.paidAt;

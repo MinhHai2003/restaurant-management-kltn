@@ -6,28 +6,33 @@ const getStatistics = async (req, res) => {
     console.log('📊 Statistics: Fetching comprehensive statistics...');
 
     // Get date ranges - Convert to Vietnam timezone (UTC+7) properly
-    const now = new Date();
+    const now = new Date(); // Current UTC time
     const vietnamOffset = 7 * 60 * 60 * 1000; // UTC+7 in milliseconds
     
     // Get current date in Vietnam timezone
     // Add 7 hours to UTC time to get Vietnam time
-    const vietnamTime = new Date(now.getTime() + vietnamOffset);
+    const vietnamNow = new Date(now.getTime() + vietnamOffset);
     // Extract year, month, date from Vietnam time
-    const vnYear = vietnamTime.getUTCFullYear();
-    const vnMonth = vietnamTime.getUTCMonth();
-    const vnDate = vietnamTime.getUTCDate();
+    const vnYear = vietnamNow.getUTCFullYear();
+    const vnMonth = vietnamNow.getUTCMonth();
+    const vnDate = vietnamNow.getUTCDate();
     
-    // Create Date object for 00:00 Vietnam time
-    // 00:00 VN = 17:00 UTC (previous day)
-    const todayVN = new Date(Date.UTC(vnYear, vnMonth, vnDate, 0, 0, 0, 0));
-    // Convert to UTC: subtract 7 hours
-    const todayStartUTC = new Date(todayVN.getTime() - vietnamOffset);
+    // Create Date object for 00:00:00 Vietnam time (today)
+    // This represents midnight in Vietnam timezone
+    const todayVNMidnight = new Date(Date.UTC(vnYear, vnMonth, vnDate, 0, 0, 0, 0));
+    
+    // Convert to UTC: 00:00 VN = 17:00 UTC (previous day)
+    // So start of today in VN = 17:00 UTC yesterday
+    const todayStartUTC = new Date(todayVNMidnight.getTime() - vietnamOffset);
+    // End of today in VN = 17:00 UTC today
+    const todayEndUTC = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
     
     console.log('📊 Date ranges:', { 
       nowUTC: now.toISOString(),
-      vietnamTime: vietnamTime.toISOString(),
-      todayVN: todayVN.toISOString(),
+      vietnamNow: vietnamNow.toISOString(),
+      todayVNMidnight: todayVNMidnight.toISOString(),
       todayStartUTC: todayStartUTC.toISOString(),
+      todayEndUTC: todayEndUTC.toISOString(),
       todayStr: `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`
     });
 
@@ -39,16 +44,18 @@ const getStatistics = async (req, res) => {
     const dailyRevenue = [];
     
     for (let i = 6; i >= 0; i--) {
-      // Calculate date in Vietnam timezone (go back i days)
-      const dateVN = new Date(todayVN.getTime() - i * 24 * 60 * 60 * 1000);
-      const vnYear = dateVN.getUTCFullYear();
-      const vnMonth = dateVN.getUTCMonth();
-      const vnDate = dateVN.getUTCDate();
-      const dateVNStr = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
+      // Calculate date in Vietnam timezone (go back i days from today)
+      const targetDateVN = new Date(todayVNMidnight.getTime() - i * 24 * 60 * 60 * 1000);
+      const targetYear = targetDateVN.getUTCFullYear();
+      const targetMonth = targetDateVN.getUTCMonth();
+      const targetDay = targetDateVN.getUTCDate();
+      const dateVNStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
       
       // Convert to UTC for MongoDB query
       // 00:00 VN = 17:00 UTC (previous day)
-      const startOfDayUTC = new Date(dateVN.getTime() - vietnamOffset);
+      // Start of day in VN = 17:00 UTC previous day
+      const startOfDayUTC = new Date(targetDateVN.getTime() - vietnamOffset);
+      // End of day in VN = 17:00 UTC same day
       const endOfDayUTC = new Date(startOfDayUTC.getTime() + 24 * 60 * 60 * 1000);
       
       try {
@@ -66,7 +73,7 @@ const getStatistics = async (req, res) => {
         const revenue = orders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
         
         dailyRevenue.push({
-          date: `${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`, // Format: MM-DD
+          date: `${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`, // Format: MM-DD
           revenue: revenue
         });
         
@@ -74,7 +81,7 @@ const getStatistics = async (req, res) => {
       } catch (error) {
         console.error(`📊 Error for day ${i}:`, error);
         dailyRevenue.push({
-          date: `${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`,
+          date: `${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`,
           revenue: 0
         });
       }
@@ -84,7 +91,7 @@ const getStatistics = async (req, res) => {
     const weeklyRevenue = [];
     for (let i = 3; i >= 0; i--) {
       // Calculate week start (Monday) and end (Sunday) in Vietnam timezone
-      const weekDateVN = new Date(todayVN.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      const weekDateVN = new Date(todayVNMidnight.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const weekDay = weekDateVN.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
       const mondayOffset = weekDay === 0 ? -6 : 1 - weekDay; // Adjust to Monday
       
@@ -92,6 +99,7 @@ const getStatistics = async (req, res) => {
       weekStartVN.setUTCHours(0, 0, 0, 0);
       
       // Convert to UTC for MongoDB query
+      // 00:00 VN = 17:00 UTC (previous day)
       const weekStart = new Date(weekStartVN.getTime() - vietnamOffset);
       const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
       
@@ -121,16 +129,18 @@ const getStatistics = async (req, res) => {
     const monthlyRevenue = [];
     for (let i = 2; i >= 0; i--) {
       // Calculate month in Vietnam timezone
-      const monthDateVN = new Date(todayVN.getTime());
-      monthDateVN.setUTCMonth(todayVN.getUTCMonth() - i);
+      const monthDateVN = new Date(todayVNMidnight.getTime());
+      monthDateVN.setUTCMonth(todayVNMidnight.getUTCMonth() - i);
       monthDateVN.setUTCDate(1);
       monthDateVN.setUTCHours(0, 0, 0, 0);
       
       // Convert to UTC for MongoDB query
+      // 00:00 VN = 17:00 UTC (previous day)
       const monthStart = new Date(monthDateVN.getTime() - vietnamOffset);
-      const monthEnd = new Date(monthStart.getTime() + 32 * 24 * 60 * 60 * 1000); // Approximate, will be adjusted
-      monthEnd.setUTCMonth(monthStart.getUTCMonth() + 1);
-      monthEnd.setUTCDate(1);
+      // Calculate end of month
+      const nextMonthVN = new Date(monthDateVN.getTime());
+      nextMonthVN.setUTCMonth(monthDateVN.getUTCMonth() + 1);
+      const monthEnd = new Date(nextMonthVN.getTime() - vietnamOffset);
       
       console.log(`📊 Month ${3 - i}: ${monthStart.toISOString().split('T')[0]} to ${monthEnd.toISOString().split('T')[0]}`);
       
@@ -239,19 +249,19 @@ const getStatistics = async (req, res) => {
     };
 
     // Calculate top dishes for different periods
-    const endOfToday = new Date(todayStartUTC.getTime() + 24 * 60 * 60 * 1000);
+    // Use todayEndUTC (already calculated) for end of today
     const startOfWeek = new Date(todayStartUTC.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const startOfMonth = new Date(Date.UTC(vnYear, vnMonth, 1, 0, 0, 0, 0));
-    const startOfMonthUTC = new Date(startOfMonth.getTime() - vietnamOffset);
+    const startOfMonthVN = new Date(Date.UTC(vnYear, vnMonth, 1, 0, 0, 0, 0));
+    const startOfMonthUTC = new Date(startOfMonthVN.getTime() - vietnamOffset);
     
     console.log('📊 ===== STARTING TOPDISHES CALCULATION =====');
-    console.log('📊 Daily range:', todayStartUTC.toISOString(), 'to', endOfToday.toISOString());
-    console.log('📊 Weekly range:', startOfWeek.toISOString(), 'to', endOfToday.toISOString());
-    console.log('📊 Monthly range:', startOfMonthUTC.toISOString(), 'to', endOfToday.toISOString());
+    console.log('📊 Daily range:', todayStartUTC.toISOString(), 'to', todayEndUTC.toISOString());
+    console.log('📊 Weekly range:', startOfWeek.toISOString(), 'to', todayEndUTC.toISOString());
+    console.log('📊 Monthly range:', startOfMonthUTC.toISOString(), 'to', todayEndUTC.toISOString());
     
-    const dailyTopDishes = await calculateTopDishes(todayStartUTC, endOfToday, 'daily');
-    const weeklyTopDishes = await calculateTopDishes(startOfWeek, endOfToday, 'weekly');
-    const monthlyTopDishes = await calculateTopDishes(startOfMonthUTC, endOfToday, 'monthly');
+    const dailyTopDishes = await calculateTopDishes(todayStartUTC, todayEndUTC, 'daily');
+    const weeklyTopDishes = await calculateTopDishes(startOfWeek, todayEndUTC, 'weekly');
+    const monthlyTopDishes = await calculateTopDishes(startOfMonthUTC, todayEndUTC, 'monthly');
     
     console.log('📊 ===== TOPDISHES CALCULATION COMPLETED =====');
     console.log('📊 Daily topDishes:', dailyTopDishes.length, 'items');
@@ -336,9 +346,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate reservation statistics for different periods
     console.log('📊 ===== STARTING RESERVATION STATS CALCULATION =====');
-    const dailyReservationStats = await calculateReservationStats(todayStartUTC, endOfToday, 'daily');
-    const weeklyReservationStats = await calculateReservationStats(startOfWeek, endOfToday, 'weekly');
-    const monthlyReservationStats = await calculateReservationStats(startOfMonthUTC, endOfToday, 'monthly');
+    const dailyReservationStats = await calculateReservationStats(todayStartUTC, todayEndUTC, 'daily');
+    const weeklyReservationStats = await calculateReservationStats(startOfWeek, todayEndUTC, 'weekly');
+    const monthlyReservationStats = await calculateReservationStats(startOfMonthUTC, todayEndUTC, 'monthly');
     
     console.log('📊 ===== RESERVATION STATS CALCULATION COMPLETED =====');
 
@@ -385,9 +395,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate order statistics for different periods
     console.log('📊 ===== STARTING ORDER STATS CALCULATION =====');
-    const dailyOrderStats = await calculateOrderStats(todayStartUTC, endOfToday, 'daily');
-    const weeklyOrderStats = await calculateOrderStats(startOfWeek, endOfToday, 'weekly');
-    const monthlyOrderStats = await calculateOrderStats(startOfMonthUTC, endOfToday, 'monthly');
+    const dailyOrderStats = await calculateOrderStats(todayStartUTC, todayEndUTC, 'daily');
+    const weeklyOrderStats = await calculateOrderStats(startOfWeek, todayEndUTC, 'weekly');
+    const monthlyOrderStats = await calculateOrderStats(startOfMonthUTC, todayEndUTC, 'monthly');
     
     console.log('📊 ===== ORDER STATS CALCULATION COMPLETED =====');
 
@@ -682,60 +692,49 @@ const getStatistics = async (req, res) => {
     };
     
     // Daily utilization (today only)
+    // Filter reservations by UTC date range that corresponds to today in VN
+    const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
+    const todayReservations = reservations.filter(reservation => {
+      const resDate = new Date(reservation.reservationDate);
+      // Check if reservation date falls within today's UTC range
+      return resDate >= todayStartUTC && resDate < todayEndUTC;
+    });
+    
     console.log('📊 Current date/time:', {
-      todayVN: todayVN.toISOString(),
+      todayVNMidnight: todayVNMidnight.toISOString(),
       todayStartUTC: todayStartUTC.toISOString(),
-      todayStr: `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`,
+      todayEndUTC: todayEndUTC.toISOString(),
+      todayStr: todayStrDaily,
       timezone: 'UTC+7 (Vietnam)'
     });
     
-    const todayStrDaily = `${vnYear}-${String(vnMonth + 1).padStart(2, '0')}-${String(vnDate).padStart(2, '0')}`;
-    const todayReservations = reservations.filter(reservation => {
-      const reservationDate = new Date(reservation.reservationDate).toISOString().split('T')[0];
-      return reservationDate === todayStrDaily;
-    });
-    
-    console.log(`📊 Filtering for today (${todayStrDaily}):`);
+    console.log(`📊 Filtering for today (${todayStrDaily} VN):`);
     console.log(`📊 Total reservations: ${reservations.length}`);
-    
-    // Debug: Show all unique dates in reservations
-    const uniqueDates = [...new Set(reservations.map(r => new Date(r.reservationDate).toISOString().split('T')[0]))];
-    console.log('📊 All unique dates in reservations:', uniqueDates);
-    
-    console.log(`📊 Today's reservations: ${todayReservations.length}`);
-    todayReservations.forEach((res, index) => {
-      console.log(`  ${index + 1}. Date: ${new Date(res.reservationDate).toISOString().split('T')[0]}, Table: ${res.table?.tableNumber}, Time: ${res.timeSlot?.startTime}-${res.timeSlot?.endTime}`);
-    });
+    console.log(`📊 Today's reservations (UTC range): ${todayReservations.length}`);
     
     tableUtilization.daily = calculateUtilizationForPeriod(todayReservations, 'today');
     
     // Weekly utilization (last 7 days)
-    const weekStartVN = new Date(todayVN.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const weekStartVN = new Date(todayVNMidnight.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const weekStartVN_UTC = new Date(weekStartVN.getTime() - vietnamOffset);
     const weekReservations = reservations.filter(reservation => {
-      const reservationDate = new Date(reservation.reservationDate);
-      const resDateVN = new Date(Date.UTC(
-        reservationDate.getFullYear(),
-        reservationDate.getMonth(),
-        reservationDate.getDate()
-      ));
-      return resDateVN >= weekStartVN && resDateVN <= todayVN;
+      const resDate = new Date(reservation.reservationDate);
+      return resDate >= weekStartVN_UTC && resDate < todayEndUTC;
     });
     tableUtilization.weekly = calculateUtilizationForPeriod(weekReservations, 'week');
     
     // Monthly utilization (current month)
     const monthStartVN = new Date(Date.UTC(vnYear, vnMonth, 1, 0, 0, 0, 0));
-    const monthEndVN = new Date(Date.UTC(vnYear, vnMonth + 1, 0, 23, 59, 59));
+    const monthStartVN_UTC = new Date(monthStartVN.getTime() - vietnamOffset);
+    const nextMonthVN = new Date(Date.UTC(vnYear, vnMonth + 1, 1, 0, 0, 0, 0));
+    const monthEndVN_UTC = new Date(nextMonthVN.getTime() - vietnamOffset);
     
-    console.log(`📊 Monthly range: ${monthStartVN.toISOString().split('T')[0]} to ${monthEndVN.toISOString().split('T')[0]}`);
+    console.log(`📊 Monthly range (VN): ${monthStartVN.toISOString().split('T')[0]} to ${nextMonthVN.toISOString().split('T')[0]}`);
+    console.log(`📊 Monthly range (UTC): ${monthStartVN_UTC.toISOString()} to ${monthEndVN_UTC.toISOString()}`);
     
     const monthReservations = reservations.filter(reservation => {
-      const reservationDate = new Date(reservation.reservationDate);
-      const resDateVN = new Date(Date.UTC(
-        reservationDate.getFullYear(),
-        reservationDate.getMonth(),
-        reservationDate.getDate()
-      ));
-      return resDateVN >= monthStartVN && resDateVN <= monthEndVN;
+      const resDate = new Date(reservation.reservationDate);
+      return resDate >= monthStartVN_UTC && resDate < monthEndVN_UTC;
     });
     tableUtilization.monthly = calculateUtilizationForPeriod(monthReservations, 'month');
     
@@ -827,9 +826,9 @@ const getStatistics = async (req, res) => {
 
     // Calculate peak hours for different periods
     console.log('📊 ===== STARTING PEAK HOURS CALCULATION =====');
-    const dailyPeakHours = await calculatePeakHours(todayStartUTC, endOfToday, 'daily');
-    const weeklyPeakHours = await calculatePeakHours(startOfWeek, endOfToday, 'weekly');
-    const monthlyPeakHours = await calculatePeakHours(startOfMonthUTC, endOfToday, 'monthly');
+    const dailyPeakHours = await calculatePeakHours(todayStartUTC, todayEndUTC, 'daily');
+    const weeklyPeakHours = await calculatePeakHours(startOfWeek, todayEndUTC, 'weekly');
+    const monthlyPeakHours = await calculatePeakHours(startOfMonthUTC, todayEndUTC, 'monthly');
 
     console.log('📊 Final customer stats calculated for all periods');
     

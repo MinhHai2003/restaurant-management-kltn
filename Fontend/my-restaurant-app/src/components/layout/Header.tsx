@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../contexts/CartContext';
 import UserProfile from '../auth/UserProfile';
+import './Header.css';
 
 const Header: React.FC = () => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { user } = useAuth();
   const { cartCount, refreshCart } = useCart();
 
@@ -34,160 +36,69 @@ const Header: React.FC = () => {
         padding: '0.75rem 0',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
       }}>
-        <div className="container" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          gap: '1rem'
-        }}>
-          {/* Logo Section */}
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
-            <div style={{
-              padding: '0.5rem',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <span style={{ fontSize: '2rem' }}>🦀</span>
-            </div>
-            <div>
-              <h1 style={{ 
-                color: 'white', 
-                fontSize: '1rem', 
-                fontWeight: 'bold',
-                margin: 0,
-                lineHeight: 1,
-              }}>
-                NHÀ HÀNG
-              </h1>
-              <div style={{ 
-                fontSize: '1rem', 
-                fontWeight: 'bold',
-                color: '#fbbf24',
-                lineHeight: 1
-              }}>
-                HẢI SẢN BIỂN ĐÔNG
-              </div>
-            </div>
-          </a>
-
-          {/* Search Bar */}
-          <div style={{ 
-            flex: 1, 
-            maxWidth: '400px', 
-            display: 'flex',
-            margin: '0 2rem'
-          }}>
-            <input
-              id="global-search-input"
-              type="text"
-              placeholder="Tìm kiếm trên nhà hàng hải sản Biển đông"
+        <div className="container header-main-container">
+          {/* Mobile: First Row - Logo, Menu Toggle, Cart */}
+          <div className="header-top-row">
+            {/* Mobile Menu Toggle Button */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
               style={{
-                flex: 1,
-                padding: '0.75rem 1rem',
+                display: 'none',
+                background: 'rgba(255,255,255,0.2)',
                 border: 'none',
-                borderRadius: '6px 0 0 6px',
-                outline: 'none',
-                fontSize: '0.9rem'
+                color: 'white',
+                padding: '0.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1.5rem'
               }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  const value = (e.currentTarget as HTMLInputElement).value.trim();
-                  if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
-                }
-              }}
-            />
-            <button style={{
-              background: '#fbbf24',
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              border: 'none',
-              borderRadius: '0 6px 6px 0',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: 'bold'
-            }}
-            onClick={() => {
-              const el = document.getElementById('global-search-input') as HTMLInputElement | null;
-              const value = el?.value.trim();
-              if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
-            }}
             >
-              🔍
+              ☰
             </button>
-          </div>
 
-          {/* Right Section */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '2rem',
-            fontSize: '0.9rem'
-          }}>
-            {/* Phone Number */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: 'bold',
-                color: '#fbbf24',
-                lineHeight: 1
+            {/* Logo Section */}
+            <a href="/" className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: '0.5rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center'
               }}>
-                0936.253.588
+                <span style={{ fontSize: '2rem' }}>🦀</span>
               </div>
-              <div style={{ 
-                fontSize: '0.8rem',
-                opacity: 0.9,
-                lineHeight: 1
-              }}>
-                (8h-21h từ T2-Chủ Nhật)
-              </div>
-            </div>
-
-            {/* Delivery Info */}
-            <div style={{ 
-              color: '#fbbf24',
-              fontWeight: 'bold',
-              fontSize: '1.1rem'
-            }}>
-              ⚡Giao Hàng 2H
-            </div>
-
-            {/* Login/Register or User Profile */}
-            {user ? (
-              <UserProfile />
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <a href="/login" style={{ 
+              <div className="header-logo-text">
+                <h1 style={{ 
                   color: 'white', 
-                  textDecoration: 'none',
-                  fontSize: '0.85rem',
-                  textAlign: 'center'
+                  fontSize: '1rem', 
+                  fontWeight: 'bold',
+                  margin: 0,
+                  lineHeight: 1,
                 }}>
-                  Đăng nhập
-                </a>
-                <a href="/register" style={{ 
-                  color: 'white', 
-                  textDecoration: 'none',
-                  fontSize: '0.85rem',
-                  textAlign: 'center'
+                  NHÀ HÀNG
+                </h1>
+                <div style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  lineHeight: 1
                 }}>
-                  Đăng ký
-                </a>
+                  HẢI SẢN BIỂN ĐÔNG
+                </div>
               </div>
-            )}
+            </a>
 
-            {/* Cart */}
-            <div style={{ position: 'relative' }}>
+            {/* Mobile Cart Icon */}
+            <div className="mobile-cart-icon" style={{ position: 'relative', display: 'none' }}>
               <a href="/gio-hang" style={{ 
                 color: 'white', 
                 textDecoration: 'none',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
+                alignItems: 'center'
               }}>
                 <div style={{
                   background: 'rgba(255,255,255,0.2)',
-                  padding: '0.75rem',
+                  padding: '0.5rem',
                   borderRadius: '8px',
                   position: 'relative'
                 }}>
@@ -215,11 +126,244 @@ const Header: React.FC = () => {
               </a>
             </div>
           </div>
+
+          {/* Desktop: All content in one row */}
+          <div className="header-desktop-content" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            gap: '1rem',
+            width: '100%'
+          }}>
+            {/* Desktop Logo (hidden on mobile) */}
+            <a href="/" className="header-desktop-logo" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: '0.5rem',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <span style={{ fontSize: '2rem' }}>🦀</span>
+              </div>
+              <div>
+                <h1 style={{ 
+                  color: 'white', 
+                  fontSize: '1rem', 
+                  fontWeight: 'bold',
+                  margin: 0,
+                  lineHeight: 1,
+                }}>
+                  NHÀ HÀNG
+                </h1>
+                <div style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  lineHeight: 1
+                }}>
+                  HẢI SẢN BIỂN ĐÔNG
+                </div>
+              </div>
+            </a>
+
+            {/* Search Bar */}
+            <div className="header-search" style={{ 
+              flex: 1, 
+              maxWidth: '400px', 
+              display: 'flex',
+              margin: '0 2rem'
+            }}>
+              <input
+                id="global-search-input"
+                type="text"
+                placeholder="Tìm kiếm trên nhà hàng hải sản Biển đông"
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  borderRadius: '6px 0 0 6px',
+                  outline: 'none',
+                  fontSize: '0.9rem'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const value = (e.currentTarget as HTMLInputElement).value.trim();
+                    if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+                  }
+                }}
+              />
+              <button style={{
+                background: '#fbbf24',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                border: 'none',
+                borderRadius: '0 6px 6px 0',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: 'bold'
+              }}
+              onClick={() => {
+                const el = document.getElementById('global-search-input') as HTMLInputElement | null;
+                const value = el?.value.trim();
+                if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+              }}
+              >
+                🔍
+              </button>
+            </div>
+
+            {/* Right Section */}
+            <div className="header-right" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '2rem',
+              fontSize: '0.9rem'
+            }}>
+              {/* Phone Number */}
+              <div className="header-phone" style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  lineHeight: 1
+                }}>
+                  0936.253.588
+                </div>
+                <div style={{ 
+                  fontSize: '0.8rem',
+                  opacity: 0.9,
+                  lineHeight: 1
+                }}>
+                  (8h-21h từ T2-Chủ Nhật)
+                </div>
+              </div>
+
+              {/* Delivery Info */}
+              <div className="header-delivery" style={{ 
+                color: '#fbbf24',
+                fontWeight: 'bold',
+                fontSize: '1.1rem'
+              }}>
+                ⚡Giao Hàng 2H
+              </div>
+
+              {/* Login/Register or User Profile */}
+              <div className="header-auth">
+                {user ? (
+                  <UserProfile />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <a href="/login" style={{ 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      fontSize: '0.85rem',
+                      textAlign: 'center'
+                    }}>
+                      Đăng nhập
+                    </a>
+                    <a href="/register" style={{ 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      fontSize: '0.85rem',
+                      textAlign: 'center'
+                    }}>
+                      Đăng ký
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart (Desktop) */}
+              <div className="header-cart-desktop" style={{ position: 'relative' }}>
+                <a href="/gio-hang" style={{ 
+                  color: 'white', 
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    position: 'relative'
+                  }}>
+                    <span style={{ fontSize: '1.5rem' }}>🛒</span>
+                    {cartCount > 0 && (
+                      <span style={{
+                        position: 'absolute',
+                        top: '-0.25rem',
+                        right: '-0.25rem',
+                        background: '#ef4444',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        borderRadius: '50%',
+                        width: '1.25rem',
+                        height: '1.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold'
+                      }}>
+                        {cartCount}
+                      </span>
+                    )}
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: Second Row - Search Bar */}
+          <div className="header-mobile-search" style={{ 
+            display: 'none',
+            width: '100%',
+            marginTop: '0.75rem'
+          }}>
+            <div style={{ display: 'flex', width: '100%' }}>
+              <input
+                id="mobile-search-input"
+                type="text"
+                placeholder="Tìm kiếm trên nhà hàng hải sản..."
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1rem',
+                  border: 'none',
+                  borderRadius: '6px 0 0 6px',
+                  outline: 'none',
+                  fontSize: '1rem'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const value = (e.currentTarget as HTMLInputElement).value.trim();
+                    if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+                  }
+                }}
+              />
+              <button style={{
+                background: '#fbbf24',
+                color: 'white',
+                padding: '0.75rem 1.25rem',
+                border: 'none',
+                borderRadius: '0 6px 6px 0',
+                cursor: 'pointer',
+                fontSize: '1.2rem'
+              }}
+              onClick={() => {
+                const el = document.getElementById('mobile-search-input') as HTMLInputElement | null;
+                const value = el?.value.trim();
+                if (value) window.location.href = `/search?q=${encodeURIComponent(value)}`;
+              }}
+              >
+                🔍
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Navigation Menu */}
-      <div style={{ 
+      {/* Navigation Menu - Desktop */}
+      <div className="header-nav-desktop" style={{ 
         background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', 
         borderTop: '1px solid rgba(255,255,255,0.2)'
       }}>
@@ -373,6 +517,122 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Sidebar */}
+      {showMobileMenu && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="mobile-menu-overlay"
+            onClick={() => setShowMobileMenu(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 999,
+              display: 'none'
+            }}
+          />
+          
+          {/* Sidebar */}
+          <div 
+            className="mobile-menu-sidebar"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '280px',
+              height: '100vh',
+              background: 'white',
+              boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+              zIndex: 1000,
+              overflowY: 'auto',
+              display: 'none',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+              padding: '1.5rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                DANH MỤC
+              </div>
+              <button 
+                onClick={() => setShowMobileMenu(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '0.25rem'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Menu Items */}
+            <div style={{ flex: 1 }}>
+              {menuCategories.map((category, index) => (
+                <a
+                  key={index}
+                  href={category.link}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '1rem 1.5rem',
+                    color: '#475569',
+                    textDecoration: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    borderBottom: '1px solid #f1f5f9',
+                    gap: '0.75rem'
+                  }}
+                >
+                  {index === 0 && '🍚'}
+                  {index === 1 && '🦐'}
+                  {index === 2 && '🥘'}
+                  {index === 3 && '🥙'}
+                  {index === 4 && '🍹'}
+                  {index === 5 && '📞'}
+                  {index === 6 && '🍽️'}
+                  {index === 7 && '👍'}
+                  <span>{category.name}</span>
+                </a>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid #e2e8f0',
+              background: '#f8fafc'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                Hotline
+              </div>
+              <a href="tel:0936253588" style={{
+                display: 'block',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                color: '#0ea5e9',
+                textDecoration: 'none'
+              }}>
+                0936.253.588
+              </a>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 };

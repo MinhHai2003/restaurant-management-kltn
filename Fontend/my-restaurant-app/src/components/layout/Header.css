@@ -1,0 +1,179 @@
+/* Header.css - Responsive styles for Header component */
+
+/* Desktop styles (default) */
+.header-top-row {
+  display: none;
+}
+
+.mobile-menu-toggle {
+  display: none;
+}
+
+.mobile-cart-icon {
+  display: none;
+}
+
+.header-mobile-search {
+  display: none;
+}
+
+.mobile-menu-sidebar,
+.mobile-menu-overlay {
+  display: none;
+}
+
+/* Tablet responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header-desktop-content {
+    gap: 0.75rem !important;
+  }
+
+  .header-search {
+    margin: 0 1rem !important;
+    max-width: 300px !important;
+  }
+
+  .header-right {
+    gap: 1rem !important;
+  }
+
+  .header-phone div:first-child {
+    font-size: 1.2rem !important;
+  }
+
+  .header-delivery {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  /* Hide desktop header elements */
+  .header-desktop-content {
+    display: none !important;
+  }
+
+  .header-nav-desktop {
+    display: none !important;
+  }
+
+  /* Show mobile elements */
+  .header-top-row {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .mobile-menu-toggle {
+    display: block !important;
+  }
+
+  .mobile-cart-icon {
+    display: block !important;
+  }
+
+  .header-mobile-search {
+    display: block !important;
+  }
+
+  .mobile-menu-sidebar {
+    display: flex !important;
+  }
+
+  .mobile-menu-overlay {
+    display: block !important;
+  }
+
+  /* Logo adjustments */
+  .header-logo {
+    gap: 0.5rem !important;
+  }
+
+  .header-logo span {
+    font-size: 1.75rem !important;
+  }
+
+  .header-logo h1 {
+    font-size: 0.875rem !important;
+  }
+
+  .header-logo > div > div {
+    font-size: 0.875rem !important;
+  }
+
+  /* Container padding */
+  .header-main-container {
+    padding: 0 1rem !important;
+  }
+
+  /* Search input */
+  .header-mobile-search input {
+    font-size: 14px !important;
+  }
+
+  /* Mobile menu animations */
+  .mobile-menu-sidebar {
+    animation: slideInLeft 0.3s ease-out;
+  }
+
+  .mobile-menu-overlay {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Mobile menu links hover effects */
+  .mobile-menu-sidebar a:active {
+    background: #f1f5f9 !important;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .header-logo h1 {
+    font-size: 0.75rem !important;
+  }
+
+  .header-logo > div > div {
+    font-size: 0.75rem !important;
+  }
+
+  .header-logo span {
+    font-size: 1.5rem !important;
+  }
+
+  .mobile-menu-sidebar {
+    width: 100% !important;
+    max-width: 320px !important;
+  }
+}
+
+/* Fix for sidebar scroll on mobile */
+.mobile-menu-sidebar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Ensure smooth transitions */
+.header-nav-desktop,
+.mobile-menu-sidebar,
+.mobile-menu-overlay {
+  transition: all 0.3s ease;
+}

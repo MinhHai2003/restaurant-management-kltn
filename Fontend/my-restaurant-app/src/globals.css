@@ -55,11 +55,41 @@ table th {
 }
 
 /* Dashboard cards - fix text visibility */
+/* IMPORTANT: Do NOT use universal selector (*) as it affects all children including white cards */
+/* Only apply white text to the gradient container itself and direct children without backgrounds */
 div[style*="background: linear-gradient"] {
   color: white !important;
 }
 
-div[style*="background: linear-gradient"] * {
+/* CRITICAL: Explicitly exclude white cards and datban elements FIRST - this must come before any other rules */
+div[style*="background: linear-gradient"] [style*="background: white"],
+div[style*="background: linear-gradient"] [style*="background: rgba(255,255,255"],
+div[style*="background: linear-gradient"] [style*="background: rgba(255, 255, 255"],
+div[style*="background: linear-gradient"] [style*="background: #fff"],
+div[style*="background: linear-gradient"] [style*="background: #ffffff"],
+div[style*="background: linear-gradient"] [class*="datban"],
+div[style*="background: linear-gradient"] [class*="card"],
+div[style*="background: linear-gradient"] [class*="white"] {
+  color: inherit !important;
+}
+
+/* Force dark text for white cards inside gradient - this overrides everything */
+div[style*="background: linear-gradient"] [style*="background: white"] *,
+div[style*="background: linear-gradient"] [style*="background: rgba(255,255,255"] *,
+div[style*="background: linear-gradient"] [style*="background: rgba(255, 255, 255"] *,
+div[style*="background: linear-gradient"] .datban-search-form *,
+div[style*="background: linear-gradient"] .datban-search-inputs *,
+div[style*="background: linear-gradient"] .datban-table-card * {
+  color: #374151 !important;
+}
+
+/* Only apply white to direct text elements that are actually on the gradient (not in cards) */
+div[style*="background: linear-gradient"] > h1:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
+div[style*="background: linear-gradient"] > h2:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
+div[style*="background: linear-gradient"] > h3:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
+div[style*="background: linear-gradient"] > p:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
+div[style*="background: linear-gradient"] > span:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
+div[style*="background: linear-gradient"] > div:not([style*="background"]):not([class*="datban"]):not([class*="card"]) {
   color: white !important;
 }
 
@@ -68,6 +98,99 @@ div[style*="background: white"] *,
 div[style*="background: #fff"] *,
 div[style*="background: rgba(255,255,255"] * {
   color: #1f2937 !important;
+}
+
+/* CRITICAL: Override gradient background rule for white cards inside gradient containers */
+/* This MUST come after the gradient rule to override it */
+div[style*="background: linear-gradient"] div[style*="background: white"],
+div[style*="background: linear-gradient"] div[style*="background: white"] *,
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255"],
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255"] *,
+div[style*="background: linear-gradient"] .datban-search-form,
+div[style*="background: linear-gradient"] .datban-search-form *,
+div[style*="background: linear-gradient"] .datban-search-inputs,
+div[style*="background: linear-gradient"] .datban-search-inputs *,
+div[style*="background: linear-gradient"] .datban-table-card,
+div[style*="background: linear-gradient"] .datban-table-card *,
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.95)"],
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.95)"] *,
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.9)"],
+div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.9)"] * {
+  color: #374151 !important;
+}
+
+/* DATBAN PAGE - Force dark text with maximum specificity */
+/* These rules apply AFTER the gradient override above */
+.datban-search-form,
+.datban-search-form *,
+.datban-search-inputs,
+.datban-search-inputs *,
+.datban-table-card,
+.datban-table-card * {
+  color: #374151 !important;
+}
+
+/* Override for specific datban elements - with even higher specificity */
+div[style*="background: linear-gradient"] .datban-form-title,
+.datban-form-title {
+  color: #1e293b !important;
+}
+
+div[style*="background: linear-gradient"] .datban-input-label,
+.datban-input-label {
+  color: #374151 !important;
+}
+
+div[style*="background: linear-gradient"] .datban-sort-label,
+div[style*="background: linear-gradient"] .datban-sort-button,
+div[style*="background: linear-gradient"] .datban-results-count,
+.datban-sort-label,
+.datban-sort-button,
+.datban-results-count {
+  color: #374151 !important;
+}
+
+div[style*="background: linear-gradient"] .datban-table-number,
+.datban-table-number {
+  color: #1e40af !important;
+}
+
+div[style*="background: linear-gradient"] .datban-feature-tag,
+.datban-feature-tag {
+  color: #0c4a6e !important;
+}
+
+div[style*="background: linear-gradient"] .datban-location-tag,
+.datban-location-tag {
+  color: #0c4a6e !important;
+}
+
+div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #dcfce7"],
+.datban-status-badge[style*="background: #dcfce7"] {
+  color: #15803d !important;
+}
+
+div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #fee2e2"],
+.datban-status-badge[style*="background: #fee2e2"] {
+  color: #b91c1c !important;
+}
+
+div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #fef3c7"],
+.datban-status-badge[style*="background: #fef3c7"] {
+  color: #b45309 !important;
+}
+
+div[style*="background: linear-gradient"] .datban-price,
+.datban-price {
+  color: #dc2626 !important;
+}
+
+/* But keep button text white */
+div[style*="background: linear-gradient"] .datban-table-card button,
+div[style*="background: linear-gradient"] .datban-search-form button,
+.datban-table-card button,
+.datban-search-form button {
+  color: white !important;
 }
 
 /* Status text in tables */

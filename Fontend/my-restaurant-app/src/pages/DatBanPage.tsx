@@ -454,15 +454,15 @@ const DatBanPage: React.FC = () => {
     return Math.round(price);
   };
 
-  // Get status color
+  // Get status color - Use darker colors for better contrast
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return { bg: '#dcfce7', color: '#16a34a', text: 'Còn trống' };
-      case 'occupied': return { bg: '#fee2e2', color: '#dc2626', text: 'Đang sử dụng' };
-      case 'reserved': return { bg: '#fef3c7', color: '#d97706', text: 'Đã đặt trước' };
-      case 'maintenance': return { bg: '#f3f4f6', color: '#64748b', text: 'Bảo trì' };
-      case 'cleaning': return { bg: '#e0e7ff', color: '#3730a3', text: 'Đang dọn' };
-      default: return { bg: '#f3f4f6', color: '#64748b', text: status };
+      case 'available': return { bg: '#dcfce7', color: '#15803d', text: 'Còn trống' }; // Darker green
+      case 'occupied': return { bg: '#fee2e2', color: '#b91c1c', text: 'Đang sử dụng' }; // Darker red
+      case 'reserved': return { bg: '#fef3c7', color: '#b45309', text: 'Đã đặt trước' }; // Darker orange
+      case 'maintenance': return { bg: '#f3f4f6', color: '#475569', text: 'Bảo trì' }; // Darker gray
+      case 'cleaning': return { bg: '#e0e7ff', color: '#1e3a8a', text: 'Đang dọn' }; // Darker blue
+      default: return { bg: '#f3f4f6', color: '#475569', text: status }; // Darker gray
     }
   };
 
@@ -938,8 +938,8 @@ const DatBanPage: React.FC = () => {
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#374151'
+                  fontWeight: '600',
+                  color: '#1f2937'
                 }}
                 className="datban-sort-button"
               >
@@ -948,9 +948,9 @@ const DatBanPage: React.FC = () => {
             </div>
 
             <div style={{ 
-              color: '#6b7280', 
+              color: '#374151', 
               fontSize: '14px', 
-              fontWeight: '500'
+              fontWeight: '600'
             }} className="datban-results-count">
               🔢 Tìm thấy {tables.length} bàn
             </div>
@@ -1073,8 +1073,8 @@ const DatBanPage: React.FC = () => {
                           borderRadius: '12px', 
                           padding: '4px 12px', 
                           fontSize: '13px',
-                          fontWeight: '600'
-                        }}>
+                          fontWeight: '700'
+                        }} className="datban-status-badge">
                           {statusInfo.text}
                         </span>
                       </div>
@@ -1088,11 +1088,11 @@ const DatBanPage: React.FC = () => {
                       }}>
                         <span style={{ 
                           background: '#e0f2fe', 
-                          color: '#0369a1', 
+                          color: '#0c4a6e', 
                           borderRadius: '10px', 
                           padding: '4px 10px', 
                           fontSize: '14px',
-                          fontWeight: '500'
+                          fontWeight: '600'
                         }} className="datban-location-tag">
                           {getLocationLabel(table.location)}
                         </span>
@@ -1142,12 +1142,12 @@ const DatBanPage: React.FC = () => {
                               key={feature} 
                               style={{ 
                                 background: '#f0f9ff', 
-                                color: '#0284c7', 
+                                color: '#0c4a6e', 
                                 borderRadius: '8px', 
                                 padding: '4px 8px', 
                                 fontSize: '12px',
-                                fontWeight: '500',
-                                border: '1px solid #e0f2fe'
+                                fontWeight: '600',
+                                border: '1px solid #bae6fd'
                               }}
                               className="datban-feature-tag"
                             >

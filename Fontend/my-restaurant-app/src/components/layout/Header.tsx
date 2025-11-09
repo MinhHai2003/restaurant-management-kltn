@@ -668,7 +668,7 @@ const Header: React.FC = () => {
                 </div>
               )}
 
-              {/* Menu categories */}
+              {/* Menu categories - ALIGN LEFT */}
               {menuCategories.map((category, index) => (
                 <a
                   key={index}
@@ -676,13 +676,15 @@ const Header: React.FC = () => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'flex-start',
                     padding: '1rem 1.5rem',
                     color: '#475569',
                     textDecoration: 'none',
                     fontSize: '0.95rem',
                     fontWeight: '500',
                     borderBottom: '1px solid #f1f5f9',
-                    gap: '0.75rem'
+                    gap: '0.75rem',
+                    textAlign: 'left'
                   }}
                 >
                   {index === 0 && '🍚'}
@@ -705,13 +707,15 @@ const Header: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'flex-start',
                       padding: '1rem 1.5rem',
                       color: '#475569',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       fontWeight: '500',
                       borderBottom: '1px solid #f1f5f9',
-                      gap: '0.75rem'
+                      gap: '0.75rem',
+                      textAlign: 'left'
                     }}
                   >
                     👤 <span>Tài khoản của tôi</span>
@@ -729,6 +733,7 @@ const Header: React.FC = () => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'flex-start',
                       padding: '1rem 1.5rem',
                       color: '#dc2626',
                       textDecoration: 'none',

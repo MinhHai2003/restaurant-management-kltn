@@ -1037,6 +1037,7 @@ const DatBanPage: React.FC = () => {
                         border: '1px solid rgba(255,255,255,0.2)',
                         transition: 'all 0.3s ease'
                       }}
+                      className="datban-table-card"
                     >
                       {/* Table Header */}
                       <div style={{ 
@@ -1061,7 +1062,7 @@ const DatBanPage: React.FC = () => {
                             padding: '4px 12px', 
                             fontSize: '14px', 
                             fontWeight: '600'
-                          }}>
+                          }} className="datban-capacity-tag">
                             👥 {table.capacity} người
                           </span>
                         </div>
@@ -1092,7 +1093,7 @@ const DatBanPage: React.FC = () => {
                           padding: '4px 10px', 
                           fontSize: '14px',
                           fontWeight: '500'
-                        }}>
+                        }} className="datban-location-tag">
                           {getLocationLabel(table.location)}
                         </span>
                       </div>
@@ -1196,12 +1197,12 @@ const DatBanPage: React.FC = () => {
                         paddingTop: '16px',
                         borderTop: '1px solid #e5e7eb'
                       }}>
-                        <div>
+                        <div className="datban-price-section">
                           <div style={{ 
                             fontWeight: '700', 
                             color: '#dc2626', 
                             fontSize: '20px'
-                          }}>
+                          }} className="datban-price">
                             {estimatedPrice > 0 ? `${estimatedPrice.toLocaleString('vi-VN')}đ` : 'Miễn phí'}
                           </div>
                           {estimatedPrice > (table.pricing?.basePrice || 0) && (
@@ -1209,7 +1210,7 @@ const DatBanPage: React.FC = () => {
                               fontSize: '12px', 
                               color: '#6b7280',
                               textDecoration: 'line-through'
-                            }}>
+                            }} className="datban-original-price">
                               Giá gốc: {(table.pricing?.basePrice || 0).toLocaleString('vi-VN')}đ
                             </div>
                           )}

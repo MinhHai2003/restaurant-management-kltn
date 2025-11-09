@@ -304,46 +304,6 @@ const TableQRGenerator: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Test Links */}
-      <div style={{
-        background: '#fff7ed',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #fed7aa'
-      }}>
-        <h3 style={{
-          fontSize: '18px',
-          color: '#ea580c',
-          marginBottom: '16px'
-        }}>
-          🧪 Test Links
-        </h3>
-        <div style={{
-          display: 'grid',
-          gap: '12px',
-          fontSize: '14px'
-        }}>
-          <div>
-            <strong>Bàn 01:</strong>{' '}
-            <a href="/table/01" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>
-              /table/01
-            </a>
-          </div>
-          <div>
-            <strong>Bàn A1:</strong>{' '}
-            <a href="/table/A1" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>
-              /table/A1
-            </a>
-          </div>
-          <div>
-            <strong>Bàn VIP-01:</strong>{' '}
-            <a href="/table/VIP-01" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6' }}>
-              /table/VIP-01
-            </a>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

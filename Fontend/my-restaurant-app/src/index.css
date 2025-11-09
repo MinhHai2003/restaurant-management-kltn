@@ -783,12 +783,36 @@ body {
     color: #6b7280 !important;
   }
 
-  /* Fix table card text */
+  /* Fix table card text - Force dark colors for all text */
+  .datban-table-card {
+    color: #374151 !important;
+  }
+
+  /* Set default dark color for all text in table cards */
+  .datban-table-card,
+  .datban-table-card div,
+  .datban-table-card p {
+    color: #374151 !important;
+  }
+
+  /* Specific text elements with their own colors */
   .datban-table-number {
     color: #1e40af !important;
   }
 
+  .datban-capacity-tag {
+    color: #1e40af !important;
+  }
+
+  .datban-location-tag {
+    color: #0369a1 !important;
+  }
+
   .datban-table-description {
+    color: #4b5563 !important;
+  }
+
+  .datban-table-description * {
     color: #4b5563 !important;
   }
 
@@ -801,13 +825,46 @@ body {
     color: #0284c7 !important;
   }
 
-  /* Ensure all text in white cards is dark */
-  div[style*="background: rgba(255,255,255,0.95)"] * {
-    color: inherit !important;
+  /* Fix price text */
+  .datban-price {
+    color: #dc2626 !important;
   }
 
-  div[style*="background: rgba(255,255,255,0.95)"] span:not([style*="background"]) {
+  .datban-original-price {
+    color: #6b7280 !important;
+  }
+
+  /* Force all headings in table cards to be dark */
+  .datban-table-card h5 {
     color: #374151 !important;
+  }
+
+  /* Override white/light colors in table cards */
+  .datban-table-card [style*="color: white"],
+  .datban-table-card [style*="color: #fff"],
+  .datban-table-card [style*="color: #ffffff"],
+  .datban-table-card [style*="color: rgba(255, 255, 255"],
+  .datban-table-card [style*="color: 'white'"],
+  .datban-table-card [style*="color: 'rgba(255,255,255"] {
+    color: #374151 !important;
+  }
+
+  /* Keep status badge colors - they have colored backgrounds */
+  .datban-table-card span[style*="background: #dcfce7"] {
+    color: #16a34a !important;
+  }
+
+  .datban-table-card span[style*="background: #fee2e2"] {
+    color: #dc2626 !important;
+  }
+
+  .datban-table-card span[style*="background: #fef3c7"] {
+    color: #d97706 !important;
+  }
+
+  /* Ensure buttons keep their white text */
+  .datban-table-card button {
+    color: white !important;
   }
 
   /* Mobile Navigation Menu */

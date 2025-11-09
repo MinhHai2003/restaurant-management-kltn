@@ -842,11 +842,11 @@ const TableMenuPage: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }} className="table-menu-page">
       <Header />
 
-      <main style={{ padding: '20px 0', minHeight: '60vh' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+      <main style={{ padding: '20px 0', minHeight: '60vh' }} className="table-menu-main">
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }} className="table-menu-container">
 
           {/* Table Header */}
           <div style={{
@@ -856,7 +856,7 @@ const TableMenuPage: React.FC = () => {
             marginBottom: '24px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
             textAlign: 'center'
-          }}>
+          }} className="table-header-card">
             <h1 style={{
               fontSize: '32px',
               fontWeight: 'bold',
@@ -960,8 +960,8 @@ const TableMenuPage: React.FC = () => {
                     })()}
 
                     {/* Chọn phương thức thanh toán tổng */}
-                    <div style={{ display: 'flex', gap: '12px', margin: '8px 0 12px 0' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', gap: '12px', margin: '8px 0 12px 0' }} className="payment-method-options">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} className="payment-option-label">
                         <input
                           type="radio"
                           checked={sessionPayMethod === 'cash'}
@@ -969,7 +969,7 @@ const TableMenuPage: React.FC = () => {
                         />
                         <span>💰 Tiền mặt</span>
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} className="payment-option-label">
                         <input
                           type="radio"
                           checked={sessionPayMethod === 'banking'}
@@ -1027,8 +1027,12 @@ const TableMenuPage: React.FC = () => {
                         fontSize: '14px',
                         fontWeight: '600',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease'
+                        transition: 'all 0.3s ease',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
+                      className="session-payment-button"
                     >
                       💳 THANH TOÁN TỔNG TẤT CẢ ({formatPrice(calculateSessionTotal())})
                     </button>
@@ -1125,7 +1129,7 @@ const TableMenuPage: React.FC = () => {
               padding: '16px',
               marginBottom: '24px',
               border: '2px solid #fb923c'
-            }}>
+            }} className="table-session-summary">
               <h3 style={{
                 fontSize: '16px',
                 fontWeight: '600',
@@ -1146,14 +1150,16 @@ const TableMenuPage: React.FC = () => {
                 <div key={index} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
+                  alignItems: 'center',
                   padding: '8px 0',
                   borderBottom: index < Math.min(tableSession.orders.length, 3) - 1 ? '1px solid #fed7aa' : 'none',
-                  fontSize: '12px'
-                }}>
-                  <span style={{ color: '#9a3412' }}>
-                    {order._id || `Đơn ${index + 1}`}
+                  fontSize: '12px',
+                  gap: '8px'
+                }} className="session-order-item">
+                  <span style={{ color: '#9a3412', flex: '1', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {order.orderNumber || order._id?.slice(-8) || `Đơn ${index + 1}`}
                   </span>
-                  <span style={{ fontWeight: '600', color: '#ea580c' }}>
+                  <span style={{ fontWeight: '600', color: '#ea580c', flexShrink: 0 }}>
                     {formatPrice(order.pricing?.total || 0)}
                   </span>
                 </div>
@@ -1168,16 +1174,16 @@ const TableMenuPage: React.FC = () => {
           )}
 
           {/* Main Content */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }} className="table-menu-content-grid">
 
             {/* Menu Items */}
-            <div>
+            <div className="menu-items-section">
               <h2 style={{
                 fontSize: '24px',
                 fontWeight: 'bold',
                 color: '#1e293b',
                 marginBottom: '20px'
-              }}>
+              }} className="menu-title">
                 📋 THỰC ĐƠN
               </h2>
 
@@ -1185,7 +1191,7 @@ const TableMenuPage: React.FC = () => {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                 gap: '20px'
-              }}>
+              }} className="menu-items-grid">
                 {menuItems.map(item => (
                   <div
                     key={item._id}
@@ -1197,6 +1203,7 @@ const TableMenuPage: React.FC = () => {
                       transition: 'transform 0.2s',
                       cursor: 'pointer'
                     }}
+                    className="menu-item-card"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
@@ -1234,7 +1241,7 @@ const TableMenuPage: React.FC = () => {
                       color: '#64748b',
                       marginBottom: '12px',
                       lineHeight: '1.5'
-                    }}>
+                    }} className="menu-item-description">
                       {item.description}
                     </p>
 
@@ -1395,7 +1402,7 @@ const TableMenuPage: React.FC = () => {
               height: 'fit-content',
               position: 'sticky',
               top: '20px'
-            }}>
+            }} className="order-summary-sidebar">
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: '600',

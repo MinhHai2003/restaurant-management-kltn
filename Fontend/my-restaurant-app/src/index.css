@@ -752,35 +752,54 @@ body {
     gap: 12px !important;
   }
 
-  /* Fix white text issues on DatBanPage */
-  .datban-search-form h3 {
+  /* Fix white text issues on DatBanPage - Maximum specificity */
+  .datban-search-form h3.datban-form-title,
+  .datban-search-form .datban-form-title {
     color: #1e293b !important;
   }
 
-  .datban-search-form label {
+  .datban-search-form label.datban-input-label,
+  .datban-search-form .datban-input-label,
+  .datban-search-inputs label.datban-input-label,
+  .datban-search-inputs .datban-input-label {
     color: #374151 !important;
   }
 
-  .datban-search-inputs label {
+  /* Override any global CSS that might be setting white color */
+  div.datban-search-form h3,
+  div.datban-search-form label,
+  div.datban-search-inputs label {
     color: #374151 !important;
   }
 
-  /* Fix sorting controls text */
-  .datban-sort-label {
+  /* Fix sorting controls text - Maximum specificity */
+  div .datban-sort-label,
+  .datban-sort-label,
+  span.datban-sort-label {
     color: #374151 !important;
   }
 
+  select.datban-sort-select,
   .datban-sort-select {
     color: #374151 !important;
     background: white !important;
   }
 
+  button.datban-sort-button,
   .datban-sort-button {
     color: #374151 !important;
   }
 
+  div.datban-results-count,
   .datban-results-count {
     color: #6b7280 !important;
+  }
+
+  /* Override any global white text rules for sorting section */
+  div[style*="background: rgba(255,255,255,0.9)"] .datban-sort-label,
+  div[style*="background: rgba(255,255,255,0.9)"] .datban-sort-button,
+  div[style*="background: rgba(255,255,255,0.9)"] .datban-results-count {
+    color: #374151 !important;
   }
 
   /* Fix table card text - Force dark colors for all text */
@@ -1076,4 +1095,72 @@ body {
     position: static;
     box-shadow: none;
   }
+}
+
+/* ============================================
+   DATBAN PAGE - ULTRA STRONG OVERRIDES
+   Override ALL global CSS that might set white text
+   ============================================ */
+
+/* Force dark text in white background cards - Maximum specificity */
+div.datban-search-form,
+div.datban-search-form *,
+div[style*="background: rgba(255,255,255,0.95)"] h3.datban-form-title,
+div[style*="background: rgba(255,255,255,0.95)"] .datban-form-title,
+div[style*="background: white"] h3.datban-form-title,
+div[style*="background: white"] .datban-form-title {
+  color: #1e293b !important;
+}
+
+/* Force dark text for all labels in white cards */
+div.datban-search-form label.datban-input-label,
+div.datban-search-form .datban-input-label,
+div.datban-search-inputs label.datban-input-label,
+div.datban-search-inputs .datban-input-label,
+div[style*="background: rgba(255,255,255,0.95)"] label.datban-input-label,
+div[style*="background: rgba(255,255,255,0.95)"] .datban-input-label,
+div[style*="background: white"] label.datban-input-label,
+div[style*="background: white"] .datban-input-label {
+  color: #374151 !important;
+}
+
+/* Force dark text for sorting controls */
+div[style*="background: rgba(255,255,255,0.9)"] span.datban-sort-label,
+div[style*="background: rgba(255,255,255,0.9)"] .datban-sort-label,
+div[style*="background: white"] span.datban-sort-label,
+div[style*="background: white"] .datban-sort-label,
+div[style*="background: rgba(255,255,255,0.9)"] button.datban-sort-button,
+div[style*="background: rgba(255,255,255,0.9)"] .datban-sort-button,
+div[style*="background: white"] button.datban-sort-button,
+div[style*="background: white"] .datban-sort-button,
+div[style*="background: rgba(255,255,255,0.9)"] div.datban-results-count,
+div[style*="background: rgba(255,255,255,0.9)"] .datban-results-count,
+div[style*="background: white"] div.datban-results-count,
+div[style*="background: white"] .datban-results-count {
+  color: #374151 !important;
+}
+
+/* Force dark text for all table cards */
+div.datban-table-card,
+div.datban-table-card *,
+div[style*="background: rgba(255,255,255,0.95)"] .datban-table-card,
+div[style*="background: rgba(255,255,255,0.95)"] .datban-table-card * {
+  color: #374151 !important;
+}
+
+/* But keep specific colors for special elements */
+div.datban-table-card .datban-table-number {
+  color: #1e40af !important;
+}
+
+div.datban-table-card .datban-feature-tag {
+  color: #0284c7 !important;
+}
+
+div.datban-table-card .datban-price {
+  color: #dc2626 !important;
+}
+
+div.datban-table-card button {
+  color: white !important;
 }

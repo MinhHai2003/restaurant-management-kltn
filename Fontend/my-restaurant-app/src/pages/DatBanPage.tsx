@@ -537,7 +537,7 @@ const DatBanPage: React.FC = () => {
               color: '#1e293b', 
               marginBottom: '24px',
               textAlign: 'center'
-            }}>
+            }} className="datban-form-title">
               📅 Thông tin đặt bàn
             </h3>
             
@@ -557,7 +557,7 @@ const DatBanPage: React.FC = () => {
                   fontWeight: '600', 
                   color: '#374151', 
                   marginBottom: '8px' 
-                }}>
+                }} className="datban-input-label">
                   📅 Ngày đặt bàn:
                 </label>
                 <input 
@@ -582,7 +582,7 @@ const DatBanPage: React.FC = () => {
                   fontWeight: '600', 
                   color: '#374151', 
                   marginBottom: '8px' 
-                }}>
+                }} className="datban-input-label">
                   🕐 Giờ bắt đầu:
                 </label>
                 <select
@@ -609,7 +609,7 @@ const DatBanPage: React.FC = () => {
                   fontWeight: '600', 
                   color: '#374151', 
                   marginBottom: '8px' 
-                }}>
+                }} className="datban-input-label">
                   🕒 Giờ kết thúc:
                 </label>
                 <select
@@ -636,7 +636,7 @@ const DatBanPage: React.FC = () => {
                   fontWeight: '600', 
                   color: '#374151', 
                   marginBottom: '8px' 
-                }}>
+                }} className="datban-input-label">
                   👥 Số người:
                 </label>
                 <input 

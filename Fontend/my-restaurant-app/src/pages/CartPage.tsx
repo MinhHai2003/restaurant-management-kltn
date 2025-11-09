@@ -218,14 +218,18 @@ const CartPage: React.FC = () => {
             </div>
           ) : (
             // Cart with items
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '30px' }}
+            className="cart-page-layout"
+            >
               {/* Cart Items */}
               <div style={{
                 background: 'white',
                 borderRadius: '12px',
                 padding: '30px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-              }}>
+              }}
+              className="cart-items-container"
+              >
                 <div style={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -281,6 +285,7 @@ const CartPage: React.FC = () => {
                         opacity: updatingItems.has(item._id) ? 0.7 : 1,
                         transition: 'all 0.3s ease'
                       }}
+                      className="cart-item-row"
                     >
                       {/* Product Image */}
                       <div style={{
@@ -330,7 +335,10 @@ const CartPage: React.FC = () => {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div style={{
+                      <div 
+                      className="cart-item-quantity"
+                      data-subtotal={formatPrice(item.subtotal)}
+                      style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px'
@@ -384,7 +392,9 @@ const CartPage: React.FC = () => {
                       </div>
 
                       {/* Subtotal */}
-                      <div style={{
+                      <div 
+                      className="cart-item-subtotal"
+                      style={{
                         fontSize: '16px',
                         fontWeight: '600',
                         color: '#1e293b',
@@ -416,11 +426,15 @@ const CartPage: React.FC = () => {
               </div>
 
               {/* Order Summary */}
-              <div style={{
+              <div 
+              className="cart-summary-sidebar"
+              style={{
                 background: 'white',
                 borderRadius: '12px',
                 padding: '30px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                position: 'sticky',
+                top: '20px',
                 height: 'fit-content'
               }}>
                 <h3 style={{

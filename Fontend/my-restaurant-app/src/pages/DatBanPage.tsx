@@ -528,7 +528,9 @@ const DatBanPage: React.FC = () => {
             marginBottom: '32px', 
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
             backdropFilter: 'blur(10px)'
-          }}>
+          }}
+          className="datban-search-form"
+          >
             <h3 style={{ 
               fontSize: '24px', 
               fontWeight: 'bold', 
@@ -545,7 +547,9 @@ const DatBanPage: React.FC = () => {
               gap: '20px',
               alignItems: 'end',
               marginBottom: '24px'
-            }}>
+            }}
+            className="datban-search-inputs"
+            >
               {/* Date */}
               <div>
                 <label style={{ 
@@ -997,7 +1001,9 @@ const DatBanPage: React.FC = () => {
               display: 'grid', 
               gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', 
               gap: '24px' 
-            }}>
+            }}
+            className="datban-tables-grid"
+            >
               {tables.length === 0 ? (
                 <div style={{ 
                   gridColumn: '1 / -1',
@@ -1248,7 +1254,9 @@ const DatBanPage: React.FC = () => {
               justifyContent: 'center',
               zIndex: 1000,
               backdropFilter: 'blur(5px)'
-            }}>
+            }}
+            className="datban-modal-overlay"
+            >
               <div style={{
                 background: 'white',
                 borderRadius: '24px',
@@ -1258,7 +1266,9 @@ const DatBanPage: React.FC = () => {
                 maxHeight: '90vh',
                 overflowY: 'auto',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-              }}>
+              }}
+              className="datban-modal-content"
+              >
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 

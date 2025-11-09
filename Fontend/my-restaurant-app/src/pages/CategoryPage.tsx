@@ -97,7 +97,17 @@ const CategoryPage: React.FC = () => {
         <div style={{ height: '4px', width: '72px', background: 'linear-gradient(90deg,#0ea5e9,#06b6d4)', borderRadius: '2px', marginBottom: '16px' }} />
         {/* Subcategory chips */}
         {activeCategory && activeCategory.subcategories?.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+          <div style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: '8px', 
+            marginBottom: '20px',
+            overflowX: 'auto',
+            paddingBottom: '8px',
+            WebkitOverflowScrolling: 'touch'
+          }}
+          className="subcategory-chips-scroll"
+          >
             {[{ name: 'Tất cả', slug: '' }, ...activeCategory.subcategories].map((sub, idx) => {
               const isActive = (!selectedSubcategory && idx === 0) || (selectedSubcategory && sub.slug === selectedSubcategory);
               const href = sub.slug ? `/menu/${activeCategory.slug}?sub=${sub.slug}` : `/menu/${activeCategory.slug}`;
@@ -113,7 +123,11 @@ const CategoryPage: React.FC = () => {
                     fontWeight: 600,
                     background: isActive ? 'linear-gradient(135deg,#0ea5e9,#06b6d4)' : '#e2e8f0',
                     color: isActive ? 'white' : '#0f172a',
-                    boxShadow: isActive ? '0 6px 16px rgba(14,165,233,0.35)' : 'none'
+                    boxShadow: isActive ? '0 6px 16px rgba(14,165,233,0.35)' : 'none',
+                    whiteSpace: 'nowrap',
+                    minHeight: '36px',
+                    display: 'inline-flex',
+                    alignItems: 'center'
                   }}
                 >
                   {sub.name}
@@ -131,7 +145,9 @@ const CategoryPage: React.FC = () => {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             gap: '20px',
-          }}>
+          }}
+          className="products-grid-responsive"
+          >
             {uiProducts.map((p) => (
               <ProductCard key={p.menuItemId || p.id} product={p} />
             ))}

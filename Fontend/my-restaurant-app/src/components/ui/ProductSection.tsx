@@ -59,7 +59,9 @@ const ProductSection: React.FC<ProductSectionProps> = ({
           justifyContent: 'space-between', 
           marginBottom: '40px',
           paddingBottom: '20px',
-          borderBottom: '2px solid #e2e8f0'
+          borderBottom: '2px solid #e2e8f0',
+          flexWrap: 'wrap',
+          gap: '16px'
         }}>
           <div>
             <h2 style={{
@@ -135,7 +137,9 @@ const ProductSection: React.FC<ProductSectionProps> = ({
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '24px',
           marginBottom: '20px'
-        }}>
+        }}
+        className="products-grid-responsive"
+        >
           {products.map((product) => (
             <ProductCard 
               key={product.id} 

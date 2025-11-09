@@ -589,7 +589,9 @@ const CheckoutPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '40px' }}
+            className="checkout-page-layout"
+            >
               {/* Customer Information */}
               <div style={{
                 background: 'white',
@@ -597,7 +599,9 @@ const CheckoutPage: React.FC = () => {
                 padding: '30px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 height: 'fit-content'
-              }}>
+              }}
+              className="checkout-form-container"
+              >
                 <h2 style={{
                   fontSize: '20px',
                   fontWeight: '600',
@@ -920,12 +924,16 @@ const CheckoutPage: React.FC = () => {
               </div>
 
               {/* Order Summary */}
-              <div style={{
+              <div 
+              className="checkout-summary-sidebar"
+              style={{
                 background: 'white',
                 borderRadius: '12px',
                 padding: '30px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                height: 'fit-content'
+                height: 'fit-content',
+                position: 'sticky',
+                top: '20px'
               }}>
                 <h3 style={{
                   fontSize: '20px',

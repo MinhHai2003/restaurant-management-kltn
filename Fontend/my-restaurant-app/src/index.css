@@ -752,6 +752,64 @@ body {
     gap: 12px !important;
   }
 
+  /* Fix white text issues on DatBanPage */
+  .datban-search-form h3 {
+    color: #1e293b !important;
+  }
+
+  .datban-search-form label {
+    color: #374151 !important;
+  }
+
+  .datban-search-inputs label {
+    color: #374151 !important;
+  }
+
+  /* Fix sorting controls text */
+  .datban-sort-label {
+    color: #374151 !important;
+  }
+
+  .datban-sort-select {
+    color: #374151 !important;
+    background: white !important;
+  }
+
+  .datban-sort-button {
+    color: #374151 !important;
+  }
+
+  .datban-results-count {
+    color: #6b7280 !important;
+  }
+
+  /* Fix table card text */
+  .datban-table-number {
+    color: #1e40af !important;
+  }
+
+  .datban-table-description {
+    color: #4b5563 !important;
+  }
+
+  .datban-no-description {
+    color: #9ca3af !important;
+  }
+
+  /* Fix feature tags text */
+  .datban-feature-tag {
+    color: #0284c7 !important;
+  }
+
+  /* Ensure all text in white cards is dark */
+  div[style*="background: rgba(255,255,255,0.95)"] * {
+    color: inherit !important;
+  }
+
+  div[style*="background: rgba(255,255,255,0.95)"] span:not([style*="background"]) {
+    color: #374151 !important;
+  }
+
   /* Mobile Navigation Menu */
   .header .container > div:last-child > div {
     flex-direction: column !important;

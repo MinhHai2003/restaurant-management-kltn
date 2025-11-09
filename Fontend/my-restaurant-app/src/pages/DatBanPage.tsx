@@ -908,8 +908,8 @@ const DatBanPage: React.FC = () => {
             flexWrap: 'wrap',
             gap: '16px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ fontWeight: '600', color: '#374151' }}>📊 Sắp xếp:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }} className="datban-sort-controls">
+              <span style={{ fontWeight: '600', color: '#374151' }} className="datban-sort-label">📊 Sắp xếp:</span>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as 'tableNumber' | 'capacity' | 'location' | 'price')}
@@ -917,8 +917,11 @@ const DatBanPage: React.FC = () => {
                   padding: '8px 12px', 
                   borderRadius: '8px', 
                   border: '1px solid #d1d5db',
-                  fontSize: '14px'
+                  fontSize: '14px',
+                  color: '#374151',
+                  background: 'white'
                 }}
+                className="datban-sort-select"
               >
                 <option value="tableNumber">Số bàn</option>
                 <option value="capacity">Sức chứa</option>
@@ -935,8 +938,10 @@ const DatBanPage: React.FC = () => {
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  color: '#374151'
                 }}
+                className="datban-sort-button"
               >
                 {sortOrder === 'asc' ? '↑ Tăng dần' : '↓ Giảm dần'}
               </button>
@@ -946,7 +951,7 @@ const DatBanPage: React.FC = () => {
               color: '#6b7280', 
               fontSize: '14px', 
               fontWeight: '500'
-            }}>
+            }} className="datban-results-count">
               🔢 Tìm thấy {tables.length} bàn
             </div>
           </div>
@@ -1046,7 +1051,7 @@ const DatBanPage: React.FC = () => {
                             fontSize: '24px', 
                             color: '#1e40af',
                             textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
-                          }}>
+                          }} className="datban-table-number">
                             🍽️ Bàn {table.tableNumber}
                           </span>
                           <span style={{ 
@@ -1115,9 +1120,9 @@ const DatBanPage: React.FC = () => {
                         fontSize: '15px',
                         lineHeight: '1.5',
                         fontWeight: '400'
-                      }}>
+                      }} className="datban-table-description">
                         {table.description || (
-                          <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>
+                          <span style={{ color: '#9ca3af', fontStyle: 'italic' }} className="datban-no-description">
                             Chưa có mô tả chi tiết
                           </span>
                         )}
@@ -1143,6 +1148,7 @@ const DatBanPage: React.FC = () => {
                                 fontWeight: '500',
                                 border: '1px solid #e0f2fe'
                               }}
+                              className="datban-feature-tag"
                             >
                               {getFeatureLabel(feature)}
                             </span>

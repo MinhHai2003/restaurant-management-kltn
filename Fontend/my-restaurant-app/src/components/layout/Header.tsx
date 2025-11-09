@@ -699,22 +699,53 @@ const Header: React.FC = () => {
 
               {/* Account link for logged in users */}
               {user && (
-                <a
-                  href="/account"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '1rem 1.5rem',
-                    color: '#475569',
-                    textDecoration: 'none',
-                    fontSize: '0.95rem',
-                    fontWeight: '500',
-                    borderBottom: '1px solid #f1f5f9',
-                    gap: '0.75rem'
-                  }}
-                >
-                  👤 <span>Tài khoản của tôi</span>
-                </a>
+                <>
+                  <a
+                    href="/account"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '1rem 1.5rem',
+                      color: '#475569',
+                      textDecoration: 'none',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
+                      borderBottom: '1px solid #f1f5f9',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    👤 <span>Tài khoản của tôi</span>
+                  </a>
+                  <button
+                    onClick={() => {
+                      // Get logout function from auth context
+                      const confirmed = window.confirm('Bạn có chắc muốn đăng xuất?');
+                      if (confirmed) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/';
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '1rem 1.5rem',
+                      color: '#dc2626',
+                      textDecoration: 'none',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      borderBottom: '1px solid #f1f5f9',
+                      gap: '0.75rem',
+                      background: 'white',
+                      border: 'none',
+                      width: '100%',
+                      textAlign: 'left',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🚪 <span>Đăng xuất</span>
+                  </button>
+                </>
               )}
             </div>
 

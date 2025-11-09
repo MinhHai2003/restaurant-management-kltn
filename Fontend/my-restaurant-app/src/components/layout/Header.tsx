@@ -582,6 +582,93 @@ const Header: React.FC = () => {
 
             {/* Menu Items */}
             <div style={{ flex: 1 }}>
+              {/* Auth section for mobile - Show at top if not logged in */}
+              {!user && (
+                <div style={{
+                  padding: '1rem 1.5rem',
+                  background: '#f0f9ff',
+                  borderBottom: '2px solid #e0f2fe',
+                  display: 'flex',
+                  gap: '0.75rem'
+                }}>
+                  <a
+                    href="/login"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.75rem',
+                      background: '#0ea5e9',
+                      color: 'white',
+                      textDecoration: 'none',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    🔐 Đăng nhập
+                  </a>
+                  <a
+                    href="/register"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.75rem',
+                      background: 'white',
+                      color: '#0ea5e9',
+                      textDecoration: 'none',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: '2px solid #0ea5e9',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    ✍️ Đăng ký
+                  </a>
+                </div>
+              )}
+
+              {/* User info for logged in users */}
+              {user && (
+                <div style={{
+                  padding: '1rem 1.5rem',
+                  background: '#f0fdf4',
+                  borderBottom: '2px solid #d1fae5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.25rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {user.name?.charAt(0).toUpperCase() || '👤'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '600', color: '#065f46', fontSize: '0.95rem' }}>
+                      {user.name || 'User'}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                      {user.email}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Menu categories */}
               {menuCategories.map((category, index) => (
                 <a
                   key={index}
@@ -609,6 +696,26 @@ const Header: React.FC = () => {
                   <span>{category.name}</span>
                 </a>
               ))}
+
+              {/* Account link for logged in users */}
+              {user && (
+                <a
+                  href="/account"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '1rem 1.5rem',
+                    color: '#475569',
+                    textDecoration: 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    borderBottom: '1px solid #f1f5f9',
+                    gap: '0.75rem'
+                  }}
+                >
+                  👤 <span>Tài khoản của tôi</span>
+                </a>
+              )}
             </div>
 
             {/* Footer */}

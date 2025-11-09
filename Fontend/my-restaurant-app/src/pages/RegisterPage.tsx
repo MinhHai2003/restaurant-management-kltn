@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import './auth.css';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();

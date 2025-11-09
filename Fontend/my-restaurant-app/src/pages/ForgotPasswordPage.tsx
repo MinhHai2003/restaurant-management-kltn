@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { API_CONFIG } from '../config/api';
+import './auth.css';
 
 const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();

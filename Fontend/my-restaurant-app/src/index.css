@@ -697,6 +697,49 @@ body {
     max-height: 95vh !important;
   }
 
+  .datban-modal-overlay {
+    padding: 1rem !important;
+  }
+
+  /* DatBan - Table cards */
+  div[style*="gridTemplateColumns: repeat(auto-fit, minmax(360px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* DatBan - Action buttons */
+  div[style*="display: flex"][style*="gap: 16px"] button {
+    font-size: 14px !important;
+    padding: 10px 16px !important;
+  }
+
+  /* DatBan - Filter section */
+  div[style*="gridTemplateColumns: repeat(auto-fit, minmax(240px, 1fr))"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* DatBan - Table image */
+  img[style*="height: 180px"] {
+    height: 150px !important;
+  }
+
+  /* DatBan - Status badge */
+  span[style*="borderRadius: 12px"] {
+    font-size: 12px !important;
+    padding: 3px 8px !important;
+  }
+
+  /* DatBan - Price and book button */
+  div[style*="justifyContent: space-between"]:has(button) {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  div[style*="justifyContent: space-between"]:has(button) button {
+    width: 100% !important;
+  }
+
   /* DatBanPage title responsive */
   h1[style*="fontSize: 48px"] {
     font-size: 28px !important;

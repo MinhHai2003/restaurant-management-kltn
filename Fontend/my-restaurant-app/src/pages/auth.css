@@ -1,0 +1,182 @@
+/* Authentication Pages Responsive Styles */
+/* Login, Register, Forgot Password pages */
+
+/* Desktop defaults are fine, focus on mobile */
+
+@media (max-width: 768px) {
+  /* Container adjustments */
+  .container {
+    padding: 1rem !important;
+  }
+
+  /* Auth form containers */
+  div[style*="maxWidth: 400px"],
+  div[style*="maxWidth: 500px"],
+  div[style*="max-width: 400px"],
+  div[style*="max-width: 500px"] {
+    max-width: 100% !important;
+    padding: 1.5rem !important;
+    margin: 1rem !important;
+    border-radius: 1rem !important;
+  }
+
+  /* Form titles */
+  h1[style*="fontSize: 1.875rem"],
+  h1[style*="font-size: 1.875rem"] {
+    font-size: 1.5rem !important;
+  }
+
+  /* Input fields */
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Password toggle button */
+  button[style*="position: absolute"] {
+    font-size: 1.2rem !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Form buttons */
+  button[type="submit"] {
+    padding: 0.875rem !important;
+    font-size: 1rem !important;
+    min-height: 48px !important;
+  }
+
+  /* Social login buttons */
+  button[style*="gap: 0.5rem"] {
+    padding: 0.75rem 1rem !important;
+    min-height: 44px !important;
+  }
+
+  /* Social login container */
+  div[style*="display: flex"][style*="gap: 1rem"] {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  div[style*="display: flex"][style*="gap: 1rem"] > button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Forgot Password - OTP inputs */
+  input[id^="otp-"] {
+    width: 40px !important;
+    height: 50px !important;
+    font-size: 1.25rem !important;
+  }
+
+  div[style*="gap: 0.5rem"][style*="justify-content: center"] {
+    gap: 0.375rem !important;
+  }
+
+  /* Forgot Password - Progress indicator */
+  div[style*="width: 40px"][style*="height: 40px"] {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+  }
+
+  /* Labels */
+  label {
+    font-size: 0.9rem !important;
+  }
+
+  /* Terms checkbox */
+  label[style*="display: flex"][style*="gap: 0.5rem"] {
+    align-items: flex-start !important;
+  }
+
+  label[style*="display: flex"][style*="gap: 0.5rem"] span {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Employee login link */
+  div[style*="paddingTop: 1rem"] {
+    margin-top: 1.5rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile adjustments */
+  div[style*="maxWidth: 400px"],
+  div[style*="maxWidth: 500px"],
+  div[style*="max-width: 400px"],
+  div[style*="max-width: 500px"] {
+    padding: 1.25rem !important;
+  }
+
+  h1[style*="fontSize: 1.875rem"],
+  h1[style*="font-size: 1.875rem"] {
+    font-size: 1.25rem !important;
+  }
+
+  /* OTP inputs even smaller */
+  input[id^="otp-"] {
+    width: 35px !important;
+    height: 45px !important;
+    font-size: 1.1rem !important;
+  }
+
+  /* Social login buttons stack */
+  div[style*="display: flex"][style*="justifyContent: center"] {
+    flex-direction: column !important;
+  }
+}
+
+/* Forgot Password specific */
+.forgot-password-progress {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .forgot-password-progress {
+    padding: 0 10px;
+  }
+
+  /* Progress steps */
+  .forgot-password-progress > div:first-child {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Touch-friendly improvements */
+@media (max-width: 768px) {
+  /* Increase touch targets */
+  a[href],
+  button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Error/Success messages */
+  div[style*="background: #fee2e2"],
+  div[style*="background: #d1fae5"] {
+    font-size: 0.875rem !important;
+    padding: 1rem !important;
+  }
+
+  /* Back to login link */
+  a[href="/login"] {
+    font-size: 1rem !important;
+    padding: 0.5rem !important;
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import './table.css';
 
 const TableQRGenerator: React.FC = () => {
   const [tableNumber, setTableNumber] = useState('');
@@ -11,7 +12,13 @@ const TableQRGenerator: React.FC = () => {
       return;
     }
 
-    const qrUrl = `${window.location.origin}/table/${tableNumber.trim()}`;
+    // Use production URL or current origin
+    const baseUrl = import.meta.env.PROD 
+      ? 'https://my-restaurant-app-six.vercel.app'
+      : window.location.origin;
+    
+    const qrUrl = `${baseUrl}/table/${tableNumber.trim()}`;
+    console.log('🔗 Generated QR URL:', qrUrl);
     setGeneratedQR(qrUrl);
   };
 
@@ -24,11 +31,18 @@ const TableQRGenerator: React.FC = () => {
     const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    canvas.width = 300;
-    canvas.height = 300;
+    // Increase canvas size for better quality
+    canvas.width = 1024;
+    canvas.height = 1024;
 
     img.onload = () => {
-      ctx?.drawImage(img, 0, 0);
+      // Fill with white background
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+      
       const pngFile = canvas.toDataURL('image/png');
       
       const downloadLink = document.createElement('a');
@@ -37,7 +51,7 @@ const TableQRGenerator: React.FC = () => {
       downloadLink.click();
     };
 
-    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const printQR = () => {
@@ -193,9 +207,15 @@ const TableQRGenerator: React.FC = () => {
               <QRCodeSVG
                 id="table-qr-code"
                 value={generatedQR}
-                size={200}
-                level="M"
+                size={256}
+                level="H"
                 includeMargin={true}
+                imageSettings={{
+                  src: "",
+                  height: 24,
+                  width: 24,
+                  excavate: true,
+                }}
               />
             </div>
 

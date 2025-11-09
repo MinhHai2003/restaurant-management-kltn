@@ -9,6 +9,7 @@ import orderService from '../services/orderService';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import RatingStars from '../components/RatingStars';
 import { API_CONFIG } from '../config/api';
+import './table.css';
 
 interface MenuItem {
   _id: string;

@@ -38,7 +38,8 @@ const Header: React.FC = () => {
         padding: '0.75rem 0',
         boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'visible',
+        zIndex: 1000
       }}>
         <div className="container header-main-container">
           {/* Mobile: First Row - Logo, Menu Toggle, Cart */}
@@ -229,7 +230,9 @@ const Header: React.FC = () => {
               display: 'flex', 
               alignItems: 'center', 
               gap: '2rem',
-              fontSize: '0.9rem'
+              fontSize: '0.9rem',
+              position: 'relative',
+              zIndex: 100
             }}>
               {/* Phone Number */}
               <div className="header-phone" style={{ textAlign: 'center' }}>
@@ -387,7 +390,9 @@ const Header: React.FC = () => {
       <div className="header-nav-desktop" style={{ 
         background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)', 
         borderTop: '1px solid rgba(255,255,255,0.15)',
-        boxShadow: '0 2px 10px rgba(102, 126, 234, 0.2)'
+        boxShadow: '0 2px 10px rgba(102, 126, 234, 0.2)',
+        position: 'relative',
+        zIndex: 50
       }}>
         <div className="container">
           <div style={{ display: 'flex', alignItems: 'stretch' }}>

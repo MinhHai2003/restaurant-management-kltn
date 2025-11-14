@@ -277,35 +277,48 @@ table td,
 table th,
 tbody td,
 tbody th,
-thead th {
+thead th,
+table tbody td,
+table tbody th,
+table thead th {
   opacity: 1 !important;
   color: inherit !important;
+  font-weight: inherit !important;
 }
 
 /* Admin table data cells */
-td {
-  color: #374151;
-  font-weight: 500;
+td,
+table td {
+  color: #1f2937 !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
 }
 
 /* Admin table headers */
-th {
-  color: #1f2937;
-  font-weight: 600;
+th,
+table th {
+  color: #111827 !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
 }
 
 /* Order IDs and links in admin */
 td a,
-th a {
-  color: #0ea5e9;
-  font-weight: 600;
+th a,
+table td a,
+table th a {
+  color: #3b82f6 !important;
+  font-weight: 600 !important;
   opacity: 1 !important;
 }
 
 /* Status badges in admin */
 td span,
-th span {
+th span,
+table td span,
+table th span {
   opacity: 1 !important;
+  font-weight: 600 !important;
 }
 
 /* Customer names and emails */

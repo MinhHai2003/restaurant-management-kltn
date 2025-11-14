@@ -75,21 +75,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
 
   return (
     <div style={{
-      background: 'white',
-      borderRadius: '16px',
+      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+      borderRadius: '20px',
       overflow: 'hidden',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 20px rgba(102, 126, 234, 0.08)',
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
-      border: '1px solid #f1f5f9'
+      border: '1px solid rgba(102, 126, 234, 0.1)',
+      position: 'relative'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-4px)';
-      e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+      e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+      e.currentTarget.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.2), 0 0 0 1px rgba(102, 126, 234, 0.15)';
+      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)';
     }}
     onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+      e.currentTarget.style.boxShadow = '0 4px 20px rgba(102, 126, 234, 0.08)';
+      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.1)';
     }}
     >
       {/* Product Image */}
@@ -100,15 +103,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
           onError={handleImageError}
           style={{
             width: '100%',
-            height: '220px',
+            height: '240px',
             objectFit: 'cover',
-            transition: 'transform 0.3s ease'
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.transform = 'scale(1.1) rotate(1deg)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
           }}
         />
         
@@ -118,9 +121,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
           bottom: 0,
           left: 0,
           right: 0,
-          height: '50%',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
-          pointerEvents: 'none'
+          height: '60%',
+          background: 'linear-gradient(to top, rgba(102, 126, 234, 0.7) 0%, rgba(118, 75, 162, 0.4) 50%, transparent 100%)',
+          pointerEvents: 'none',
+          transition: 'opacity 0.3s ease'
         }} />
         
         {/* Badges */}
@@ -180,28 +184,35 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
       {/* Product Info */}
       <div style={{ padding: '20px' }}>
         <h3 style={{
-          fontSize: '16px',
-          fontWeight: '700',
-          color: '#1e293b',
+          fontSize: '17px',
+          fontWeight: '800',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
           marginBottom: '8px',
           lineHeight: '1.4',
           overflow: 'hidden',
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
-          minHeight: '44px'
+          minHeight: '48px',
+          textShadow: '0 2px 10px rgba(102, 126, 234, 0.1)'
         }}>
           {product.name}
         </h3>
         
         <div style={{
           fontSize: '12px',
-          color: '#64748b',
-          marginBottom: '12px',
-          padding: '4px 8px',
-          background: '#f8fafc',
-          borderRadius: '6px',
-          display: 'inline-block'
+          color: '#667eea',
+          marginBottom: '14px',
+          padding: '6px 12px',
+          background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08))',
+          borderRadius: '8px',
+          display: 'inline-block',
+          fontWeight: '600',
+          border: '1px solid rgba(102, 126, 234, 0.15)',
+          backdropFilter: 'blur(10px)'
         }}>
           📂 {product.category}
         </div>
@@ -260,34 +271,38 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
               ? 'linear-gradient(135deg, #10b981, #059669)' 
               : isAddingToCart 
                 ? 'linear-gradient(135deg, #6b7280, #4b5563)'
-                : 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                : 'linear-gradient(135deg, #667eea, #764ba2)',
             color: 'white',
             border: 'none',
-            borderRadius: '12px',
-            padding: '12px 16px',
+            borderRadius: '14px',
+            padding: '14px 18px',
             fontSize: '14px',
-            fontWeight: '600',
+            fontWeight: '700',
             cursor: isAddingToCart ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            letterSpacing: '0.8px',
             boxShadow: showSuccess 
-              ? '0 4px 6px -1px rgba(16, 185, 129, 0.3)'
-              : '0 4px 6px -1px rgba(14, 165, 233, 0.3)',
+              ? '0 8px 16px rgba(16, 185, 129, 0.3)'
+              : isAddingToCart
+                ? '0 4px 8px rgba(107, 114, 128, 0.3)'
+                : '0 8px 16px rgba(102, 126, 234, 0.3)',
             opacity: isAddingToCart ? 0.7 : 1,
+            position: 'relative',
+            overflow: 'hidden'
           }}
           onMouseEnter={(e) => {
             if (!isAddingToCart && !showSuccess) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(14, 165, 233, 0.4)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #764ba2, #667eea)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 24px rgba(102, 126, 234, 0.4)';
             }
           }}
           onMouseLeave={(e) => {
             if (!isAddingToCart && !showSuccess) {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #0ea5e9, #0284c7)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(14, 165, 233, 0.3)';
+              e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.3)';
             }
           }}
         >

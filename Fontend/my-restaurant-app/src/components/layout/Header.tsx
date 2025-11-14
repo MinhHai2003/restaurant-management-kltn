@@ -29,12 +29,16 @@ const Header: React.FC = () => {
 
   return (
     <header className="header">
-      {/* Main Header - Single Blue Bar with all content */}
+      {/* Main Header - Modern Purple Gradient */}
       <div style={{ 
-        background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)', 
+        backgroundSize: '200% 200%',
+        animation: 'gradientShift 10s ease infinite',
         color: 'white', 
         padding: '0.75rem 0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         <div className="container header-main-container">
           {/* Mobile: First Row - Logo, Menu Toggle, Cart */}
@@ -45,13 +49,15 @@ const Header: React.FC = () => {
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               style={{
                 display: 'none',
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
+                background: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
                 color: 'white',
                 padding: '0.5rem',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 cursor: 'pointer',
-                fontSize: '1.5rem'
+                fontSize: '1.5rem',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
               }}
             >
               ☰
@@ -97,10 +103,13 @@ const Header: React.FC = () => {
                 alignItems: 'center'
               }}>
                 <div style={{
-                  background: 'rgba(255,255,255,0.2)',
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
                   padding: '0.5rem',
-                  borderRadius: '8px',
-                  position: 'relative'
+                  borderRadius: '12px',
+                  position: 'relative',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                 }}>
                   <span style={{ fontSize: '1.5rem' }}>🛒</span>
                   {cartCount > 0 && (
@@ -108,7 +117,7 @@ const Header: React.FC = () => {
                       position: 'absolute',
                       top: '-0.25rem',
                       right: '-0.25rem',
-                      background: '#ef4444',
+                      background: 'linear-gradient(135deg, #f093fb, #f5576c)',
                       color: 'white',
                       fontSize: '0.75rem',
                       borderRadius: '50%',
@@ -117,7 +126,8 @@ const Header: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      boxShadow: '0 2px 8px rgba(240, 147, 251, 0.5)'
                     }}>
                       {cartCount}
                     </span>
@@ -193,14 +203,16 @@ const Header: React.FC = () => {
                 }}
               />
               <button style={{
-                background: '#fbbf24',
+                background: 'linear-gradient(135deg, #f093fb, #4facfe)',
                 color: 'white',
                 padding: '0.75rem 1.5rem',
                 border: 'none',
-                borderRadius: '0 6px 6px 0',
+                borderRadius: '0 10px 10px 0',
                 cursor: 'pointer',
                 fontSize: '1rem',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(240, 147, 251, 0.3)',
+                transition: 'all 0.3s ease'
               }}
               onClick={() => {
                 const el = document.getElementById('global-search-input') as HTMLInputElement | null;
@@ -240,9 +252,13 @@ const Header: React.FC = () => {
 
               {/* Delivery Info */}
               <div className="header-delivery" style={{ 
-                color: '#fbbf24',
+                background: 'linear-gradient(135deg, #f093fb, #4facfe)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
                 fontWeight: 'bold',
-                fontSize: '1.1rem'
+                fontSize: '1.1rem',
+                textShadow: '0 0 20px rgba(240, 147, 251, 0.5)'
               }}>
                 ⚡Giao Hàng 2H
               </div>
@@ -283,10 +299,14 @@ const Header: React.FC = () => {
                   gap: '0.5rem'
                 }}>
                   <div style={{
-                    background: 'rgba(255,255,255,0.2)',
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
                     padding: '0.75rem',
-                    borderRadius: '8px',
-                    position: 'relative'
+                    borderRadius: '12px',
+                    position: 'relative',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                    transition: 'all 0.3s ease'
                   }}>
                     <span style={{ fontSize: '1.5rem' }}>🛒</span>
                     {cartCount > 0 && (
@@ -294,7 +314,7 @@ const Header: React.FC = () => {
                         position: 'absolute',
                         top: '-0.25rem',
                         right: '-0.25rem',
-                        background: '#ef4444',
+                        background: 'linear-gradient(135deg, #f093fb, #f5576c)',
                         color: 'white',
                         fontSize: '0.75rem',
                         borderRadius: '50%',
@@ -303,7 +323,8 @@ const Header: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 8px rgba(240, 147, 251, 0.5)'
                       }}>
                         {cartCount}
                       </span>
@@ -364,28 +385,37 @@ const Header: React.FC = () => {
 
       {/* Navigation Menu - Desktop */}
       <div className="header-nav-desktop" style={{ 
-        background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', 
-        borderTop: '1px solid rgba(255,255,255,0.2)'
+        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)', 
+        borderTop: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 2px 10px rgba(102, 126, 234, 0.2)'
       }}>
         <div className="container">
           <div style={{ display: 'flex', alignItems: 'stretch' }}>
             {/* DANH MỤC - Special styling with Dropdown */}
             <div style={{ position: 'relative' }}>
               <div style={{
-                background: '#0284c7',
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
                 padding: '0 2rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 cursor: 'pointer',
-                borderRight: '1px solid rgba(255,255,255,0.2)',
-                transition: 'all 0.3s ease'
+                borderRight: '1px solid rgba(255,255,255,0.15)',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
               }}
               onMouseEnter={() => setShowCategoryDropdown(true)}
               onMouseLeave={() => setShowCategoryDropdown(false)}
-              onMouseOver={(e) => e.currentTarget.style.background = '#0369a1'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#0284c7'}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
               >
                 <span style={{ fontSize: '1.1rem' }}>☰</span>
                 <span style={{ 
@@ -430,12 +460,14 @@ const Header: React.FC = () => {
                         transition: 'all 0.2s ease'
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.background = '#f8fafc';
-                        e.currentTarget.style.color = '#0ea5e9';
+                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08))';
+                        e.currentTarget.style.color = '#667eea';
+                        e.currentTarget.style.transform = 'translateX(8px)';
                       }}
                       onMouseOut={(e) => {
                         e.currentTarget.style.background = 'transparent';
                         e.currentTarget.style.color = '#64748b';
+                        e.currentTarget.style.transform = 'translateX(0)';
                       }}
                     >
                       <span style={{ 
@@ -556,11 +588,12 @@ const Header: React.FC = () => {
           >
             {/* Header */}
             <div style={{
-              background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               padding: '1.5rem',
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxShadow: '0 2px 10px rgba(102, 126, 234, 0.2)'
             }}>
               <div style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>
                 DANH MỤC
@@ -599,13 +632,14 @@ const Header: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'center',
                       padding: '0.75rem',
-                      background: '#0ea5e9',
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
                       color: 'white',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
-                      gap: '0.5rem'
+                      borderRadius: '10px',
+                      gap: '0.5rem',
+                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
                     }}
                   >
                     🔐 Đăng nhập
@@ -619,13 +653,14 @@ const Header: React.FC = () => {
                       justifyContent: 'center',
                       padding: '0.75rem',
                       background: 'white',
-                      color: '#0ea5e9',
+                      color: '#667eea',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
-                      border: '2px solid #0ea5e9',
-                      gap: '0.5rem'
+                      borderRadius: '10px',
+                      border: '2px solid #667eea',
+                      gap: '0.5rem',
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)'
                     }}
                   >
                     ✍️ Đăng ký

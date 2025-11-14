@@ -4,20 +4,49 @@ const Footer: React.FC = () => {
   return (
     <footer className="footer">
       {/* Partners Section */}
-      <div style={{ background: '#4b5563', padding: '2rem 0' }}>
+      <div style={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+        padding: '2rem 0',
+        boxShadow: '0 -4px 20px rgba(102, 126, 234, 0.2)'
+      }}>
         <div className="container">
-          <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '600' }}>
-            Đối tác của Siêu thị hải sản Biển đông
+          <h3 style={{ 
+            textAlign: 'center', 
+            marginBottom: '1.5rem', 
+            fontSize: '1.5rem', 
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #ffffff, #f0f9ff)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            ✨ Đối tác của Siêu thị hải sản Biển đông
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
             {companyInfo.partners.map((partner, index) => (
               <div key={index} style={{
-                background: 'white',
-                color: '#374151',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '0.5rem',
-                fontWeight: 'bold'
-              }}>
+                background: 'rgba(255,255,255,0.95)',
+                backdropFilter: 'blur(10px)',
+                color: '#667eea',
+                padding: '1rem 2rem',
+                borderRadius: '12px',
+                fontWeight: 'bold',
+                border: '2px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 30px rgba(102, 126, 234, 0.3)';
+                e.currentTarget.style.background = 'rgba(255,255,255,1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.1)';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+              }}
+              >
                 {partner}
               </div>
             ))}
@@ -65,24 +94,28 @@ const Footer: React.FC = () => {
             <h4>DỊCH VỤ</h4>
             {/* Delivery Info */}
             <div style={{
-              background: '#059669',
-              padding: '1rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem'
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              padding: '1.25rem',
+              borderRadius: '16px',
+              marginBottom: '1rem',
+              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)',
+              border: '2px solid rgba(255,255,255,0.2)'
             }}>
-              <h5 style={{ fontWeight: '600', marginBottom: '0.5rem' }}>🚚 GIAO HÀNG 2H</h5>
-              <p style={{ fontSize: '0.875rem' }}>Đổi trả miễn phí</p>
+              <h5 style={{ fontWeight: '700', marginBottom: '0.5rem', fontSize: '1.1rem' }}>🚚 GIAO HÀNG 2H</h5>
+              <p style={{ fontSize: '0.9rem' }}>Đổi trả miễn phí</p>
             </div>
             
             {/* Hotline */}
             <div style={{
-              background: '#16a34a',
-              padding: '1rem',
-              borderRadius: '0.5rem'
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              padding: '1.25rem',
+              borderRadius: '16px',
+              boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)',
+              border: '2px solid rgba(255,255,255,0.2)'
             }}>
-              <h5 style={{ fontWeight: '600', marginBottom: '0.5rem' }}>📞 TƯ VẤN ĐẶT HÀNG</h5>
-              <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{companyInfo.phone}</p>
-              <p style={{ fontSize: '0.875rem' }}>({companyInfo.workingHours})</p>
+              <h5 style={{ fontWeight: '700', marginBottom: '0.5rem', fontSize: '1.1rem' }}>📞 TƯ VẤN ĐẶT HÀNG</h5>
+              <p style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{companyInfo.phone}</p>
+              <p style={{ fontSize: '0.9rem' }}>({companyInfo.workingHours})</p>
             </div>
           </div>
         </div>

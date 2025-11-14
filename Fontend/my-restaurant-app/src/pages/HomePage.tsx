@@ -163,14 +163,6 @@ const HomePage: React.FC = () => {
           <p className="modern-hero-subtitle">
             Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
           </p>
-          <div className="modern-hero-buttons">
-            <a href="/menu/com-chien-pho" className="modern-btn modern-btn-primary">
-              🍽️ Xem thực đơn
-            </a>
-            <a href="/dat-ban" className="modern-btn modern-btn-secondary">
-              📅 Đặt bàn ngay
-            </a>
-          </div>
         </div>
       </div>
 

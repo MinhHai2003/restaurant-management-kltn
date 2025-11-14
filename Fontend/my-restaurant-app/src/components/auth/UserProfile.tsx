@@ -26,31 +26,43 @@ const UserProfile: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          padding: '0.5rem',
-          background: '#f9fafb',
-          borderRadius: '0.5rem',
-          cursor: 'pointer'
+          padding: '0.6rem 0.8rem',
+          background: 'rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '12px',
+          cursor: 'pointer',
+          border: '1px solid rgba(255,255,255,0.2)',
+          transition: 'all 0.3s ease'
         }}
-        onMouseEnter={() => setIsOpen(true)} // hover vào thì mở menu
+        onMouseEnter={(e) => {
+          setIsOpen(true);
+          e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
       >
         <div style={{
-          width: '32px',
-          height: '32px',
-          background: '#0f766e',
+          width: '36px',
+          height: '36px',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
-          fontSize: '0.875rem',
-          fontWeight: '600'
+          fontSize: '0.95rem',
+          fontWeight: '700',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
         }}>
           {user.name.split(' ').slice(-1)[0].charAt(0).toUpperCase()}
         </div>
         <span style={{
-          fontSize: '0.875rem',
-          color: '#374151',
-          fontWeight: '500'
+          fontSize: '0.9rem',
+          color: 'white',
+          fontWeight: '600'
         }}>
           {user.name.split(' ').slice(-1)[0]}
         </span>
@@ -62,13 +74,14 @@ const UserProfile: React.FC = () => {
           position: 'absolute',
           top: '100%',
           right: '0',
-          marginTop: '0.25rem',
+          marginTop: '0.5rem',
           background: 'white',
-          border: '1px solid #d1d5db',
-          borderRadius: '0.5rem',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          minWidth: '200px',
-          zIndex: 50
+          border: '1px solid rgba(102, 126, 234, 0.2)',
+          borderRadius: '12px',
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+          minWidth: '220px',
+          zIndex: 9999,
+          overflow: 'hidden'
         }}>
           <div style={{ padding: '0.5rem', textAlign: 'center' }}>
             <button
@@ -122,13 +135,16 @@ const UserProfile: React.FC = () => {
 const menuButtonStyle: React.CSSProperties = {
   width: '100%',
   textAlign: 'center',
-  padding: '0.5rem',
+  padding: '0.75rem 1rem',
   background: 'none',
   border: 'none',
-  borderRadius: '0.25rem',
+  borderRadius: '0',
   cursor: 'pointer',
-  fontSize: '0.875rem',
-  color: '#374151'
+  fontSize: '0.9rem',
+  color: '#374151',
+  fontWeight: '500',
+  transition: 'all 0.2s ease',
+  borderBottom: '1px solid #f3f4f6'
 };
 
 export default UserProfile;

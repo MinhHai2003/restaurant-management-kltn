@@ -61,13 +61,13 @@ const Footer: React.FC = () => {
           <div className="footer-section">
             <h4>THÔNG TIN</h4>
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>{companyInfo.name}</p>
-              <p>📞 {companyInfo.phone} - {companyInfo.phone2}</p>
-              <p style={{ fontSize: '0.875rem' }}>({companyInfo.workingHours})</p>
+              <p style={{ fontWeight: 'bold', color: '#ffffff', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{companyInfo.name}</p>
+              <p style={{ color: '#3b82f6', fontWeight: '600', fontSize: '0.95rem' }}>📞 {companyInfo.phone} - {companyInfo.phone2}</p>
+              <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>({companyInfo.workingHours})</p>
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               {companyInfo.addresses.map((address, index) => (
-                <p key={index} style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>{address}</p>
+                <p key={index} style={{ fontSize: '0.875rem', marginBottom: '0.25rem', color: '#cbd5e1' }}>📍 {address}</p>
               ))}
             </div>
             <div>

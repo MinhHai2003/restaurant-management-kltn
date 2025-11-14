@@ -1,471 +1,276 @@
-/* Global Text Color Fixes */
-/* Fix cho tất cả các text bị màu trắng/nhạt khó đọc */
+/* ============================================
+   GLOBAL STYLES - Simplified & Consistent
+   ============================================ */
 
-/* Ensure all text has good contrast */
+/* ============================================
+   BASE TEXT COLORS - Foundation Layer
+   ============================================ */
+
+/* Default body text - không dùng !important để inline styles có thể ghi đè */
 body {
-  color: #1f2937 !important;
+  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Fix white text on light backgrounds */
-p, span, div, label, h1, h2, h3, h4, h5, h6 {
+/* Headings - màu đậm hơn cho tiêu đề */
+h1, h2, h3, h4, h5, h6 {
+  color: #111827;
+  font-weight: 700;
+}
+
+/* Paragraphs & Regular Text - kế thừa màu từ parent */
+p, span, div, label {
   color: inherit;
 }
 
-/* Admin Dashboard - Fix white text */
-.admin-dashboard h1,
-.admin-dashboard h2,
-.admin-dashboard h3,
-.admin-dashboard p,
-.admin-dashboard span,
-.admin-dashboard label {
-  color: #1f2937 !important;
-}
-
-/* Table headers and cells */
-th, td {
-  color: #1f2937 !important;
-}
-
-/* Fix status badges - ensure text is visible */
-span[style*="background: #"],
-div[style*="background: #"] {
-  color: inherit !important;
-}
-
-/* Inventory page - fix text colors */
-div[style*="color: white"] p,
-div[style*="color: white"] span,
-div[style*="color: white"] h1,
-div[style*="color: white"] h2,
-div[style*="color: white"] h3 {
-  color: #1f2937 !important;
-}
-
-/* Order management - fix table text */
-table td,
-table th {
-  color: #374151 !important;
-}
-
-/* Reservation page - fix text */
-.reservation-page td,
-.reservation-page th,
-.reservation-page span {
-  color: #1f2937 !important;
-}
-
-/* Dashboard cards - fix text visibility */
-/* IMPORTANT: Do NOT use universal selector (*) as it affects all children including white cards */
-/* Only apply white text to the gradient container itself and direct children without backgrounds */
-div[style*="background: linear-gradient"] {
-  color: white !important;
-}
-
-/* CRITICAL: Explicitly exclude white cards and datban elements FIRST - this must come before any other rules */
-div[style*="background: linear-gradient"] [style*="background: white"],
-div[style*="background: linear-gradient"] [style*="background: rgba(255,255,255"],
-div[style*="background: linear-gradient"] [style*="background: rgba(255, 255, 255"],
-div[style*="background: linear-gradient"] [style*="background: #fff"],
-div[style*="background: linear-gradient"] [style*="background: #ffffff"],
-div[style*="background: linear-gradient"] [class*="datban"],
-div[style*="background: linear-gradient"] [class*="card"],
-div[style*="background: linear-gradient"] [class*="white"] {
-  color: inherit !important;
-}
-
-/* Force dark text for white cards inside gradient - this overrides everything */
-div[style*="background: linear-gradient"] [style*="background: white"] *,
-div[style*="background: linear-gradient"] [style*="background: rgba(255,255,255"] *,
-div[style*="background: linear-gradient"] [style*="background: rgba(255, 255, 255"] *,
-div[style*="background: linear-gradient"] .datban-search-form *,
-div[style*="background: linear-gradient"] .datban-search-inputs *,
-div[style*="background: linear-gradient"] .datban-table-card * {
-  color: #374151 !important;
-}
-
-/* Only apply white to direct text elements that are actually on the gradient (not in cards) */
-div[style*="background: linear-gradient"] > h1:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
-div[style*="background: linear-gradient"] > h2:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
-div[style*="background: linear-gradient"] > h3:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
-div[style*="background: linear-gradient"] > p:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
-div[style*="background: linear-gradient"] > span:not([style*="background"]):not([class*="datban"]):not([class*="card"]),
-div[style*="background: linear-gradient"] > div:not([style*="background"]):not([class*="datban"]):not([class*="card"]) {
-  color: white !important;
-}
-
-/* But override for cards that should have dark text */
-div[style*="background: white"] *,
-div[style*="background: #fff"] *,
-div[style*="background: rgba(255,255,255"] * {
-  color: #1f2937 !important;
-}
-
-/* CRITICAL: Override gradient background rule for white cards inside gradient containers */
-/* This MUST come after the gradient rule to override it */
-div[style*="background: linear-gradient"] div[style*="background: white"],
-div[style*="background: linear-gradient"] div[style*="background: white"] *,
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255"],
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255"] *,
-div[style*="background: linear-gradient"] .datban-search-form,
-div[style*="background: linear-gradient"] .datban-search-form *,
-div[style*="background: linear-gradient"] .datban-search-inputs,
-div[style*="background: linear-gradient"] .datban-search-inputs *,
-div[style*="background: linear-gradient"] .datban-table-card,
-div[style*="background: linear-gradient"] .datban-table-card *,
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.95)"],
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.95)"] *,
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.9)"],
-div[style*="background: linear-gradient"] div[style*="background: rgba(255,255,255,0.9)"] * {
-  color: #374151 !important;
-}
-
-/* DATBAN PAGE - Force dark text with maximum specificity */
-/* These rules apply AFTER the gradient override above */
-.datban-search-form,
-.datban-search-form *,
-.datban-search-inputs,
-.datban-search-inputs *,
-.datban-table-card,
-.datban-table-card * {
-  color: #374151 !important;
-}
-
-/* Override for specific datban elements - with even higher specificity */
-div[style*="background: linear-gradient"] .datban-form-title,
-.datban-form-title {
-  color: #1e293b !important;
-}
-
-div[style*="background: linear-gradient"] .datban-input-label,
-.datban-input-label {
-  color: #374151 !important;
-}
-
-div[style*="background: linear-gradient"] .datban-sort-label,
-div[style*="background: linear-gradient"] .datban-sort-button,
-div[style*="background: linear-gradient"] .datban-results-count,
-.datban-sort-label,
-.datban-sort-button,
-.datban-results-count {
-  color: #374151 !important;
-}
-
-div[style*="background: linear-gradient"] .datban-table-number,
-.datban-table-number {
-  color: #1e40af !important;
-}
-
-div[style*="background: linear-gradient"] .datban-feature-tag,
-.datban-feature-tag {
-  color: #0c4a6e !important;
-}
-
-div[style*="background: linear-gradient"] .datban-location-tag,
-.datban-location-tag {
-  color: #0c4a6e !important;
-}
-
-div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #dcfce7"],
-.datban-status-badge[style*="background: #dcfce7"] {
-  color: #15803d !important;
-}
-
-div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #fee2e2"],
-.datban-status-badge[style*="background: #fee2e2"] {
-  color: #b91c1c !important;
-}
-
-div[style*="background: linear-gradient"] .datban-status-badge[style*="background: #fef3c7"],
-.datban-status-badge[style*="background: #fef3c7"] {
-  color: #b45309 !important;
-}
-
-div[style*="background: linear-gradient"] .datban-price,
-.datban-price {
-  color: #dc2626 !important;
-}
-
-/* But keep button text white */
-div[style*="background: linear-gradient"] .datban-table-card button,
-div[style*="background: linear-gradient"] .datban-search-form button,
-.datban-table-card button,
-.datban-search-form button {
-  color: white !important;
-}
-
-/* Status text in tables */
-td span[style*="color"],
-td div[style*="color"] {
-  font-weight: 600 !important;
-}
-
-/* Input labels */
-label {
-  color: #374151 !important;
-  font-weight: 500 !important;
-}
-
-/* Placeholder text */
-input::placeholder,
-textarea::placeholder {
-  color: #9ca3af !important;
+/* Ensure text is readable on all backgrounds */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Links */
 a {
-  color: #0ea5e9 !important;
+  color: #0ea5e9;
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #0284c7 !important;
+  color: #0284c7;
 }
 
-/* Buttons - ensure text is visible */
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  color: #374151;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px;
+  background: #f9fafb;
+}
+
+td {
+  color: #4b5563;
+  padding: 12px;
+}
+
+tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* Forms */
+input, select, textarea {
+  color: #1f2937;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+label {
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Buttons */
 button {
-  font-weight: 600 !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-button[style*="background: #"],
-button[style*="background: rgb"] {
-  color: white !important;
+/* White Backgrounds = Dark Text */
+[style*="background: white"],
+[style*="background: #fff"],
+[style*="background: rgba(255,255,255"],
+[style*="background: rgba(255, 255, 255"] {
+  color: #1f2937;
 }
 
-/* Table search and filters */
-input[type="search"],
-input[type="text"],
-select {
-  color: #1f2937 !important;
-}
-
-/* Modal content */
-.modal-content,
-.modal-content * {
-  color: #1f2937 !important;
-}
-
-/* Sidebar menu */
-.sidebar-menu a,
-.sidebar-menu span {
-  color: #374151 !important;
-}
-
-/* Header */
-.header * {
+[style*="background: white"] *,
+[style*="background: #fff"] *,
+[style*="background: rgba(255,255,255"] *,
+[style*="background: rgba(255, 255, 255"] * {
   color: inherit;
 }
 
-/* Footer */
+/* Gradient Backgrounds = White Text (Direct Children Only) */
+[style*="background: linear-gradient"] > h1,
+[style*="background: linear-gradient"] > h2,
+[style*="background: linear-gradient"] > h3,
+[style*="background: linear-gradient"] > p,
+[style*="background: linear-gradient"] > span:not([style*="background"]) {
+  color: white;
+}
+
+/* Colored Backgrounds = White Text */
+[style*="background: #3b82f6"],
+[style*="background: #10b981"],
+[style*="background: #ef4444"],
+[style*="background: #f59e0b"],
+[style*="background: rgb(59, 130, 246)"],
+[style*="background: rgb(16, 185, 129)"] {
+  color: white;
+}
+
+/* Status Badges - Keep Their Own Colors */
+.status-badge {
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* Success Messages */
+[style*="background: #d1fae5"],
+[style*="background: #dcfce7"],
+[style*="background: #f0fdf4"] {
+  color: #065f46;
+}
+
+/* Error Messages */
+[style*="background: #fee2e2"],
+[style*="background: #fef2f2"] {
+  color: #dc2626;
+}
+
+/* Warning Messages */
+[style*="background: #fef3c7"],
+[style*="background: #fffbeb"] {
+  color: #92400e;
+}
+
+/* Info Messages */
+[style*="background: #dbeafe"],
+[style*="background: #eff6ff"] {
+  color: #1e40af;
+}
+
+/* Modal */
+.modal-content {
+  color: #1f2937;
+}
+
+/* Header & Footer - Let Them Control Their Own Colors */
+.header,
+.header *,
+.footer,
 .footer * {
   color: inherit;
 }
 
-/* Stats cards - numbers */
-div[style*="fontSize: 24px"],
-div[style*="fontSize: 32px"],
-div[style*="fontSize: 36px"],
-div[style*="font-size: 24px"],
-div[style*="font-size: 32px"],
-div[style*="font-size: 36px"] {
-  font-weight: 700 !important;
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  th, td {
+    font-size: 13px;
+    padding: 8px;
+  }
 }
 
-/* Ensure colored backgrounds have white text */
-[style*="background: #3b82f6"] *,
-[style*="background: #10b981"] *,
-[style*="background: #f59e0b"] *,
-[style*="background: #ef4444"] *,
-[style*="background: #8b5cf6"] *,
-[style*="background: #0ea5e9"] * {
-  color: white !important;
+/* Smooth Transitions */
+* {
+  transition: color 0.15s ease;
 }
 
-/* But status badges need their own colors */
-span[style*="color: #16a34a"],
+/* Ensure Readability */
+::selection {
+  background: #0ea5e9;
+  color: white;
+}
+
+/* ============================================
+   CONSISTENCY RULES - Enforce Same Colors Across Pages
+   ============================================ */
+
+/* Breadcrumbs - consistent gray across all pages */
+.container a[href="/"],
+.container a[href="/login"],
+.container a[href="/cart"] {
+  color: #0ea5e9 !important;
+}
+
+/* Breadcrumb separator and inactive items */
+.container span {
+  color: inherit;
+}
+
+/* Price text - always red across all pages */
 span[style*="color: #dc2626"],
-span[style*="color: #d97706"],
-span[style*="color: #0284c7"] {
-  font-weight: 600 !important;
-}
-
-/* Admin page specific fixes */
-/* Order Management */
-.order-management-table td {
-  color: #374151 !important;
-  font-size: 14px !important;
-}
-
-.order-management-table th {
-  color: #1f2937 !important;
-  font-weight: 600 !important;
-}
-
-/* Inventory Management */
-.inventory-table td,
-.inventory-table th {
-  color: #1f2937 !important;
-}
-
-/* Reservation Management */
-.reservation-table td,
-.reservation-table th {
-  color: #1f2937 !important;
-}
-
-/* Fix specific Vietnamese text */
-div:contains("Tổng mặt hàng"),
-div:contains("Còn hàng"),
-div:contains("Sắp hết"),
-div:contains("Hết hàng") {
-  font-weight: 600 !important;
-}
-
-/* Dashboard statistics cards */
-div[style*="Tổng giá trị"] {
-  color: white !important;
-}
-
-/* Specific fixes for data tables */
-tbody tr td {
-  color: #374151 !important;
-  font-size: 0.875rem !important;
-}
-
-tbody tr:hover td {
-  color: #1f2937 !important;
-}
-
-/* Phone numbers, emails in tables */
-td a[href^="tel:"],
-td a[href^="mailto:"] {
-  color: #0ea5e9 !important;
-  font-weight: 500 !important;
-}
-
-/* Order ID links */
-td a[href*="/order"],
-td a[href*="/reservation"] {
-  color: #3b82f6 !important;
-  font-weight: 600 !important;
-}
-
-/* Status indicators */
-.status-badge,
-span[class*="status"],
-div[class*="status"] {
-  font-weight: 600 !important;
-  padding: 4px 8px !important;
-  border-radius: 6px !important;
-}
-
-/* Amount/Price text */
-td[style*="color: green"],
-td[style*="color: red"],
-span[style*="color: green"],
-span[style*="color: red"] {
-  font-weight: 700 !important;
-  font-size: 0.9rem !important;
-}
-
-/* Breadcrumb */
-.breadcrumb a,
-.breadcrumb span {
-  color: #6b7280 !important;
-}
-
-.breadcrumb a:hover {
-  color: #0ea5e9 !important;
-}
-
-/* Error messages */
-div[style*="background: #fee2e2"] {
+span[style*="color: #ef4444"],
+div[style*="color: #dc2626"] {
   color: #dc2626 !important;
 }
 
-/* Success messages */
-div[style*="background: #d1fae5"],
-div[style*="background: #f0fdf4"] {
-  color: #065f46 !important;
+/* Links - consistent cyan blue */
+a:not([class*="button"]):not([class*="btn"]) {
+  color: #0ea5e9;
 }
 
-/* Warning messages */
-div[style*="background: #fef3c7"] {
-  color: #92400e !important;
+a:not([class*="button"]):not([class*="btn"]):hover {
+  color: #0284c7;
 }
 
-/* Info messages */
-div[style*="background: #dbeafe"] {
-  color: #1e40af !important;
+/* Form labels - consistent medium gray */
+label,
+label * {
+  color: #374151;
 }
 
-/* Card titles */
-h3[style*="fontSize: 18px"],
-h3[style*="fontSize: 20px"],
-h3[style*="fontSize: 24px"] {
-  color: #1f2937 !important;
-  font-weight: 700 !important;
+/* Secondary text - light gray for descriptions */
+[style*="color: #64748b"],
+[style*="color: #6b7280"],
+[style*="color: #9ca3af"] {
+  opacity: 0.85;
 }
 
-/* Small text / captions */
-div[style*="fontSize: 12px"],
-div[style*="fontSize: 14px"],
-span[style*="fontSize: 12px"],
-span[style*="fontSize: 14px"] {
-  color: #6b7280 !important;
+/* Success/positive text - green */
+[style*="color: #22c55e"],
+[style*="color: #16a34a"],
+[style*="color: #15803d"] {
+  color: #059669 !important;
 }
 
-/* Ensure icons are visible */
-span[role="img"],
-.icon {
-  opacity: 1 !important;
+/* Warning text - amber/orange */
+[style*="color: #f59e0b"],
+[style*="color: #d97706"],
+[style*="color: #ea580c"] {
+  color: #d97706 !important;
 }
 
-/* Fix for mobile view */
-@media (max-width: 768px) {
-  /* Ensure all mobile text is readable */
-  body * {
-    color: inherit !important;
-  }
-
-  /* Mobile menu text */
-  .mobile-menu-sidebar a,
-  .mobile-menu-sidebar span {
-    color: #374151 !important;
-  }
-
-  /* Mobile header */
-  .header-mobile-search input {
-    color: #1f2937 !important;
-  }
-
-  /* Mobile tables - make text smaller but readable */
-  table td,
-  table th {
-    font-size: 13px !important;
-    color: #374151 !important;
-  }
+/* Info text - blue */
+[style*="color: #0ea5e9"],
+[style*="color: #0284c7"],
+[style*="color: #3b82f6"] {
+  color: #0ea5e9 !important;
 }
 
-/* Override any remaining white text issues */
-div[style*="color: white"]:not([style*="background: linear-gradient"]):not([style*="background: #"]):not([style*="background: rgb"]) {
-  color: #1f2937 !important;
+/* Error text - red */
+[style*="color: #ef4444"],
+[style*="color: #b91c1c"] {
+  color: #dc2626 !important;
 }
 
-/* Specific Vietnamese text patterns */
-:lang(vi) {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+/* Teal/cyan links (for auth pages) */
+[style*="color: #0f766e"] {
+  color: #0ea5e9 !important;
 }
 
-/* Table striping for better readability */
-tbody tr:nth-child(even) {
-  background-color: #f9fafb !important;
-}
-
-tbody tr:nth-child(odd) {
-  background-color: white !important;
-}
-
-/* Hover effect for rows */
-tbody tr:hover {
-  background-color: #f3f4f6 !important;
-  transition: background-color 0.15s ease;
+/* Ensure page titles are always dark */
+h1[style*="color: #1f2937"],
+h1[style*="color: #1e293b"],
+h2[style*="color: #1e293b"],
+h2[style*="color: #0f172a"] {
+  color: #111827 !important;
 }

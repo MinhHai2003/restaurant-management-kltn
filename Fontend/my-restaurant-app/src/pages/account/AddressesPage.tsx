@@ -78,21 +78,66 @@ const AddressesPage: React.FC = () => {
     fetchAddresses();
   }, [fetchAddresses]);
 
-  // Handle input changes
+  // Handle input changes with real-time validation
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
+      // Real-time validation for phone - only digits, max 10
+      if (name === 'phone') {
+        const phoneRegex = /^[0-9]{0,10}$/;
+        if (!phoneRegex.test(value)) return;
+      }
+      
+      // Real-time validation for address - max 200 characters
+      if (name === 'address') {
+        if (value.length > 200) return;
+      }
+      
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // Handle form submission
+  // Handle form submission with validation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?._id) return;
+
+    // Validate phone - exactly 10 digits starting with 0
+    if (!formData.phone || !formData.phone.trim()) {
+      alert('Vui lòng nhập số điện thoại!');
+      return;
+    }
+    
+    const phoneRegex = /^0[0-9]{9}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      alert('Số điện thoại không hợp lệ! Phải bắt đầu bằng số 0 và có đúng 10 chữ số (VD: 0912345678).');
+      return;
+    }
+
+    // Validate address - required and 5-200 characters
+    if (!formData.address || formData.address.trim().length < 5) {
+      alert('Địa chỉ chi tiết phải có ít nhất 5 ký tự!');
+      return;
+    }
+    
+    if (formData.address.trim().length > 200) {
+      alert('Địa chỉ chi tiết không được quá 200 ký tự!');
+      return;
+    }
+
+    // Validate city and district
+    if (!formData.city || formData.city === '') {
+      alert('Vui lòng chọn Tỉnh/Thành phố!');
+      return;
+    }
+    
+    if (!formData.district || formData.district === '') {
+      alert('Vui lòng chọn Quận/Huyện!');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -374,7 +419,9 @@ const AddressesPage: React.FC = () => {
                         borderRadius: '8px',
                         fontSize: '14px',
                         outline: 'none',
-                        transition: 'border-color 0.2s'
+                        transition: 'border-color 0.2s',
+                        color: '#111827',
+                        fontWeight: '500'
                       }}
                       onFocus={(e) => {
                         (e.target as HTMLInputElement).style.borderColor = '#ea580c';
@@ -384,9 +431,14 @@ const AddressesPage: React.FC = () => {
                         (e.target as HTMLInputElement).style.borderColor = '#d1d5db';
                         (e.target as HTMLInputElement).style.boxShadow = 'none';
                       }}
-                      placeholder="Nhập số điện thoại"
+                      placeholder="Nhập số điện thoại (VD: 0912345678)"
+                      pattern="^0[0-9]{9}$"
+                      maxLength={10}
                       required
                     />
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      Bắt đầu bằng số 0, có đúng 10 chữ số
+                    </div>
                   </div>
 
                   {/* Location Selection */}
@@ -421,12 +473,6 @@ const AddressesPage: React.FC = () => {
                       >
                         <option value="">Chọn Tỉnh/Thành phố</option>
                         <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                        <option value="Hà Nội">Hà Nội</option>
-                        <option value="Đà Nẵng">Đà Nẵng</option>
-                        <option value="Cần Thơ">Cần Thơ</option>
-                        <option value="Hải Phòng">Hải Phòng</option>
-                        <option value="Nha Trang">Nha Trang</option>
-                        <option value="Hạ Long">Hạ Long</option>
                       </select>
                     </div>
                     <div>
@@ -498,7 +544,9 @@ const AddressesPage: React.FC = () => {
                         borderRadius: '8px',
                         fontSize: '14px',
                         outline: 'none',
-                        transition: 'border-color 0.2s'
+                        transition: 'border-color 0.2s',
+                        color: '#111827',
+                        fontWeight: '500'
                       }}
                       onFocus={(e) => {
                         (e.target as HTMLInputElement).style.borderColor = '#ea580c';
@@ -509,10 +557,12 @@ const AddressesPage: React.FC = () => {
                         (e.target as HTMLInputElement).style.boxShadow = 'none';
                       }}
                       placeholder="Ví dụ: Số 123 Đường ABC, Phường XYZ"
+                      minLength={5}
+                      maxLength={200}
                       required
                     />
-                    <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
-                      Hãy cung cấp thông tin chi tiết để shipper dễ dàng tìm thấy bạn
+                    <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      Hãy cung cấp thông tin chi tiết để shipper dễ dàng tìm thấy bạn (5-200 ký tự)
                     </p>
                   </div>
 

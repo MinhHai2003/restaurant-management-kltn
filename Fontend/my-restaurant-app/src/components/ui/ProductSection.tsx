@@ -65,12 +65,15 @@ const ProductSection: React.FC<ProductSectionProps> = ({
         }}>
           <div>
             <h2 style={{
-              fontSize: '28px',
-              fontWeight: '800',
-              color: '#1e293b',
+              fontSize: '32px',
+              fontWeight: '900',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
               marginBottom: '8px',
               textTransform: 'uppercase',
-              letterSpacing: '1px',
+              letterSpacing: '1.5px',
               position: 'relative'
             }}>
               {title}
@@ -78,14 +81,15 @@ const ProductSection: React.FC<ProductSectionProps> = ({
                 position: 'absolute',
                 bottom: '-12px',
                 left: 0,
-                width: '60px',
+                width: '80px',
                 height: '4px',
-                background: 'linear-gradient(90deg, #0ea5e9, #06b6d4)',
-                borderRadius: '2px'
+                background: 'linear-gradient(90deg, #667eea, #764ba2)',
+                borderRadius: '2px',
+                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
               }} />
             </h2>
             <p style={{
-              color: '#64748b',
+              color: '#6b7280',
               fontSize: '16px',
               margin: 0,
               fontWeight: '500'
@@ -98,31 +102,29 @@ const ProductSection: React.FC<ProductSectionProps> = ({
             <a
               href={viewAllLink}
               style={{
-                color: '#0ea5e9',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
                 textDecoration: 'none',
                 fontWeight: '600',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '12px 20px',
-                border: '2px solid #0ea5e9',
+                padding: '12px 24px',
+                border: 'none',
                 borderRadius: '12px',
                 transition: 'all 0.3s ease',
                 fontSize: '14px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#0ea5e9';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 8px 15px rgba(14, 165, 233, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.5)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#0ea5e9';
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
               }}
             >
               <span>Xem thêm</span>

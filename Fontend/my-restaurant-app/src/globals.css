@@ -228,13 +228,6 @@ label * {
   color: #374151;
 }
 
-/* Secondary text - light gray for descriptions */
-[style*="color: #64748b"],
-[style*="color: #6b7280"],
-[style*="color: #9ca3af"] {
-  opacity: 0.85;
-}
-
 /* Success/positive text - green */
 [style*="color: #22c55e"],
 [style*="color: #16a34a"],
@@ -273,4 +266,50 @@ h1[style*="color: #1e293b"],
 h2[style*="color: #1e293b"],
 h2[style*="color: #0f172a"] {
   color: #111827 !important;
+}
+
+/* ============================================
+   ADMIN DASHBOARD - Ensure Sharp Text
+   ============================================ */
+
+/* Admin table text - must be clear and readable */
+table td,
+table th,
+tbody td,
+tbody th,
+thead th {
+  opacity: 1 !important;
+  color: inherit !important;
+}
+
+/* Admin table data cells */
+td {
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Admin table headers */
+th {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* Order IDs and links in admin */
+td a,
+th a {
+  color: #0ea5e9;
+  font-weight: 600;
+  opacity: 1 !important;
+}
+
+/* Status badges in admin */
+td span,
+th span {
+  opacity: 1 !important;
+}
+
+/* Customer names and emails */
+td[style*="color"],
+span[style*="color"] {
+  opacity: 1 !important;
 }

@@ -6,6 +6,7 @@ import ProductSection from '../components/ui/ProductSection';
 import ChatBotContainer from '../components/ChatBot/ChatBotContainer';
 import { useCart } from '../contexts/CartContext';
 import { API_CONFIG } from '../config/api';
+import '../styles/modern-home.css';
 
 interface MenuItem {
   _id: string;
@@ -154,6 +155,73 @@ const HomePage: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', background: 'white' }}>
       <Header />
+
+      {/* Modern Hero Section */}
+      <div className="modern-hero">
+        <div className="modern-hero-content">
+          <h1 className="modern-hero-title">🦀 HẢI SẢN BIỂN ĐÔNG</h1>
+          <p className="modern-hero-subtitle">
+            Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
+          </p>
+          <div className="modern-hero-buttons">
+            <a href="/menu/com-chien-pho" className="modern-btn modern-btn-primary">
+              🍽️ Xem thực đơn
+            </a>
+            <a href="/dat-ban" className="modern-btn modern-btn-secondary">
+              📅 Đặt bàn ngay
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="modern-features">
+        <div className="modern-features-grid">
+          <div className="modern-feature-card">
+            <div className="modern-feature-icon">🎯</div>
+            <h3 className="modern-feature-title">Hải sản tươi sống</h3>
+            <p className="modern-feature-description">
+              Nhập khẩu trực tiếp từ biển, đảm bảo độ tươi ngon và chất lượng cao nhất
+            </p>
+          </div>
+          <div className="modern-feature-card">
+            <div className="modern-feature-icon">👨‍🍳</div>
+            <h3 className="modern-feature-title">Đầu bếp chuyên nghiệp</h3>
+            <p className="modern-feature-description">
+              Đội ngũ đầu bếp 5 sao với hơn 15 năm kinh nghiệm trong ẩm thực hải sản
+            </p>
+          </div>
+          <div className="modern-feature-card">
+            <div className="modern-feature-icon">🚚</div>
+            <h3 className="modern-feature-title">Giao hàng nhanh chóng</h3>
+            <p className="modern-feature-description">
+              Giao hàng trong vòng 60 phút, đảm bảo món ăn còn nóng hổi khi đến tay bạn
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="modern-stats">
+        <div className="modern-stats-grid">
+          <div className="modern-stat-card">
+            <span className="modern-stat-number">15+</span>
+            <span className="modern-stat-label">Năm kinh nghiệm</span>
+          </div>
+          <div className="modern-stat-card">
+            <span className="modern-stat-number">50K+</span>
+            <span className="modern-stat-label">Khách hàng hài lòng</span>
+          </div>
+          <div className="modern-stat-card">
+            <span className="modern-stat-number">200+</span>
+            <span className="modern-stat-label">Món ăn đa dạng</span>
+          </div>
+          <div className="modern-stat-card">
+            <span className="modern-stat-number">4.9⭐</span>
+            <span className="modern-stat-label">Đánh giá trung bình</span>
+          </div>
+        </div>
+      </div>
 
       {/* Categories Section */}
       <Categories />

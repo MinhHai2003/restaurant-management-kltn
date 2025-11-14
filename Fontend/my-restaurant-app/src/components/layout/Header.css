@@ -1,5 +1,20 @@
 /* Header.css - Responsive styles for Header component */
 
+/* Fix search input text visibility */
+#global-search-input,
+#mobile-search-input {
+  color: #111827 !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+}
+
+#global-search-input::placeholder,
+#mobile-search-input::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+  font-weight: 400 !important;
+}
+
 /* Desktop styles (default) */
 .header-top-row {
   display: none;

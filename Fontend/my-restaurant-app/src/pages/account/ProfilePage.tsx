@@ -98,6 +98,23 @@ const ProfilePage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    
+    // Validate phone number - only 10 digits
+    if (name === 'phone') {
+      const phoneRegex = /^[0-9]{0,10}$/;
+      if (!phoneRegex.test(value)) {
+        return; // Don't update if invalid
+      }
+    }
+    
+    // Validate name - only Vietnamese letters and spaces
+    if (name === 'name') {
+      const nameRegex = /^[a-zA-ZÀ-ỹ\s]{0,100}$/;
+      if (!nameRegex.test(value)) {
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
@@ -105,6 +122,50 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // Validate name
+    if (formData.name.trim().length < 2) {
+      alert('Họ và tên phải có ít nhất 2 ký tự!');
+      return;
+    }
+    
+    const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/;
+    if (!nameRegex.test(formData.name.trim())) {
+      alert('Họ và tên chỉ được chứa chữ cái và khoảng trắng!');
+      return;
+    }
+    
+    // Validate phone - must be exactly 10 digits starting with 0
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^0[0-9]{9}$/;
+      if (!phoneRegex.test(formData.phone.trim())) {
+        alert('Số điện thoại không hợp lệ! Phải bắt đầu bằng số 0 và có đúng 10 chữ số (VD: 0912345678).');
+        return;
+      }
+    }
+    
+    // Validate date of birth - must be before today and age 13-120
+    if (formData.dateOfBirth) {
+      const birthDate = new Date(formData.dateOfBirth);
+      const today = new Date();
+      
+      // Check if date is in the future
+      if (birthDate >= today) {
+        alert('Ngày sinh phải trước ngày hôm nay!');
+        return;
+      }
+      
+      // Check age range
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const dayDiff = today.getDate() - birthDate.getDate();
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      
+      if (actualAge < 13 || actualAge > 120) {
+        alert('Ngày sinh không hợp lệ! Tuổi phải từ 13 đến 120.');
+        return;
+      }
+    }
+    
     try {
       setSaving(true);
       const token = localStorage.getItem('token');
@@ -161,9 +222,9 @@ const ProfilePage: React.FC = () => {
   const getMembershipLabel = (level: string) => {
     switch (level) {
       case 'bronze': return 'ĐỒNG';
-      case 'silver': return 'Bạc';
+      case 'silver': return 'BẠC';
       case 'gold': return 'VÀNG';
-      case 'platinum': return 'BạCH KIM';
+      case 'platinum': return 'BẠCH KIM';
       default: return 'ĐỒNG';
     }
   };
@@ -251,29 +312,41 @@ const ProfilePage: React.FC = () => {
                   color: '#374151',
                   marginBottom: '0.5rem'
                 }}>
-                  Họ và tên
+                  Họ và tên <span style={{ color: '#ef4444' }}>*</span>
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem'
-                    }}
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      placeholder="Nhập họ và tên (chỉ chữ cái)"
+                      required
+                      minLength={2}
+                      maxLength={100}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        color: '#111827',
+                        fontWeight: '500'
+                      }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      Chỉ được nhập chữ cái và khoảng trắng (2-100 ký tự)
+                    </div>
+                  </div>
                 ) : (
                   <div style={{
                     padding: '0.75rem',
                     background: '#f9fafb',
                     borderRadius: '0.375rem',
                     color: '#1f2937',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
                   }}>
                     {customer?.name || 'Chưa cập nhật'}
                   </div>
@@ -322,26 +395,37 @@ const ProfilePage: React.FC = () => {
                   Số điện thoại
                 </label>
                 {isEditing ? (
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem'
-                    }}
-                  />
+                  <div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Nhập số điện thoại (VD: 0912345678)"
+                      pattern="^0[0-9]{9}$"
+                      maxLength={10}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        color: '#111827',
+                        fontWeight: '500'
+                      }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      Bắt đầu bằng số 0, có đúng 10 chữ số
+                    </div>
+                  </div>
                 ) : (
                   <div style={{
                     padding: '0.75rem',
                     background: '#f9fafb',
                     borderRadius: '0.375rem',
                     color: '#1f2937',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
                   }}>
                     {customer?.phone || 'Chưa cập nhật'}
                   </div>
@@ -360,26 +444,36 @@ const ProfilePage: React.FC = () => {
                   Ngày sinh
                 </label>
                 {isEditing ? (
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem'
-                    }}
-                  />
+                  <div>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleInputChange}
+                      max={new Date().toISOString().split('T')[0]}
+                      min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.875rem',
+                        color: '#111827',
+                        fontWeight: '500'
+                      }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                      Phải từ 13 tuổi trở lên và trước ngày hôm nay
+                    </div>
+                  </div>
                 ) : (
                   <div style={{
                     padding: '0.75rem',
                     background: '#f9fafb',
                     borderRadius: '0.375rem',
                     color: '#1f2937',
-                    fontSize: '0.875rem'
+                    fontSize: '0.875rem',
+                    fontWeight: '500'
                   }}>
                     {formData.dateOfBirth || 'Chưa cập nhật'}
                   </div>

@@ -267,25 +267,17 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
           </button>
         )}
         {conversation.status === 'closed' && (
-          <button
-            onClick={async () => {
-              await chatService.reopenConversation(conversation.id || conversation._id);
-              if (onAssign) {
-                onAssign();
-              }
-            }}
+          <div
             style={{
               padding: '6px 12px',
-              border: '1px solid #0ea5e9',
-              borderRadius: '6px',
               fontSize: '12px',
-              backgroundColor: '#0ea5e9',
-              color: 'white',
-              cursor: 'pointer',
+              color: '#6b7280',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '6px',
             }}
           >
-            Mở lại cuộc trò chuyện
-          </button>
+            Cuộc trò chuyện đã đóng
+          </div>
         )}
       </div>
 

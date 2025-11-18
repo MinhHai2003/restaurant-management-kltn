@@ -24,6 +24,12 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
       return;
     }
 
+    // Don't connect if no conversationId - wait until user sends first message
+    if (!conversationId) {
+      console.log('🔌 [useChatSocket] No conversationId, skipping connection');
+      return;
+    }
+
     // Get socket URL from customer service
     // Socket.io needs base URL without /api suffix
     let socketUrl = API_CONFIG.CHAT_SOCKET_URL || '';

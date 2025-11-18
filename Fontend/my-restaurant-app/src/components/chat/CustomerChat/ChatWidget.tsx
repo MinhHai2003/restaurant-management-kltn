@@ -13,71 +13,42 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ currentUserId }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load or create conversation - automatically for customer
+  // Only check for unread count when widget is closed (lightweight check)
+  // Don't load conversation until user actually wants to chat
   useEffect(() => {
-    const loadConversation = async () => {
-      if (!isOpen) return;
+    if (isOpen || conversation) return; // Skip if open or already has conversation
 
-      setIsLoading(true);
+    // Lightweight check for unread messages (only when closed)
+    const checkUnreadCount = async () => {
       try {
-        // Try to get existing open or waiting conversation first
         const response = await chatService.getConversations();
-
         if (response.success && response.data) {
           const conversations = response.data.conversations;
-          // Find open or waiting conversation (customer only has one active conversation)
           const activeConversation = conversations.find(
             (conv) => conv.status === 'open' || conv.status === 'waiting'
           );
           
           if (activeConversation) {
-            // Use existing conversation
-            setConversation(activeConversation);
-
-            // Get unread count
             const unreadResponse = await chatService.getUnreadCount(
               activeConversation.id || activeConversation._id
             );
             if (unreadResponse.success && unreadResponse.data) {
               setUnreadCount(unreadResponse.data.unreadCount);
             }
-          } else {
-            // No active conversation, create new one automatically
-            const createResponse = await chatService.createConversation();
-            if (createResponse.success && createResponse.data) {
-              setConversation(createResponse.data);
-              setUnreadCount(0);
-            }
-          }
-        } else {
-          // If getConversations fails, try to create new conversation
-          const createResponse = await chatService.createConversation();
-          if (createResponse.success && createResponse.data) {
-            setConversation(createResponse.data);
-            setUnreadCount(0);
           }
         }
       } catch (error) {
-        console.error('Failed to load conversation:', error);
-        // Try to create new conversation as fallback
-        try {
-          const createResponse = await chatService.createConversation();
-          if (createResponse.success && createResponse.data) {
-            setConversation(createResponse.data);
-            setUnreadCount(0);
-          }
-        } catch (createError) {
-          console.error('Failed to create conversation:', createError);
-        }
-      } finally {
-        setIsLoading(false);
+        // Silently fail - don't show errors for background checks
+        console.debug('Background unread check failed:', error);
       }
     };
 
-    if (isOpen) {
-      loadConversation();
-    }
-  }, [isOpen]);
+    // Check every 30 seconds when closed
+    const interval = setInterval(checkUnreadCount, 30000);
+    checkUnreadCount(); // Check immediately
+
+    return () => clearInterval(interval);
+  }, [isOpen, conversation]);
 
   // Poll for unread count when closed
   useEffect(() => {
@@ -176,25 +147,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ currentUserId }) => {
             border: '1px solid #e5e7eb',
           }}
         >
-          {isLoading ? (
-            <div
-              style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6b7280',
-              }}
-            >
-              Đang tải...
-            </div>
-          ) : (
-            <ChatWindow
-              conversation={conversation}
-              currentUserId={currentUserId}
-              onClose={handleToggle}
-            />
-          )}
+          <ChatWindow
+            conversation={conversation}
+            currentUserId={currentUserId}
+            onClose={handleToggle}
+            onConversationCreated={setConversation}
+          />
         </div>
       )}
     </>

@@ -54,10 +54,12 @@ export const AdminChatDashboard: React.FC = () => {
         // Apply search filter
         if (searchQuery.trim()) {
           filteredConversations = filteredConversations.filter((conv) => {
-            const customerName =
-              typeof conv.customerId === 'object' && conv.customerId
-                ? conv.customerId.name
-                : conv.customerInfo?.name || 'Khách hàng';
+            let customerName = 'Khách hàng';
+            if (typeof conv.customerId === 'object' && conv.customerId && 'name' in conv.customerId) {
+              customerName = conv.customerId.name;
+            } else if (conv.customerInfo) {
+              customerName = conv.customerInfo.name;
+            }
             return customerName.toLowerCase().includes(searchQuery.toLowerCase());
           });
         }

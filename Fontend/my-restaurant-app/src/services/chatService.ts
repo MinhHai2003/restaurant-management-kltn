@@ -3,7 +3,13 @@ import { API_CONFIG } from '../config/api';
 export interface Conversation {
   id: string;
   _id: string;
-  customerId: string;
+  customerId: string | {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    phone?: string;
+  };
   adminId?: string;
   adminName?: string;
   status: 'open' | 'closed' | 'waiting';

@@ -6,9 +6,16 @@ interface CustomerInfoProps {
 }
 
 export const CustomerInfo: React.FC<CustomerInfoProps> = ({ conversation }) => {
-  const customer = conversation.customerId || conversation.customerInfo;
+  // Get customer info - can be from customerId (if populated) or customerInfo
+  let customer: { _id: string; name: string; email: string; avatar?: string; phone?: string } | null = null;
+  
+  if (typeof conversation.customerId === 'object' && conversation.customerId && 'name' in conversation.customerId) {
+    customer = conversation.customerId;
+  } else if (conversation.customerInfo) {
+    customer = conversation.customerInfo;
+  }
 
-  if (!customer || typeof customer === 'string') {
+  if (!customer) {
     return (
       <div
         style={{

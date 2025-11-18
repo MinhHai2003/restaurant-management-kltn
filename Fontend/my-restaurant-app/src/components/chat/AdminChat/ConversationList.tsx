@@ -39,7 +39,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   const getCustomerName = (conversation: Conversation) => {
-    if (typeof conversation.customerId === 'object' && conversation.customerId) {
+    if (typeof conversation.customerId === 'object' && conversation.customerId && 'name' in conversation.customerId) {
       return conversation.customerId.name;
     }
     if (conversation.customerInfo) {
@@ -213,7 +213,6 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   <span
                     style={{
                       fontSize: '12px',
-                      color: '#6b7280',
                       padding: '2px 8px',
                       borderRadius: '4px',
                       backgroundColor: statusColor.bg,

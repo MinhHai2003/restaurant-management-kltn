@@ -5,6 +5,7 @@ const {
   handleCustomerMessage,
   handleAdminMessage,
   handleMarkAsRead,
+  setSocketApi,
 } = require("../services/chatSocketService");
 
 let io;
@@ -278,4 +279,12 @@ module.exports = {
   emitToAllAdmins,
   getConnectedUsers,
 };
+
+// Provide socket helpers to chat service (avoid circular deps issues)
+setSocketApi({
+  emitToConversation,
+  emitToAllAdmins,
+  emitToCustomer,
+  emitToAdmin,
+});
 

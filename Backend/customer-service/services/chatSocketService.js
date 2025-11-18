@@ -1,13 +1,12 @@
 const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
 const Customer = require("../models/Customer");
-const {
-  getIO,
-  emitToCustomer,
-  emitToAdmin,
-  emitToConversation,
-  emitToAllAdmins,
-} = require("../config/socket");
+
+// Socket helpers will be injected from config/socket to avoid circular deps
+let socketApi = {};
+const setSocketApi = (api) => {
+  socketApi = api;
+};
 
 // Handle customer sending message via socket
 const handleCustomerMessage = async (socket, data) => {
@@ -77,16 +76,26 @@ const handleCustomerMessage = async (socket, data) => {
       createdAt: message.createdAt,
     };
 
-    emitToConversation(conversation._id.toString(), "message_received", messageData);
+    const { emitToConversation, emitToAllAdmins } = socketApi;
+    if (typeof emitToConversation !== "function") {
+      throw new Error("emitToConversation helper not available");
+    }
+
+    emitToConversation(
+      conversation._id.toString(),
+      "message_received",
+      messageData
+    );
 
     // Notify all admins about new message
-    emitToAllAdmins("new_customer_message", {
+    emitToAllAdmins &&
+      emitToAllAdmins("new_customer_message", {
       conversationId: conversation._id.toString(),
       customerId: conversation.customerId.toString(),
       customerName: customer.name,
       message: content.substring(0, 50),
       timestamp: new Date(),
-    });
+      });
 
     // Confirm to sender
     socket.emit("message_sent", {
@@ -161,15 +170,25 @@ const handleAdminMessage = async (socket, data) => {
       createdAt: message.createdAt,
     };
 
-    emitToConversation(conversation._id.toString(), "message_received", messageData);
+    const { emitToConversation, emitToCustomer } = socketApi;
+    if (typeof emitToConversation !== "function") {
+      throw new Error("emitToConversation helper not available");
+    }
+
+    emitToConversation(
+      conversation._id.toString(),
+      "message_received",
+      messageData
+    );
 
     // Notify customer
-    emitToCustomer(conversation.customerId.toString(), "new_admin_message", {
-      conversationId: conversation._id,
-      adminName: socket.userData.name,
-      message: content.substring(0, 50),
-      timestamp: new Date(),
-    });
+    emitToCustomer &&
+      emitToCustomer(conversation.customerId.toString(), "new_admin_message", {
+        conversationId: conversation._id,
+        adminName: socket.userData.name,
+        message: content.substring(0, 50),
+        timestamp: new Date(),
+      });
 
     // Confirm to sender
     socket.emit("message_sent", {
@@ -253,5 +272,6 @@ module.exports = {
   handleCustomerMessage,
   handleAdminMessage,
   handleMarkAsRead,
+  setSocketApi,
 };
 

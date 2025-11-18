@@ -5,10 +5,24 @@
 // Helper to get socket URL from API URL (remove /api suffix)
 const getSocketUrl = (apiUrl: string, defaultPort: number): string => {
   if (!apiUrl) return '';
-  // Remove /api suffix if present
-  let url = apiUrl.replace(/\/api\/?$/, '');
+  
+  // Make a copy to avoid mutating
+  let url = String(apiUrl);
+  
+  // Remove /api or /api/ suffix (case insensitive, multiple times to be safe)
+  url = url.replace(/\/api\/?$/i, '');
+  url = url.replace(/\/api\/?$/i, ''); // Do it twice to catch any edge cases
+  
   // Remove trailing slash
-  url = url.replace(/\/$/, '');
+  url = url.replace(/\/+$/, '');
+  
+  // Final check - if still contains /api, remove everything after it
+  const apiIndex = url.toLowerCase().indexOf('/api');
+  if (apiIndex !== -1) {
+    url = url.substring(0, apiIndex);
+    url = url.replace(/\/+$/, '');
+  }
+  
   return url;
 };
 
@@ -68,6 +82,14 @@ console.log('🔧 [API_CONFIG] Loaded configuration:', {
   ORDER_SOCKET_URL: API_CONFIG.ORDER_SOCKET_URL,
   TABLE_SOCKET_URL: API_CONFIG.TABLE_SOCKET_URL,
   CHAT_SOCKET_URL: API_CONFIG.CHAT_SOCKET_URL,
+});
+
+// Debug: Log raw env vars for CHAT_SOCKET_URL
+console.log('🔧 [API_CONFIG] Raw env vars:', {
+  VITE_CHAT_SOCKET_URL: import.meta.env.VITE_CHAT_SOCKET_URL,
+  VITE_CUSTOMER_API: import.meta.env.VITE_CUSTOMER_API,
+  'CHAT_SOCKET_URL (computed)': API_CONFIG.CHAT_SOCKET_URL,
+  'CUSTOMER_API (computed)': API_CONFIG.CUSTOMER_API,
 });
 
 // Warn if using localhost in production

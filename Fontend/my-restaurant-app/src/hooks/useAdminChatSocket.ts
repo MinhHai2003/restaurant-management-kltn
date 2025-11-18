@@ -16,6 +16,17 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  // Use refs to always use latest callbacks
+  const onMessageReceivedRef = useRef(onMessageReceived);
+  const onTypingRef = useRef(onTyping);
+  const onNewConversationRef = useRef(onNewConversation);
+  
+  // Update refs when callbacks change
+  useEffect(() => {
+    onMessageReceivedRef.current = onMessageReceived;
+    onTypingRef.current = onTyping;
+    onNewConversationRef.current = onNewConversation;
+  }, [onMessageReceived, onTyping, onNewConversation]);
 
   useEffect(() => {
     const token = localStorage.getItem('employeeToken');
@@ -95,11 +106,11 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
       setIsConnected(false);
     });
 
-    // Message handlers
+    // Message handlers - use refs to always get latest callbacks
     newSocket.on('message_received', (data: Message) => {
       console.log('📨 [useAdminChatSocket] Message received:', data);
-      if (onMessageReceived) {
-        onMessageReceived(data);
+      if (onMessageReceivedRef.current) {
+        onMessageReceivedRef.current(data);
       }
     });
 
@@ -109,8 +120,8 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
 
     newSocket.on('new_customer_message', (data: any) => {
       console.log('📬 [useAdminChatSocket] New customer message:', data);
-      if (onNewConversation) {
-        onNewConversation(data);
+      if (onNewConversationRef.current) {
+        onNewConversationRef.current(data);
       }
     });
 
@@ -120,8 +131,8 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
       userType: string;
       isTyping: boolean;
     }) => {
-      if (onTyping) {
-        onTyping({
+      if (onTypingRef.current) {
+        onTypingRef.current({
           userId: data.userId,
           userName: data.userName,
           isTyping: data.isTyping,
@@ -149,11 +160,27 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
   }, []); // Only run once on mount
 
   // Join conversation when conversationId changes
+  // Use ref to track current conversation to avoid duplicate joins
+  const currentConversationIdRef = useRef<string | undefined>(undefined);
+  
   useEffect(() => {
     if (socket && conversationId && isConnected) {
-      socket.emit('join_conversation', conversationId);
+      // Only join if conversationId actually changed
+      if (currentConversationIdRef.current !== conversationId) {
+        // Leave previous conversation if exists
+        if (currentConversationIdRef.current) {
+          socket.emit('leave_conversation', currentConversationIdRef.current);
+        }
+        // Join new conversation
+        socket.emit('join_conversation', conversationId);
+        currentConversationIdRef.current = conversationId;
+        console.log('🔌 [useAdminChatSocket] Joined conversation:', conversationId);
+      }
       return () => {
-        socket.emit('leave_conversation', conversationId);
+        if (currentConversationIdRef.current) {
+          socket.emit('leave_conversation', currentConversationIdRef.current);
+          currentConversationIdRef.current = undefined;
+        }
       };
     }
   }, [socket, conversationId, isConnected]);

@@ -13,40 +13,62 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ currentUserId }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load or create conversation
+  // Load or create conversation - automatically for customer
   useEffect(() => {
     const loadConversation = async () => {
       if (!isOpen) return;
 
       setIsLoading(true);
       try {
-        // Try to get existing conversation
-        const response = await chatService.getConversations({ status: 'open' });
+        // Try to get existing open or waiting conversation first
+        const response = await chatService.getConversations();
 
         if (response.success && response.data) {
           const conversations = response.data.conversations;
-          if (conversations.length > 0) {
-            // Use the most recent open conversation
-            const latestConversation = conversations[0];
-            setConversation(latestConversation);
+          // Find open or waiting conversation (customer only has one active conversation)
+          const activeConversation = conversations.find(
+            (conv) => conv.status === 'open' || conv.status === 'waiting'
+          );
+          
+          if (activeConversation) {
+            // Use existing conversation
+            setConversation(activeConversation);
 
             // Get unread count
             const unreadResponse = await chatService.getUnreadCount(
-              latestConversation.id || latestConversation._id
+              activeConversation.id || activeConversation._id
             );
             if (unreadResponse.success && unreadResponse.data) {
               setUnreadCount(unreadResponse.data.unreadCount);
             }
           } else {
-            // Create new conversation
+            // No active conversation, create new one automatically
             const createResponse = await chatService.createConversation();
             if (createResponse.success && createResponse.data) {
               setConversation(createResponse.data);
+              setUnreadCount(0);
             }
+          }
+        } else {
+          // If getConversations fails, try to create new conversation
+          const createResponse = await chatService.createConversation();
+          if (createResponse.success && createResponse.data) {
+            setConversation(createResponse.data);
+            setUnreadCount(0);
           }
         }
       } catch (error) {
         console.error('Failed to load conversation:', error);
+        // Try to create new conversation as fallback
+        try {
+          const createResponse = await chatService.createConversation();
+          if (createResponse.success && createResponse.data) {
+            setConversation(createResponse.data);
+            setUnreadCount(0);
+          }
+        } catch (createError) {
+          console.error('Failed to create conversation:', createError);
+        }
       } finally {
         setIsLoading(false);
       }

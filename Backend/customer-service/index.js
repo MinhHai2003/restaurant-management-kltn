@@ -54,17 +54,29 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Database connection
 connectDB();
 
-// Debug middleware
+// Debug middleware for all /api/customers routes
 app.use("/api/customers", (req, res, next) => {
-  console.log("🔍 Request Debug:", {
+  console.log("🔍 [Request Debug] /api/customers:", {
     method: req.method,
     url: req.url,
     originalUrl: req.originalUrl,
     path: req.path,
     baseUrl: req.baseUrl,
-    headers: req.headers,
-    body: req.body,
-    contentType: req.get("Content-Type"),
+    query: req.query,
+    hasAuth: !!req.headers.authorization,
+  });
+  next();
+});
+
+// Debug middleware specifically for chat routes
+app.use("/api/customers/chat", (req, res, next) => {
+  console.log("💬 [Chat Route Debug] /api/customers/chat:", {
+    method: req.method,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    baseUrl: req.baseUrl,
+    query: req.query,
   });
   next();
 });

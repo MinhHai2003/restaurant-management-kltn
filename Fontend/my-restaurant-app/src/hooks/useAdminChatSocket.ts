@@ -28,15 +28,19 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
     // Get socket URL from customer service
     // Remove /api suffix if present, Socket.io needs base URL
     let socketUrl = API_CONFIG.CHAT_SOCKET_URL;
-    if (!socketUrl) {
+    
+    // If CHAT_SOCKET_URL is empty or undefined, derive from CUSTOMER_API
+    if (!socketUrl || socketUrl.trim() === '') {
       socketUrl = API_CONFIG.CUSTOMER_API.replace(/\/api$/, '');
     }
-    // Ensure no trailing slash
-    socketUrl = socketUrl.replace(/\/$/, '');
+    
+    // Ensure no trailing slash and no /api suffix
+    socketUrl = socketUrl.replace(/\/$/, '').replace(/\/api$/, '');
 
     console.log('🔌 [useAdminChatSocket] Connecting to:', socketUrl);
     console.log('🔌 [useAdminChatSocket] CUSTOMER_API:', API_CONFIG.CUSTOMER_API);
     console.log('🔌 [useAdminChatSocket] CHAT_SOCKET_URL:', API_CONFIG.CHAT_SOCKET_URL);
+    console.log('🔌 [useAdminChatSocket] Final socketUrl:', socketUrl);
 
     const newSocket = io(socketUrl, {
       auth: {

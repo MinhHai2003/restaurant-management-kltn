@@ -108,13 +108,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         style={{
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           height: '100%',
           color: '#6b7280',
+          padding: '20px',
+          textAlign: 'center',
         }}
       >
-        Chọn một cuộc trò chuyện để bắt đầu
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
+        <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>
+          Đang kết nối với hỗ trợ khách hàng...
+        </div>
+        <div style={{ fontSize: '14px', opacity: 0.7 }}>
+          Vui lòng đợi trong giây lát
+        </div>
       </div>
     );
   }

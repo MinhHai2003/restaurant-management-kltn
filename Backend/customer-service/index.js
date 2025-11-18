@@ -59,6 +59,9 @@ app.use("/api/customers", (req, res, next) => {
   console.log("🔍 Request Debug:", {
     method: req.method,
     url: req.url,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    baseUrl: req.baseUrl,
     headers: req.headers,
     body: req.body,
     contentType: req.get("Content-Type"),
@@ -83,9 +86,18 @@ app.get("/health", (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
+  console.log("❌ 404 - Route not found:", {
+    method: req.method,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    baseUrl: req.baseUrl,
+  });
   res.status(404).json({
     success: false,
     message: "Route not found",
+    path: req.path,
+    method: req.method,
   });
 });
 

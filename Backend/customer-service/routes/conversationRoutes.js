@@ -12,13 +12,14 @@ const {
   getUnreadCount,
 } = require("../controllers/conversationController");
 
-// Customer routes
+// Customer routes - must be defined before /:id to avoid conflicts
 router.get(
   "/",
   authenticateCustomer,
   getConversations
 );
 
+// Get single conversation by ID - must come after / route
 router.get(
   "/:id",
   authenticateCustomer,

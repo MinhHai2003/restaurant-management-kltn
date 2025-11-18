@@ -86,13 +86,24 @@ const initSocket = (server) => {
           return callback(null, true);
         }
 
-        callback(null, true); // Allow all origins for now
+        // Allow all origins for production (Railway, etc.)
+        callback(null, true);
       },
       methods: ["GET", "POST"],
       credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
     },
     path: "/socket.io/",
+    transports: ["websocket", "polling"],
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    // Railway/production specific settings
+    serveClient: false,
+    allowUpgrades: true,
   });
+  
+  console.log("✅ Socket.io initialized with path: /socket.io/");
 
   // Authentication middleware
   io.use(socketAuth);

@@ -181,6 +181,13 @@ const ChatBotContainer: React.FC = () => {
               conversation={conversation}
               currentUserId={user._id || user.id || ''}
               onClose={toggleChat}
+              onConversationCreated={setConversation}
+              onConversationClosed={() => {
+                // When conversation is closed, close the chat window
+                setChatType(null);
+                setConversation(null);
+                setShowMenu(false);
+              }}
             />
           )}
         </div>

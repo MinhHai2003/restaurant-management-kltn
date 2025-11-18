@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import type { Message, Conversation } from '../../../services/chatService';
 import { chatService } from '../../../services/chatService';
 import { useChatSocket } from '../../../hooks/useChatSocket';
@@ -26,6 +26,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [typingUserName, setTypingUserName] = useState<string>('');
 
   const [notification, setNotification] = useState<{ message: string; type: 'info' | 'warning' | 'error' } | null>(null);
+  
+  // Track if we're currently sending a message to prevent loadMessages from clearing optimistic updates
+  const isSendingMessageRef = useRef(false);
 
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } = useChatSocket({
     conversationId: conversation?.id || conversation?._id,
@@ -87,6 +90,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           // Replace optimistic message with real one
           const newMessages = [...prev];
           newMessages[optimisticIndex] = message;
+          // Clear sending flag since we received confirmation
+          isSendingMessageRef.current = false;
           return newMessages;
         }
         
@@ -100,6 +105,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         if (isDuplicate) {
           console.log('⚠️ [ChatWindow] Duplicate message detected, skipping:', messageId);
           return prev;
+        }
+        
+        // Clear sending flag if this is our own message (customer message)
+        if (message.senderType === 'customer' && message.senderId === currentUserId) {
+          isSendingMessageRef.current = false;
         }
         
         return [...prev, message];
@@ -150,6 +160,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       return;
     }
 
+    // Skip loading if we're currently sending a message (to preserve optimistic updates)
+    if (isSendingMessageRef.current) {
+      console.log('⏭️ [ChatWindow] Skipping loadMessages - message being sent');
+      return;
+    }
+
     const loadMessages = async () => {
       setIsLoading(true);
       try {
@@ -158,8 +174,37 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           { page: 1, limit: 50 }
         );
 
-        if (response.success && response.data) {
-          setMessages(response.data.messages);
+        if (response.success && response.data && response.data.messages) {
+          // Merge with optimistic messages (temp messages that haven't been confirmed yet)
+          const apiMessages = response.data.messages;
+          setMessages((prevMessages) => {
+            const optimisticMessages = prevMessages.filter(
+              (m) => (m.id || m._id)?.toString().startsWith('temp-')
+            );
+            
+            // Combine: API messages + optimistic messages
+            const allMessages = [...apiMessages];
+            
+            // Add optimistic messages that aren't in API response yet
+            optimisticMessages.forEach((optMsg) => {
+              const exists = allMessages.some(
+                (apiMsg) => 
+                  apiMsg.content === optMsg.content &&
+                  apiMsg.senderId === optMsg.senderId &&
+                  Math.abs(new Date(apiMsg.createdAt).getTime() - new Date(optMsg.createdAt).getTime()) < 5000
+              );
+              if (!exists) {
+                allMessages.push(optMsg);
+              }
+            });
+            
+            // Sort by createdAt
+            allMessages.sort((a, b) => 
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+            
+            return allMessages;
+          });
         }
       } catch (error) {
         console.error('Failed to load messages:', error);
@@ -173,6 +218,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleSendMessage = async (content: string) => {
     let currentConversation = conversation;
+    
+    // Set flag early to prevent loadMessages from clearing optimistic update
+    // This is especially important when creating a new conversation
+    isSendingMessageRef.current = true;
 
     // If no conversation, try to find existing open one first
     if (!currentConversation) {
@@ -214,6 +263,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       } catch (error) {
         console.error('Failed to create/load conversation:', error);
+        isSendingMessageRef.current = false; // Clear flag on error
         setIsLoading(false);
         return;
       } finally {
@@ -236,6 +286,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       } catch (error) {
         console.error('Failed to create conversation:', error);
+        isSendingMessageRef.current = false; // Clear flag on error
         setIsLoading(false);
         return;
       } finally {
@@ -245,6 +296,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     if (!currentConversation) {
       console.error('No conversation available to send message');
+      isSendingMessageRef.current = false; // Clear flag on error
       return;
     }
 
@@ -252,6 +304,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const conversationIdToUse = currentConversation.id || currentConversation._id;
     if (!conversationIdToUse) {
       console.error('Conversation ID is missing');
+      isSendingMessageRef.current = false; // Clear flag on error
       return;
     }
 
@@ -292,10 +345,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       // Note: We don't send via API here to avoid duplicate messages
       // Socket will handle the message and emit it back via 'message_received' event
       // The optimistic message will be replaced by the real one from socket
+      // Flag will be cleared in onMessageReceived when we receive confirmation
     } catch (error) {
       console.error('Failed to send message:', error);
       // Remove optimistic message on error
       setMessages((prev) => prev.filter((m) => (m.id || m._id) !== tempMessage.id));
+      // Clear flag on error
+      isSendingMessageRef.current = false;
     }
   };
 

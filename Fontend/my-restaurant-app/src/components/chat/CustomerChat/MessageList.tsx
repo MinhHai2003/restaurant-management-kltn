@@ -108,8 +108,9 @@ export const MessageList: React.FC<MessageListProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  fontSize: '11px',
-                  color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#9ca3af',
+                  fontSize: '12px',
+                  color: isOwnMessage ? 'rgba(255,255,255,0.95)' : '#6b7280',
+                  fontWeight: '500',
                 }}
               >
                 <span>{formatTime(message.createdAt)}</span>
@@ -117,8 +118,10 @@ export const MessageList: React.FC<MessageListProps> = ({
                 {isOwnMessage && (
                   <span
                     style={{
-                      fontSize: '12px',
-                      opacity: message.isRead ? 1 : 0.5,
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      opacity: message.isRead ? 1 : 0.9,
+                      color: 'rgba(255,255,255,1)',
                     }}
                     title={message.isRead ? 'Đã xem' : 'Đã gửi'}
                   >

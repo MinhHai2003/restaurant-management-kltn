@@ -4,15 +4,16 @@ import { API_CONFIG } from '../config/api';
 import type { Message } from '../services/chatService';
 
 interface UseChatSocketOptions {
-  conversationId?: string;
-  onMessageReceived?: (message: Message) => void;
-  onTyping?: (data: { userId: string; userName: string; isTyping: boolean }) => void;
-  onMessageRead?: (data: { messageId: string; isRead: boolean; readAt?: string }) => void;
-  onConversationClosed?: (data: { conversationId: string; closedBy: string; closedByName: string }) => void;
-}
+      conversationId?: string;
+      onMessageReceived?: (message: Message) => void;
+      onTyping?: (data: { userId: string; userName: string; isTyping: boolean }) => void;
+      onMessageRead?: (data: { messageId: string; isRead: boolean; readAt?: string }) => void;
+      onConversationClosed?: (data: { conversationId: string; closedBy: string; closedByName: string }) => void;
+      onConversationCreated?: (data: { id: string; status: string }) => void;
+    }
 
 export const useChatSocket = (options: UseChatSocketOptions = {}) => {
-  const { conversationId, onMessageReceived, onTyping, onMessageRead, onConversationClosed } = options;
+  const { conversationId, onMessageReceived, onTyping, onMessageRead, onConversationClosed, onConversationCreated } = options;
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +23,7 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
   const onTypingRef = useRef(onTyping);
   const onMessageReadRef = useRef(onMessageRead);
   const onConversationClosedRef = useRef(onConversationClosed);
+  const onConversationCreatedRef = useRef(onConversationCreated);
   
   // Update refs when callbacks change
   useEffect(() => {
@@ -29,7 +31,8 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
     onTypingRef.current = onTyping;
     onMessageReadRef.current = onMessageRead;
     onConversationClosedRef.current = onConversationClosed;
-  }, [onMessageReceived, onTyping, onMessageRead, onConversationClosed]);
+    onConversationCreatedRef.current = onConversationCreated;
+  }, [onMessageReceived, onTyping, onMessageRead, onConversationClosed, onConversationCreated]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -123,8 +126,15 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
       }
     });
 
-    newSocket.on('message_sent', (data: { success: boolean; messageId?: string }) => {
+    newSocket.on('message_sent', (data: { success: boolean; messageId?: string; conversationId?: string; conversationCreated?: boolean; conversationStatus?: string }) => {
       console.log('✅ [useChatSocket] Message sent:', data);
+      // If conversation was just created, notify parent
+      if (data.conversationCreated && data.conversationId && onConversationCreatedRef.current) {
+        onConversationCreatedRef.current({
+          id: data.conversationId,
+          status: data.conversationStatus || 'waiting',
+        });
+      }
     });
 
     newSocket.on('message_read', (data: { messageId: string; isRead: boolean; readAt?: string }) => {
@@ -138,6 +148,13 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
       console.log('🔒 [useChatSocket] Conversation closed:', data);
       if (onConversationClosedRef.current) {
         onConversationClosedRef.current(data);
+      }
+    });
+
+    newSocket.on('conversation_created', (data: { id: string; status: string }) => {
+      console.log('✨ [useChatSocket] Conversation created:', data);
+      if (onConversationCreatedRef.current) {
+        onConversationCreatedRef.current(data);
       }
     });
 
@@ -203,19 +220,20 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
 
   // Send message
   const sendMessage = useCallback(
-    (content: string, attachments?: Array<{ type: 'image' | 'file'; url: string; name: string }>) => {
+    (content: string, attachments?: Array<{ type: 'image' | 'file'; url: string; name: string }>, overrideConversationId?: string) => {
       if (!socket || !isConnected) {
         setError('Socket not connected');
         return;
       }
 
-      if (!conversationId) {
+      const idToUse = overrideConversationId || conversationId;
+      if (!idToUse) {
         setError('No conversation selected');
         return;
       }
 
       socket.emit('customer_send_message', {
-        conversationId,
+        conversationId: idToUse,
         content,
         attachments,
       });

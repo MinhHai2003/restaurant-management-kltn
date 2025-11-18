@@ -20,10 +20,15 @@ const handleCustomerMessage = async (socket, data) => {
     }
 
     // Find or create conversation
-    let conversation = await Conversation.findOne({
-      _id: conversationId,
-      customerId: socket.userId,
-    });
+    let conversation = null;
+    let conversationWasCreated = false;
+    
+    if (conversationId) {
+      conversation = await Conversation.findOne({
+        _id: conversationId,
+        customerId: socket.userId,
+      });
+    }
 
     if (!conversation) {
       // Create new conversation
@@ -32,6 +37,15 @@ const handleCustomerMessage = async (socket, data) => {
         status: "waiting",
       });
       await conversation.save();
+      conversationWasCreated = true;
+      
+      // Emit conversation_created event to customer
+      socket.emit("conversation_created", {
+        id: conversation._id.toString(),
+        customerId: conversation.customerId.toString(),
+        status: conversation.status,
+        createdAt: conversation.createdAt,
+      });
     }
 
     // Get customer info
@@ -97,11 +111,13 @@ const handleCustomerMessage = async (socket, data) => {
       timestamp: new Date(),
       });
 
-    // Confirm to sender
+    // Confirm to sender - include conversation data if it was just created
     socket.emit("message_sent", {
       success: true,
-      messageId: message._id,
-      conversationId: conversation._id,
+      messageId: message._id.toString(),
+      conversationId: conversation._id.toString(),
+      conversationCreated: conversationWasCreated,
+      conversationStatus: conversation.status,
     });
   } catch (error) {
     console.error("Handle customer message error:", error);

@@ -27,6 +27,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } = useChatSocket({
     conversationId: conversation?.id || conversation?._id,
+    onConversationCreated: (data) => {
+      // When socket creates a conversation, update state
+      console.log('✨ [ChatWindow] Conversation created via socket:', data);
+      if (onConversationCreated) {
+        // Fetch full conversation data
+        chatService.getConversationById(data.id)
+          .then((response) => {
+            if (response.success && response.data) {
+              onConversationCreated(response.data);
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to fetch conversation:', error);
+          });
+      }
+    },
     onConversationClosed: (data) => {
       // Show notification when conversation is closed
       setNotification({
@@ -202,11 +218,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     }
 
-    if (!currentConversation) return;
+    if (!currentConversation) {
+      console.error('No conversation available to send message');
+      return;
+    }
+
+    // Ensure we have conversationId before sending
+    const conversationIdToUse = currentConversation.id || currentConversation._id;
+    if (!conversationIdToUse) {
+      console.error('Conversation ID is missing');
+      return;
+    }
 
     try {
-      // Send via socket only - message will be added via socket event
-      sendMessage(content);
+      // Send via socket - pass conversationId explicitly to ensure it's used
+      // even if hook's conversationId hasn't updated yet
+      sendMessage(content, undefined, conversationIdToUse);
       
       // Note: We don't send via API here to avoid duplicate messages
       // Socket will handle the message and emit it back via 'message_received' event

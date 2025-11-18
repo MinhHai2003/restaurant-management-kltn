@@ -132,7 +132,7 @@ const PORT = process.env.PORT || 5002;
 const { initSocket } = require("./config/socket");
 initSocket(server);
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Customer Service running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`👥 Customer API: http://localhost:${PORT}/api/customers`);
@@ -146,11 +146,16 @@ server.listen(PORT, () => {
   console.log("   GET  /api/customers/loyalty");
   console.log("\n💬 Chat endpoints:");
   console.log("   GET  /api/customers/chat/conversations");
+  console.log("   POST /api/customers/chat/conversations");
+  console.log("   GET  /api/customers/chat/conversations/:id");
   console.log(
     "   POST /api/customers/chat/conversations/:conversationId/messages"
   );
   console.log(
     "   GET  /api/customers/chat/conversations/:conversationId/messages"
   );
+  console.log("\n🔌 Socket.io:");
+  console.log("   Path: /socket.io/");
+  console.log("   Transports: websocket, polling");
   console.log("\n🚀 Server ready for requests!");
 });

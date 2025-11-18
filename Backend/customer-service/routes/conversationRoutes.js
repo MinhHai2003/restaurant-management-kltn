@@ -15,6 +15,16 @@ const {
 // Customer routes - must be defined before /:id to avoid conflicts
 router.get(
   "/",
+  (req, res, next) => {
+    console.log("📋 [conversationRoutes] GET / - Request received:", {
+      method: req.method,
+      url: req.url,
+      path: req.path,
+      query: req.query,
+      hasToken: !!req.headers.authorization,
+    });
+    next();
+  },
   authenticateCustomer,
   getConversations
 );

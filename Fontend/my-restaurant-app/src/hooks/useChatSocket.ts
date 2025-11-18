@@ -25,9 +25,17 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
     }
 
     // Get socket URL from customer service
-    const socketUrl = API_CONFIG.CHAT_SOCKET_URL || API_CONFIG.CUSTOMER_API.replace('/api', '');
+    // Remove /api suffix if present, Socket.io needs base URL
+    let socketUrl = API_CONFIG.CHAT_SOCKET_URL;
+    if (!socketUrl) {
+      socketUrl = API_CONFIG.CUSTOMER_API.replace(/\/api$/, '');
+    }
+    // Ensure no trailing slash
+    socketUrl = socketUrl.replace(/\/$/, '');
 
     console.log('🔌 [useChatSocket] Connecting to:', socketUrl);
+    console.log('🔌 [useChatSocket] CUSTOMER_API:', API_CONFIG.CUSTOMER_API);
+    console.log('🔌 [useChatSocket] CHAT_SOCKET_URL:', API_CONFIG.CHAT_SOCKET_URL);
 
     const newSocket = io(socketUrl, {
       auth: {

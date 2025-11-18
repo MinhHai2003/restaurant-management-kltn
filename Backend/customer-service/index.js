@@ -70,9 +70,11 @@ app.use("/api/customers", (req, res, next) => {
 });
 
 // Routes
-app.use("/api/customers", customerRoutes);
+// IMPORTANT: Mount more specific routes BEFORE general routes to avoid conflicts
+// Chat routes must come before general customer routes to ensure proper matching
 app.use("/api/customers/chat/conversations", conversationRoutes);
 app.use("/api/customers/chat", messageRoutes);
+app.use("/api/customers", customerRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

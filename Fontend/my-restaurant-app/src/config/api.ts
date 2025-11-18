@@ -46,6 +46,7 @@ export const API_CONFIG = {
 // Debug: Log để kiểm tra env vars đã được load đúng chưa
 console.log('🔧 [API_CONFIG] Loaded configuration:', {
   AUTH_API: API_CONFIG.AUTH_API,
+  CUSTOMER_API: API_CONFIG.CUSTOMER_API,
   MENU_API: API_CONFIG.MENU_API,
   INVENTORY_API: API_CONFIG.INVENTORY_API,
   ORDER_API: API_CONFIG.ORDER_API,
@@ -53,6 +54,7 @@ console.log('🔧 [API_CONFIG] Loaded configuration:', {
   SOCKET_URL: API_CONFIG.SOCKET_URL,
   ORDER_SOCKET_URL: API_CONFIG.ORDER_SOCKET_URL,
   TABLE_SOCKET_URL: API_CONFIG.TABLE_SOCKET_URL,
+  CHAT_SOCKET_URL: API_CONFIG.CHAT_SOCKET_URL,
 });
 
 // Warn if using localhost in production
@@ -65,6 +67,12 @@ if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' &&
   }
   if (API_CONFIG.TABLE_SOCKET_URL.includes('localhost')) {
     console.error('⚠️ [API_CONFIG] TABLE_SOCKET_URL is using localhost in production!', API_CONFIG.TABLE_SOCKET_URL);
+  }
+  if (API_CONFIG.CHAT_SOCKET_URL.includes('localhost')) {
+    console.error('⚠️ [API_CONFIG] CHAT_SOCKET_URL is using localhost in production!', API_CONFIG.CHAT_SOCKET_URL);
+  }
+  if (API_CONFIG.CUSTOMER_API.includes('localhost')) {
+    console.error('⚠️ [API_CONFIG] CUSTOMER_API is using localhost in production!', API_CONFIG.CUSTOMER_API);
   }
 }
 

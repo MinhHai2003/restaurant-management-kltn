@@ -87,16 +87,19 @@ export const AdminChatDashboard: React.FC = () => {
         setConversations(filteredConversations);
 
         // Auto-select first conversation if none selected
-        if (!selectedConversation && filteredConversations.length > 0) {
-          setSelectedConversation(filteredConversations[0]);
-        }
+        setSelectedConversation((prev) => {
+          if (!prev && filteredConversations.length > 0) {
+            return filteredConversations[0];
+          }
+          return prev;
+        });
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [filter, searchQuery, selectedConversation]);
+  }, [filter, searchQuery]); // Removed selectedConversation to avoid infinite loop
 
   useEffect(() => {
     loadConversations();
@@ -147,9 +150,9 @@ export const AdminChatDashboard: React.FC = () => {
     }
   };
 
-  const handleConversationUpdated = () => {
+  const handleConversationUpdated = useCallback(() => {
     loadConversations();
-  };
+  }, [loadConversations]);
 
   return (
     <div

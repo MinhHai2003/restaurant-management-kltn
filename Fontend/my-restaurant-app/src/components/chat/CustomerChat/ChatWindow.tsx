@@ -108,11 +108,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       return;
     }
 
+    const conversationId = conversation.id || conversation._id;
+    if (!conversationId) {
+      return;
+    }
+
     const loadMessages = async () => {
       setIsLoading(true);
       try {
         const response = await chatService.getMessages(
-          conversation.id || conversation._id,
+          conversationId,
           { page: 1, limit: 50 }
         );
 
@@ -127,7 +132,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
 
     loadMessages();
-  }, [conversation]);
+  }, [conversation?.id || conversation?._id]); // Only depend on conversation ID, not the whole object
 
   const handleSendMessage = async (content: string) => {
     let currentConversation = conversation;

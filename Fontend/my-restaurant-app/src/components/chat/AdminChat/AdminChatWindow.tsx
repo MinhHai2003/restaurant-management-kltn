@@ -97,11 +97,16 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
       return;
     }
 
+    const conversationId = conversation.id || conversation._id;
+    if (!conversationId) {
+      return;
+    }
+
     const loadMessages = async () => {
       setIsLoading(true);
       try {
         const response = await chatService.getAdminMessages(
-          conversation.id || conversation._id,
+          conversationId,
           { page: 1, limit: 50 }
         );
 
@@ -119,17 +124,22 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
     };
 
     loadMessages();
-  }, [conversation, onAssign]);
+  }, [conversation?.id || conversation?._id]); // Only depend on conversation ID, not the whole object
 
   // Auto assign conversation if not assigned
   useEffect(() => {
     if (conversation && !conversation.adminId && onAssign) {
+      const conversationId = conversation.id || conversation._id;
+      if (!conversationId) {
+        return;
+      }
+
       const assignConversation = async () => {
         const employeeData = localStorage.getItem('employeeData');
         if (employeeData) {
           const admin = JSON.parse(employeeData);
           await chatService.assignConversation(
-            conversation.id || conversation._id,
+            conversationId,
             admin._id || admin.id,
             admin.name
           );
@@ -140,7 +150,8 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
       };
       assignConversation();
     }
-  }, [conversation, onAssign]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation?.id || conversation?._id, conversation?.adminId]); // Only depend on conversation ID and adminId
 
   const handleSendMessage = async (content: string) => {
     if (!conversation) return;

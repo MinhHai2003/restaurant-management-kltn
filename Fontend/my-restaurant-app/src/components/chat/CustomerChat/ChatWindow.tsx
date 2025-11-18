@@ -29,6 +29,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   
   // Track if we're currently sending a message to prevent loadMessages from clearing optimistic updates
   const isSendingMessageRef = useRef(false);
+  
+  // Track previous conversation ID to detect changes
+  const previousConversationIdRef = useRef<string | undefined>(undefined);
 
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } = useChatSocket({
     conversationId: conversation?.id || conversation?._id,
@@ -152,6 +155,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     if (!conversation) {
       setMessages([]);
+      previousConversationIdRef.current = undefined;
       return;
     }
 
@@ -159,6 +163,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!conversationId) {
       return;
     }
+
+    // If conversation ID changed, clear old messages immediately
+    const conversationIdStr = conversationId.toString();
+    if (previousConversationIdRef.current !== undefined && 
+        previousConversationIdRef.current !== conversationIdStr) {
+      console.log('🔄 [ChatWindow] Conversation changed, clearing old messages');
+      // Clear all messages from the old conversation
+      // Only keep optimistic messages that belong to the NEW conversation
+      setMessages((prevMessages) => {
+        const newConversationOptimistic = prevMessages.filter(
+          (m) => {
+            const msgId = m.id || m._id;
+            const msgConvId = m.conversationId;
+            // Keep only optimistic messages that belong to the NEW conversation
+            return msgId?.toString().startsWith('temp-') &&
+                   (msgConvId === conversationIdStr || 
+                    msgConvId?.toString() === conversationIdStr);
+          }
+        );
+        // If we have optimistic messages for new conversation, keep them
+        // Otherwise, clear everything
+        return newConversationOptimistic;
+      });
+    }
+    
+    // Update previous conversation ID
+    previousConversationIdRef.current = conversationIdStr;
 
     // Skip loading if we're currently sending a message (to preserve optimistic updates)
     if (isSendingMessageRef.current) {
@@ -175,14 +206,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         );
 
         if (response.success && response.data && response.data.messages) {
-          // Merge with optimistic messages (temp messages that haven't been confirmed yet)
+          // When loading messages for a conversation, only keep optimistic messages
+          // that belong to THIS conversation (same conversationId)
           const apiMessages = response.data.messages;
           setMessages((prevMessages) => {
+            // Only keep optimistic messages that match this conversation
             const optimisticMessages = prevMessages.filter(
-              (m) => (m.id || m._id)?.toString().startsWith('temp-')
+              (m) => {
+                const msgId = m.id || m._id;
+                const msgConvId = m.conversationId;
+                return msgId?.toString().startsWith('temp-') &&
+                       (msgConvId === conversationId || 
+                        msgConvId?.toString() === conversationId?.toString());
+              }
             );
             
-            // Combine: API messages + optimistic messages
+            // Combine: API messages + optimistic messages for THIS conversation only
             const allMessages = [...apiMessages];
             
             // Add optimistic messages that aren't in API response yet
@@ -205,9 +244,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             
             return allMessages;
           });
+        } else {
+          // If no messages from API, clear all messages except optimistic ones for this conversation
+          setMessages((prevMessages) => {
+            return prevMessages.filter(
+              (m) => {
+                const msgId = m.id || m._id;
+                const msgConvId = m.conversationId;
+                return msgId?.toString().startsWith('temp-') &&
+                       (msgConvId === conversationId || 
+                        msgConvId?.toString() === conversationId?.toString());
+              }
+            );
+          });
         }
       } catch (error) {
         console.error('Failed to load messages:', error);
+        // On error, clear all messages except optimistic ones for this conversation
+        setMessages((prevMessages) => {
+          return prevMessages.filter(
+            (m) => {
+              const msgId = m.id || m._id;
+              const msgConvId = m.conversationId;
+              return msgId?.toString().startsWith('temp-') &&
+                     (msgConvId === conversationId || 
+                      msgConvId?.toString() === conversationId?.toString());
+            }
+          );
+        });
       } finally {
         setIsLoading(false);
       }
@@ -559,7 +623,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           backgroundColor: '#f9fafb',
         }}
       >
-        {conversation.status === 'open' && (
+        {(conversation.status === 'open' || conversation.status === 'waiting') && (
           <button
             onClick={async () => {
               try {

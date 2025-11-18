@@ -26,6 +26,7 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserName, setTypingUserName] = useState<string>('');
   const [notification, setNotification] = useState<{ message: string; type: 'info' | 'warning' | 'error' } | null>(null);
+  const [insertText, setInsertText] = useState<string>(''); // Text to insert into input
 
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } =
     useAdminChatSocket({
@@ -238,6 +239,11 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
         onTypingStop={stopTyping}
         disabled={!isConnected || isLoading}
         placeholder="Nhập tin nhắn..."
+        insertText={insertText}
+        onInsertTextHandled={() => {
+          // Clear insertText after it's been inserted
+          setInsertText('');
+        }}
       />
 
       {/* Actions */}
@@ -246,39 +252,147 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
           padding: '8px 16px',
           borderTop: '1px solid #e5e7eb',
           display: 'flex',
+          flexDirection: 'column',
           gap: '8px',
           backgroundColor: '#f9fafb',
         }}
       >
-        {conversation.status === 'open' && (
-          <button
-            onClick={handleCloseConversation}
-            style={{
-              padding: '6px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '12px',
-              backgroundColor: 'white',
-              color: '#374151',
-              cursor: 'pointer',
-            }}
-          >
-            Đóng cuộc trò chuyện
-          </button>
-        )}
-        {conversation.status === 'closed' && (
+        {/* Quick Reply Buttons */}
+        {conversation && (conversation.status === 'open' || conversation.status === 'waiting') && (
           <div
             style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              color: '#6b7280',
-              backgroundColor: '#f3f4f6',
-              borderRadius: '6px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px',
             }}
           >
-            Cuộc trò chuyện đã đóng
+            <button
+              onClick={() => setInsertText('Xin chào! Tôi có thể giúp gì cho bạn?')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              👋 Xin chào
+            </button>
+            <button
+              onClick={() => setInsertText('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              🙏 Cảm ơn
+            </button>
+            <button
+              onClick={() => setInsertText('Vui lòng cho tôi biết thêm chi tiết về vấn đề của bạn.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              ❓ Cần thêm thông tin
+            </button>
+            <button
+              onClick={() => setInsertText('Vấn đề của bạn đã được giải quyết chưa?')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              ✅ Đã giải quyết?
+            </button>
           </div>
         )}
+        
+        {/* Close Button */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {conversation.status === 'open' && (
+            <button
+              onClick={handleCloseConversation}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+              }}
+            >
+              Đóng cuộc trò chuyện
+            </button>
+          )}
+          {conversation.status === 'closed' && (
+            <div
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                color: '#6b7280',
+                backgroundColor: '#f3f4f6',
+                borderRadius: '6px',
+              }}
+            >
+              Cuộc trò chuyện đã đóng
+            </div>
+          )}
+        </div>
       </div>
 
       {notification && (

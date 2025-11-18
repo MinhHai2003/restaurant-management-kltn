@@ -6,6 +6,8 @@ interface MessageInputProps {
   onTypingStop?: () => void;
   disabled?: boolean;
   placeholder?: string;
+  insertText?: string; // Text to insert into input
+  onInsertTextHandled?: () => void; // Callback when text is inserted
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -14,11 +16,40 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onTypingStop,
   disabled = false,
   placeholder = 'Nhập tin nhắn...',
+  insertText,
+  onInsertTextHandled,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Handle insertText prop - use a ref to track previous value
+  const prevInsertTextRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    // Only insert if insertText changed and is not empty
+    if (insertText && insertText.trim() && insertText !== prevInsertTextRef.current) {
+      prevInsertTextRef.current = insertText;
+      setInputValue((prev) => {
+        // Append to existing text, or replace if empty
+        const newValue = prev.trim() ? `${prev} ${insertText}` : insertText;
+        // Focus textarea after a short delay to ensure state is updated
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            // Move cursor to end
+            const length = newValue.length;
+            textareaRef.current.setSelectionRange(length, length);
+          }
+        }, 0);
+        return newValue;
+      });
+      // Notify parent that text was inserted
+      if (onInsertTextHandled) {
+        onInsertTextHandled();
+      }
+    }
+  }, [insertText, onInsertTextHandled]);
 
   useEffect(() => {
     if (textareaRef.current) {

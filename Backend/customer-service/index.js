@@ -4,9 +4,28 @@ require("dotenv").config();
 
 const http = require("http");
 const connectDB = require("./config/db");
-const customerRoutes = require("./routes/customerRoutes");
-const conversationRoutes = require("./routes/conversationRoutes");
-const messageRoutes = require("./routes/messageRoutes");
+// Load routes
+let customerRoutes, conversationRoutes, messageRoutes;
+try {
+  customerRoutes = require("./routes/customerRoutes");
+  console.log("✅ Loaded customerRoutes");
+} catch (error) {
+  console.error("❌ Failed to load customerRoutes:", error);
+}
+
+try {
+  conversationRoutes = require("./routes/conversationRoutes");
+  console.log("✅ Loaded conversationRoutes");
+} catch (error) {
+  console.error("❌ Failed to load conversationRoutes:", error);
+}
+
+try {
+  messageRoutes = require("./routes/messageRoutes");
+  console.log("✅ Loaded messageRoutes");
+} catch (error) {
+  console.error("❌ Failed to load messageRoutes:", error);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -84,9 +103,26 @@ app.use("/api/customers/chat", (req, res, next) => {
 // Routes
 // IMPORTANT: Mount more specific routes BEFORE general routes to avoid conflicts
 // Chat routes must come before general customer routes to ensure proper matching
-app.use("/api/customers/chat/conversations", conversationRoutes);
-app.use("/api/customers/chat", messageRoutes);
-app.use("/api/customers", customerRoutes);
+if (conversationRoutes) {
+  app.use("/api/customers/chat/conversations", conversationRoutes);
+  console.log("✅ Mounted /api/customers/chat/conversations");
+} else {
+  console.error("❌ conversationRoutes not loaded, cannot mount");
+}
+
+if (messageRoutes) {
+  app.use("/api/customers/chat", messageRoutes);
+  console.log("✅ Mounted /api/customers/chat");
+} else {
+  console.error("❌ messageRoutes not loaded, cannot mount");
+}
+
+if (customerRoutes) {
+  app.use("/api/customers", customerRoutes);
+  console.log("✅ Mounted /api/customers");
+} else {
+  console.error("❌ customerRoutes not loaded, cannot mount");
+}
 
 // Health check
 app.get("/health", (req, res) => {
@@ -95,6 +131,15 @@ app.get("/health", (req, res) => {
     message: "Customer Service is running",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+  });
+});
+
+// Test route for chat
+app.get("/api/customers/chat/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Chat routes are working",
+    timestamp: new Date().toISOString(),
   });
 });
 

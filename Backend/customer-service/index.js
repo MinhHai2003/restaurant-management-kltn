@@ -12,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Trust proxy (required for Railway/reverse proxy)
-app.set('trust proxy', true);
+app.set("trust proxy", true);
 
 // Middleware - CORS với support cho tất cả Vercel deployments
 app.use(
@@ -20,7 +20,7 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = [
         "http://localhost:3000",
         "http://localhost:5173",
@@ -29,23 +29,23 @@ app.use(
         "https://my-restaurant-app-six.vercel.app",
         "https://my-restaurant-b93364dpn-vinh-lois-projects.vercel.app",
       ].filter(Boolean);
-      
+
       // Allow all Vercel deployments (ends with .vercel.app)
-      if (origin.endsWith('.vercel.app')) {
+      if (origin.endsWith(".vercel.app")) {
         return callback(null, true);
       }
-      
+
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      
+
       // Default: deny
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-session-id"],
   })
 );
 app.use(express.json({ limit: "10mb" }));
@@ -120,7 +120,11 @@ server.listen(PORT, () => {
   console.log("   GET  /api/customers/loyalty");
   console.log("\n💬 Chat endpoints:");
   console.log("   GET  /api/customers/chat/conversations");
-  console.log("   POST /api/customers/chat/conversations/:conversationId/messages");
-  console.log("   GET  /api/customers/chat/conversations/:conversationId/messages");
+  console.log(
+    "   POST /api/customers/chat/conversations/:conversationId/messages"
+  );
+  console.log(
+    "   GET  /api/customers/chat/conversations/:conversationId/messages"
+  );
   console.log("\n🚀 Server ready for requests!");
 });

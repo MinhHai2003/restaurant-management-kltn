@@ -271,20 +271,31 @@ const Header: React.FC = () => {
                 {user ? (
                   <UserProfile />
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <a href="/login" style={{ 
-                      color: 'white', 
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      color: 'white',
                       textDecoration: 'none',
                       fontSize: '0.85rem',
-                      textAlign: 'center'
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                      transition: 'all 0.3s ease'
                     }}>
                       Đăng nhập
                     </a>
                     <a href="/register" style={{ 
-                      color: 'white', 
+                      padding: '0.5rem 1rem',
+                      background: 'white',
+                      color: '#667eea',
                       textDecoration: 'none',
                       fontSize: '0.85rem',
-                      textAlign: 'center'
+                      fontWeight: '600',
+                      borderRadius: '8px',
+                      border: '2px solid #667eea',
+                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.2)',
+                      transition: 'all 0.3s ease'
                     }}>
                       Đăng ký
                     </a>

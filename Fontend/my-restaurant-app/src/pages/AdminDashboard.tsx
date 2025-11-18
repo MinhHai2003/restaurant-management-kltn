@@ -5,6 +5,7 @@ import StaffManagement from '../components/admin/StaffManagement';
 import ShiftManagement from '../components/admin/ShiftManagement';
 import MenuManagement from '../components/admin/MenuManagement';
 import CustomerManagement from '../components/admin/CustomerManagement';
+import AdminChatPage from './admin/AdminChatPage';
 import { useOrderSocket } from '../hooks/useOrderSocket';
 import { useTableSocket } from '../hooks/useTableSocket';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -31,7 +32,7 @@ interface ApiReservation {
   createdAt?: string;
 }
 
-type TabType = 'overview' | 'reservations' | 'tables' | 'inventory' | 'staff' | 'shifts' | 'statistics' | 'orders' | 'customers';
+type TabType = 'overview' | 'reservations' | 'tables' | 'inventory' | 'staff' | 'shifts' | 'statistics' | 'orders' | 'customers' | 'chat';
 
 interface StatisticsData {
   revenue: {
@@ -2961,6 +2962,7 @@ const AdminDashboard: React.FC = () => {
               { key: 'inventory', label: '📦 Nguyên liệu', icon: '📦', restricted: true },
               { key: 'orders', label: '🍽️ Đặt món', icon: '🍽️', restricted: false },
               { key: 'customers', label: '👤 Khách hàng', icon: '👤', restricted: true },
+              { key: 'chat', label: '💬 Chat', icon: '💬', restricted: true },
               { key: 'staff', label: '👥 Nhân sự', icon: '👥', restricted: true },
               { key: 'shifts', label: '📅 Phân ca', icon: '📅', restricted: true },
               { key: 'statistics', label: '📈 Thống kê', icon: '📈', restricted: true }
@@ -3046,6 +3048,7 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'inventory' && isAdminOrManager && <AdminInventoryManagement />}
               {activeTab === 'orders' && renderOrderManagement()}
               {activeTab === 'customers' && isAdminOrManager && <CustomerManagement />}
+              {activeTab === 'chat' && isAdminOrManager && <AdminChatPage />}
               {activeTab === 'staff' && isAdminOrManager && <StaffManagement />}
               {activeTab === 'shifts' && isAdminOrManager && <ShiftManagement />}
               {activeTab === 'statistics' && isAdminOrManager && renderStatistics()}

@@ -24,15 +24,19 @@ import CategoryPage from './pages/CategoryPage'
 import SearchPage from './pages/SearchPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedEmployeeRoute from './components/ProtectedEmployeeRoute'
+import { ChatWidget } from './components/chat/CustomerChat/ChatWidget'
+import { useAuth } from './hooks/useAuth'
 import './App.css'
 
-function App() {
+function AppContent() {
+  const { user } = useAuth();
+  const currentUserId = user?._id || user?.id || '';
+
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
-          <div className="app-shell">
-            <Routes>
+    <>
+      <Router>
+        <div className="app-shell">
+          <Routes>
               <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -116,8 +120,21 @@ function App() {
               </ProtectedRoute>
             } />
           </Routes>
-          </div>
-        </Router>
+        </div>
+      </Router>
+      {/* Chat Widget - Only show for logged in customers */}
+      {currentUserId && localStorage.getItem('token') && (
+        <ChatWidget currentUserId={currentUserId} />
+      )}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <AppContent />
       </CartProvider>
     </AuthProvider>
   )

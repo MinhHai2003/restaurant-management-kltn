@@ -38,6 +38,9 @@ export const API_CONFIG = {
     getSocketUrl(import.meta.env.VITE_ORDER_API || 'http://localhost:5005/api', 5005),
   TABLE_SOCKET_URL: import.meta.env.VITE_TABLE_SOCKET_URL || 
     getSocketUrl(import.meta.env.VITE_TABLE_API || 'http://localhost:5006/api', 5006),
+  // Customer Chat Socket URL
+  CHAT_SOCKET_URL: import.meta.env.VITE_CHAT_SOCKET_URL || 
+    getSocketUrl(import.meta.env.VITE_CUSTOMER_API || 'http://localhost:5002/api', 5002),
 } as const;
 
 // Debug: Log để kiểm tra env vars đã được load đúng chưa

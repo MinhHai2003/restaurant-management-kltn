@@ -2,10 +2,14 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const http = require("http");
 const connectDB = require("./config/db");
 const customerRoutes = require("./routes/customerRoutes");
+const conversationRoutes = require("./routes/conversationRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 
 const app = express();
+const server = http.createServer(app);
 
 // Trust proxy (required for Railway/reverse proxy)
 app.set('trust proxy', true);
@@ -64,6 +68,8 @@ app.use("/api/customers", (req, res, next) => {
 
 // Routes
 app.use("/api/customers", customerRoutes);
+app.use("/api/customers/chat/conversations", conversationRoutes);
+app.use("/api/customers/chat", messageRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
@@ -96,7 +102,11 @@ app.use((error, req, res, next) => {
 
 const PORT = process.env.PORT || 5002;
 
-app.listen(PORT, () => {
+// Initialize Socket.io
+const { initSocket } = require("./config/socket");
+initSocket(server);
+
+server.listen(PORT, () => {
   console.log(`🚀 Customer Service running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`👥 Customer API: http://localhost:${PORT}/api/customers`);
@@ -108,5 +118,9 @@ app.listen(PORT, () => {
   console.log("   PUT  /api/customers/profile");
   console.log("   POST /api/customers/addresses");
   console.log("   GET  /api/customers/loyalty");
+  console.log("\n💬 Chat endpoints:");
+  console.log("   GET  /api/customers/chat/conversations");
+  console.log("   POST /api/customers/chat/conversations/:conversationId/messages");
+  console.log("   GET  /api/customers/chat/conversations/:conversationId/messages");
   console.log("\n🚀 Server ready for requests!");
 });

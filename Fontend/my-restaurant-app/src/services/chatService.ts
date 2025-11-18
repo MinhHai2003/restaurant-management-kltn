@@ -49,16 +49,18 @@ interface ApiResponse<T> {
 }
 
 class ChatService {
-  private getAuthToken(): string | null {
-    return localStorage.getItem('token');
+  private getAuthToken(isAdmin: boolean = false): string | null {
+    return isAdmin 
+      ? localStorage.getItem('employeeToken')
+      : localStorage.getItem('token');
   }
 
-  private getAuthHeaders(): HeadersInit {
+  private getAuthHeaders(isAdmin: boolean = false): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
-    const token = this.getAuthToken();
+    const token = this.getAuthToken(isAdmin);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -299,6 +301,279 @@ class ChatService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get unread count',
+      };
+    }
+  }
+
+  // ========== ADMIN METHODS ==========
+
+  // Get all conversations (Admin)
+  async getAdminConversations(params?: {
+    status?: string;
+    assigned?: 'me' | 'unassigned';
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{ conversations: Conversation[]; pagination: any }>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.assigned) queryParams.append('assigned', params.assigned);
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/all?${queryParams}`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get conversations');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get admin conversations error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get conversations',
+      };
+    }
+  }
+
+  // Get single conversation (Admin)
+  async getAdminConversationById(id: string): Promise<ApiResponse<Conversation>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/${id}`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get conversation');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get admin conversation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get conversation',
+      };
+    }
+  }
+
+  // Assign conversation
+  async assignConversation(
+    conversationId: string,
+    adminId?: string,
+    adminName?: string
+  ): Promise<ApiResponse<Conversation>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/${conversationId}/assign`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(true),
+          body: JSON.stringify({ adminId, adminName }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to assign conversation');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Assign conversation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to assign conversation',
+      };
+    }
+  }
+
+  // Close conversation
+  async closeConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/${conversationId}/close`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to close conversation');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Close conversation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to close conversation',
+      };
+    }
+  }
+
+  // Reopen conversation
+  async reopenConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/${conversationId}/reopen`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reopen conversation');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Reopen conversation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to reopen conversation',
+      };
+    }
+  }
+
+  // Get messages (Admin)
+  async getAdminMessages(
+    conversationId: string,
+    params?: { page?: number; limit?: number }
+  ): Promise<ApiResponse<{ messages: Message[]; pagination: any }>> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/admin/conversations/${conversationId}/messages?${queryParams}`,
+        {
+          method: 'GET',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get messages');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get admin messages error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get messages',
+      };
+    }
+  }
+
+  // Send message (Admin)
+  async sendAdminMessage(
+    conversationId: string,
+    content: string,
+    attachments?: Array<{ type: 'image' | 'file'; url: string; name: string }>
+  ): Promise<ApiResponse<Message>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/admin/conversations/${conversationId}/messages`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(true),
+          body: JSON.stringify({ content, attachments }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send message');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Send admin message error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send message',
+      };
+    }
+  }
+
+  // Mark message as read (Admin)
+  async markAdminMessageAsRead(messageId: string): Promise<ApiResponse<Message>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/admin/messages/${messageId}/read`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to mark message as read');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Mark admin message as read error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to mark message as read',
+      };
+    }
+  }
+
+  // Mark all as read (Admin)
+  async markAdminAllAsRead(conversationId: string): Promise<ApiResponse<{ updatedCount: number }>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/admin/conversations/${conversationId}/messages/read-all`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(true),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to mark all as read');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Mark admin all as read error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to mark all as read',
       };
     }
   }

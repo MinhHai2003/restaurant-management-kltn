@@ -28,7 +28,7 @@ const getConversations = async (req, res) => {
     }
 
     const conversations = await Conversation.find(query)
-      .populate("customerId", "name email avatar")
+      .populate("customerId", "name email avatar phone")
       .sort({ lastMessageAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));

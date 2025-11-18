@@ -37,6 +37,12 @@ const handleCustomerMessage = async (socket, data) => {
 
     // Get customer info
     const customer = await Customer.findById(socket.userId);
+    
+    if (!customer) {
+      return socket.emit("error", {
+        message: "Customer not found",
+      });
+    }
 
     // Create message
     const message = new Message({
@@ -71,12 +77,12 @@ const handleCustomerMessage = async (socket, data) => {
       createdAt: message.createdAt,
     };
 
-    emitToConversation(conversationId, "message_received", messageData);
+    emitToConversation(conversation._id.toString(), "message_received", messageData);
 
     // Notify all admins about new message
     emitToAllAdmins("new_customer_message", {
-      conversationId: conversation._id,
-      customerId: conversation.customerId,
+      conversationId: conversation._id.toString(),
+      customerId: conversation.customerId.toString(),
       customerName: customer.name,
       message: content.substring(0, 50),
       timestamp: new Date(),
@@ -155,10 +161,10 @@ const handleAdminMessage = async (socket, data) => {
       createdAt: message.createdAt,
     };
 
-    emitToConversation(conversationId, "message_received", messageData);
+    emitToConversation(conversation._id.toString(), "message_received", messageData);
 
     // Notify customer
-    emitToCustomer(conversation.customerId, "new_admin_message", {
+    emitToCustomer(conversation.customerId.toString(), "new_admin_message", {
       conversationId: conversation._id,
       adminName: socket.userData.name,
       message: content.substring(0, 50),

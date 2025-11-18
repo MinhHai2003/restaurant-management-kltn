@@ -35,6 +35,7 @@ const authenticateEmployee = (allowedRoles = ["admin", "manager"]) => {
       req.employeeId = decoded.userId;
       req.employeeRole = decoded.role;
       req.employeeEmail = decoded.email;
+      req.employeeName = decoded.name || null; // Get name from token if available
 
       next();
     } catch (error) {

@@ -25,20 +25,28 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
     }
 
     // Get socket URL from customer service
-    // Remove /api suffix if present, Socket.io needs base URL
-    let socketUrl = API_CONFIG.CHAT_SOCKET_URL;
+    // Socket.io needs base URL without /api suffix
+    let socketUrl = API_CONFIG.CHAT_SOCKET_URL || '';
     
-    // If CHAT_SOCKET_URL is empty or undefined, derive from CUSTOMER_API
+    // If CHAT_SOCKET_URL is empty, derive from CUSTOMER_API
     if (!socketUrl || socketUrl.trim() === '') {
-      socketUrl = API_CONFIG.CUSTOMER_API.replace(/\/api$/, '');
+      socketUrl = API_CONFIG.CUSTOMER_API;
     }
     
-    // Ensure no trailing slash and no /api suffix
-    socketUrl = socketUrl.replace(/\/$/, '').replace(/\/api$/, '');
+    // CRITICAL: Remove /api suffix and trailing slash - Socket.io needs base URL only
+    socketUrl = socketUrl
+      .replace(/\/api\/?$/, '')  // Remove /api or /api/
+      .replace(/\/$/, '');        // Remove trailing slash
+    
+    // Final validation - ensure no /api in URL
+    if (socketUrl.includes('/api')) {
+      console.warn('⚠️ [useChatSocket] Warning: socketUrl still contains /api, removing...');
+      socketUrl = socketUrl.replace(/\/api.*$/, '');
+    }
 
     console.log('🔌 [useChatSocket] Connecting to:', socketUrl);
     console.log('🔌 [useChatSocket] CUSTOMER_API:', API_CONFIG.CUSTOMER_API);
-    console.log('🔌 [useChatSocket] CHAT_SOCKET_URL:', API_CONFIG.CHAT_SOCKET_URL);
+    console.log('🔌 [useChatSocket] CHAT_SOCKET_URL (raw):', API_CONFIG.CHAT_SOCKET_URL);
     console.log('🔌 [useChatSocket] Final socketUrl:', socketUrl);
 
     const newSocket = io(socketUrl, {

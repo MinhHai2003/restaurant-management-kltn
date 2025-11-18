@@ -4,10 +4,12 @@
 
 // Helper to get socket URL from API URL (remove /api suffix)
 const getSocketUrl = (apiUrl: string, defaultPort: number): string => {
-  if (apiUrl.includes('/api')) {
-    return apiUrl.replace(/\/api$/, '');
-  }
-  return apiUrl;
+  if (!apiUrl) return '';
+  // Remove /api suffix if present
+  let url = apiUrl.replace(/\/api\/?$/, '');
+  // Remove trailing slash
+  url = url.replace(/\/$/, '');
+  return url;
 };
 
 export const API_CONFIG = {
@@ -39,8 +41,19 @@ export const API_CONFIG = {
   TABLE_SOCKET_URL: import.meta.env.VITE_TABLE_SOCKET_URL || 
     getSocketUrl(import.meta.env.VITE_TABLE_API || 'http://localhost:5006/api', 5006),
   // Customer Chat Socket URL
-  CHAT_SOCKET_URL: import.meta.env.VITE_CHAT_SOCKET_URL || 
-    getSocketUrl(import.meta.env.VITE_CUSTOMER_API || 'http://localhost:5002/api', 5002),
+  // Always derive from CUSTOMER_API to ensure consistency
+  CHAT_SOCKET_URL: (() => {
+    const envSocketUrl = import.meta.env.VITE_CHAT_SOCKET_URL;
+    const envCustomerApi = import.meta.env.VITE_CUSTOMER_API || 'http://localhost:5002/api';
+    
+    // If VITE_CHAT_SOCKET_URL is set, use it but ensure no /api suffix
+    if (envSocketUrl) {
+      return getSocketUrl(envSocketUrl, 5002);
+    }
+    
+    // Otherwise derive from CUSTOMER_API
+    return getSocketUrl(envCustomerApi, 5002);
+  })(),
 } as const;
 
 // Debug: Log để kiểm tra env vars đã được load đúng chưa

@@ -62,7 +62,7 @@ class ChatService {
   }
 
   private getAuthHeaders(isAdmin: boolean = false): HeadersInit {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
@@ -71,7 +71,7 @@ class ChatService {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return headers;
+    return headers as HeadersInit;
   }
 
   // Get all conversations
@@ -330,10 +330,17 @@ class ChatService {
       const url = `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/all?${queryParams}`;
       const headers = this.getAuthHeaders(true);
       
+      // Convert headers to object for logging (HeadersInit can be different types)
+      const headersObj = headers instanceof Headers 
+        ? Object.fromEntries(headers.entries())
+        : Array.isArray(headers)
+        ? Object.fromEntries(headers)
+        : headers;
+      
       console.log('📋 [chatService] getAdminConversations - URL:', url);
       console.log('📋 [chatService] getAdminConversations - Headers:', {
-        hasAuth: !!headers.Authorization,
-        contentType: headers['Content-Type'],
+        hasAuth: !!(headersObj as Record<string, string>).Authorization,
+        contentType: (headersObj as Record<string, string>)['Content-Type'],
       });
 
       const response = await fetch(url, {

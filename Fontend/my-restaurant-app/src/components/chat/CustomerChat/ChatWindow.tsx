@@ -9,7 +9,7 @@ interface ChatWindowProps {
   conversation: Conversation | null;
   currentUserId: string;
   onClose?: () => void;
-  onConversationCreated?: (conversation: Conversation) => void;
+  onConversationCreated?: (conversation: Conversation | null) => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -33,10 +33,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         message: `Cuộc trò chuyện đã được đóng bởi ${data.closedByName}`,
         type: 'info',
       });
-      // Update conversation status
+      // Clear conversation state so user can start a new conversation
       if (onConversationCreated) {
-        onConversationCreated({ ...conversation, status: 'closed' } as Conversation);
+        onConversationCreated(null);
       }
+      // Clear messages
+      setMessages([]);
       // Hide notification after 5 seconds
       setTimeout(() => setNotification(null), 5000);
     },
@@ -137,14 +139,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendMessage = async (content: string) => {
     let currentConversation = conversation;
 
-    // If no conversation, create one first
-    if (!currentConversation) {
+    // If no conversation OR conversation is closed, create/find a new one
+    if (!currentConversation || currentConversation.status === 'closed') {
       setIsLoading(true);
       try {
-        // Try to get existing conversation first
+        // Try to get existing OPEN conversation first
         const getResponse = await chatService.getConversations();
         if (getResponse.success && getResponse.data) {
           const conversations = getResponse.data.conversations;
+          // Only find conversations that are open or waiting (not closed)
           const activeConversation = conversations.find(
             (conv) => conv.status === 'open' || conv.status === 'waiting'
           );
@@ -153,7 +156,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           }
         }
 
-        // If still no conversation, create new one
+        // If still no active conversation, create new one
         if (!currentConversation) {
           const createResponse = await chatService.createConversation();
           if (createResponse.success && createResponse.data) {
@@ -165,7 +168,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             throw new Error('Failed to create conversation');
           }
         } else {
-          // Update conversation state if we found existing one
+          // Update conversation state if we found existing active one
           if (onConversationCreated) {
             onConversationCreated(currentConversation);
           }
@@ -400,11 +403,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             onClick={async () => {
               try {
                 const response = await chatService.closeConversation(conversation.id || conversation._id);
-                if (response.success && response.data) {
-                  // Update conversation with latest data from server
+                if (response.success) {
+                  // Clear conversation state so user can start a new conversation
                   if (onConversationCreated) {
-                    onConversationCreated(response.data);
+                    onConversationCreated(null);
                   }
+                  // Clear messages
+                  setMessages([]);
                 }
               } catch (error) {
                 console.error('Failed to close conversation:', error);

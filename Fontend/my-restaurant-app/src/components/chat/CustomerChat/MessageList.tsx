@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { Message } from '../../../services/chatService';
 
 interface MessageListProps {
@@ -15,6 +15,16 @@ export const MessageList: React.FC<MessageListProps> = ({
   typingUserName,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Auto-update time every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,11 +32,11 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = currentTime.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor(diff / 1000);
 
-    if (minutes < 1) return 'Vừa xong';
+    if (seconds < 60) return 'Vừa xong';
     if (minutes < 60) return `${minutes} phút trước`;
     if (minutes < 1440) return `${Math.floor(minutes / 60)} giờ trước`;
 
@@ -107,21 +117,23 @@ export const MessageList: React.FC<MessageListProps> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  fontSize: '12px',
-                  color: isOwnMessage ? 'rgba(255,255,255,0.95)' : '#6b7280',
-                  fontWeight: '500',
+                  gap: '6px',
+                  fontSize: '13px',
+                  color: isOwnMessage ? '#ffffff' : '#374151',
+                  fontWeight: '600',
                 }}
               >
-                <span>{formatTime(message.createdAt)}</span>
+                <span style={{ opacity: 1 }}>{formatTime(message.createdAt)}</span>
                 {/* Read receipt - only show for own messages */}
                 {isOwnMessage && (
                   <span
                     style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      opacity: message.isRead ? 1 : 0.9,
-                      color: 'rgba(255,255,255,1)',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      color: '#ffffff',
+                      opacity: 1,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                      lineHeight: '1',
                     }}
                     title={message.isRead ? 'Đã xem' : 'Đã gửi'}
                   >

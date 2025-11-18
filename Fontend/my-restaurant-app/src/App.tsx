@@ -122,8 +122,11 @@ function AppContent() {
           </Routes>
         </div>
       </Router>
-      {/* Chat Widget - Only show for logged in customers */}
-      {currentUserId && localStorage.getItem('token') && (
+      {/* Chat Widget - Only show for logged in customers (not employees/admins) */}
+      {currentUserId && 
+       localStorage.getItem('token') && 
+       !localStorage.getItem('employeeToken') && 
+       !localStorage.getItem('employeeData') && (
         <ChatWidget currentUserId={currentUserId} />
       )}
     </>

@@ -46,10 +46,13 @@ export const AdminChatDashboard: React.FC = () => {
         params.status = filter;
       }
 
+      console.log('📋 [AdminChatDashboard] Loading conversations with params:', params);
       const response = await chatService.getAdminConversations(params);
+      console.log('📋 [AdminChatDashboard] Response:', response);
 
       if (response.success && response.data) {
         let filteredConversations = response.data.conversations;
+        console.log('📋 [AdminChatDashboard] Loaded conversations:', filteredConversations.length);
 
         // Apply search filter
         if (searchQuery.trim()) {

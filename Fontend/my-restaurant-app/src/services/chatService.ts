@@ -327,23 +327,37 @@ class ChatService {
       if (params?.page) queryParams.append('page', params.page.toString());
       if (params?.limit) queryParams.append('limit', params.limit.toString());
 
-      const response = await fetch(
-        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/all?${queryParams}`,
-        {
-          method: 'GET',
-          headers: this.getAuthHeaders(true),
-        }
-      );
+      const url = `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/all?${queryParams}`;
+      const headers = this.getAuthHeaders(true);
+      
+      console.log('📋 [chatService] getAdminConversations - URL:', url);
+      console.log('📋 [chatService] getAdminConversations - Headers:', {
+        hasAuth: !!headers.Authorization,
+        contentType: headers['Content-Type'],
+      });
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
+
+      console.log('📋 [chatService] getAdminConversations - Response status:', response.status);
 
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('📋 [chatService] getAdminConversations - Error response:', data);
         throw new Error(data.message || 'Failed to get conversations');
       }
 
+      console.log('📋 [chatService] getAdminConversations - Success:', {
+        conversationsCount: data.data?.conversations?.length || 0,
+        pagination: data.data?.pagination,
+      });
+
       return data;
     } catch (error) {
-      console.error('Get admin conversations error:', error);
+      console.error('📋 [chatService] getAdminConversations - Exception:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get conversations',

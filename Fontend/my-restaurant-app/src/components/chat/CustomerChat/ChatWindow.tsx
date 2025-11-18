@@ -27,16 +27,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversationId: conversation?.id || conversation?._id,
     onMessageReceived: (message: Message) => {
       setMessages((prev) => {
-        // Avoid duplicates
-        if (prev.some((m) => (m.id || m._id) === (message.id || message._id))) {
+        // Avoid duplicates - check by ID and also by content + timestamp to catch edge cases
+        const messageId = message.id || message._id;
+        const isDuplicate = prev.some((m) => {
+          const existingId = m.id || m._id;
+          return existingId === messageId || 
+                 (existingId && messageId && existingId.toString() === messageId.toString());
+        });
+        
+        if (isDuplicate) {
+          console.log('⚠️ [ChatWindow] Duplicate message detected, skipping:', messageId);
           return prev;
         }
+        
         return [...prev, message];
       });
 
-      // Mark as read if it's from admin
+      // Mark as read if it's from admin (fire and forget, don't block on errors)
       if (message.senderType === 'admin' && !message.isRead) {
-        chatService.markMessageAsRead(message.id || message._id);
+        chatService.markMessageAsRead(message.id || message._id).catch((error) => {
+          console.warn('Failed to mark message as read:', error);
+          // Don't throw - this is not critical
+        });
       }
     },
     onTyping: (data) => {
@@ -126,24 +138,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     if (!currentConversation) return;
 
     try {
-      // Send via socket (will reconnect with new conversationId)
+      // Send via socket only - message will be added via socket event
       sendMessage(content);
-
-      // Also send via API as backup
-      const response = await chatService.sendMessage(
-        currentConversation.id || currentConversation._id,
-        content
-      );
-
-      if (response.success && response.data) {
-        // Message will be added via socket event
-        // But add it immediately for better UX
-        const newMessage: Message = {
-          ...response.data,
-          id: response.data.id || response.data._id,
-        };
-        setMessages((prev) => [...prev, newMessage]);
-      }
+      
+      // Note: We don't send via API here to avoid duplicate messages
+      // Socket will handle the message and emit it back via 'message_received' event
     } catch (error) {
       console.error('Failed to send message:', error);
     }

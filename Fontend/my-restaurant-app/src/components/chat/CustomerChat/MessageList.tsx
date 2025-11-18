@@ -119,7 +119,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontSize: '13px',
-                  color: isOwnMessage ? '#fef3c7' : '#1f2937',
+                  color: '#323d4d',
                   fontWeight: '700',
                 }}
               >
@@ -130,7 +130,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                     style={{
                       fontSize: '16px',
                       fontWeight: 'bold',
-                      color: '#fef3c7',
+                      color: '#323d4d',
                       lineHeight: '1',
                       display: 'inline-block',
                     }}

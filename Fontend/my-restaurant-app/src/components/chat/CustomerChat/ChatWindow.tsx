@@ -139,8 +139,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleSendMessage = async (content: string) => {
     let currentConversation = conversation;
 
-    // If no conversation OR conversation is closed, create/find a new one
-    if (!currentConversation || currentConversation.status === 'closed') {
+    // If no conversation, try to find existing open one first
+    if (!currentConversation) {
       setIsLoading(true);
       try {
         // Try to get existing OPEN conversation first
@@ -175,6 +175,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
       } catch (error) {
         console.error('Failed to create/load conversation:', error);
+        setIsLoading(false);
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (currentConversation.status === 'closed') {
+      // If conversation is closed, always create a NEW conversation
+      setIsLoading(true);
+      try {
+        const createResponse = await chatService.createConversation();
+        if (createResponse.success && createResponse.data) {
+          currentConversation = createResponse.data;
+          if (onConversationCreated) {
+            onConversationCreated(currentConversation);
+          }
+        } else {
+          throw new Error('Failed to create conversation');
+        }
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
         setIsLoading(false);
         return;
       } finally {

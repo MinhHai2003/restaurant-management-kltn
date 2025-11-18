@@ -14,7 +14,7 @@ export interface Conversation {
   };
   createdAt: string;
   updatedAt: string;
-  customerId?: {
+  customerInfo?: {
     _id: string;
     name: string;
     email: string;

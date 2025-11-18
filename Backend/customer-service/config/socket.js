@@ -94,13 +94,23 @@ const initSocket = (server) => {
       allowedHeaders: ["Content-Type", "Authorization"],
     },
     path: "/socket.io/",
-    transports: ["websocket", "polling"],
+    // Railway: Try polling first, then upgrade to websocket
+    transports: ["polling", "websocket"],
     allowEIO3: true,
     pingTimeout: 60000,
     pingInterval: 25000,
     // Railway/production specific settings
     serveClient: false,
     allowUpgrades: true,
+    // Railway specific: handle proxy correctly
+    cookie: {
+      name: "io",
+      httpOnly: true,
+      sameSite: "lax",
+    },
+    // Additional Railway settings
+    connectTimeout: 45000,
+    upgradeTimeout: 30000,
   });
   
   console.log("✅ Socket.io initialized with path: /socket.io/");

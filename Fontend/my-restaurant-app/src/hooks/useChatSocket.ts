@@ -54,8 +54,18 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
         token,
         type: 'customer',
       },
-      transports: ['websocket', 'polling'],
+      // Railway: Try polling first, then upgrade to websocket
+      transports: ['polling', 'websocket'],
       path: '/socket.io/',
+      // Railway specific settings
+      upgrade: true,
+      rememberUpgrade: false,
+      timeout: 20000,
+      forceNew: false,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
 
     socketRef.current = newSocket;

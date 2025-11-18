@@ -71,7 +71,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ currentUserId }) => {
   }, [isOpen, conversation]);
 
   const handleToggle = () => {
-    setIsOpen(!isOpen);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
+    
+    // When opening widget, check if current conversation is closed
+    // If closed, clear it so user can start fresh
+    if (newIsOpen && conversation && conversation.status === 'closed') {
+      setConversation(null);
+    }
   };
 
   return (

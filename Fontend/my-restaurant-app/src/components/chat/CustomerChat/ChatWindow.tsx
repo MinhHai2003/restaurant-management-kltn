@@ -215,8 +215,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
-  // Show ready-to-chat UI when no conversation (user hasn't sent first message yet)
-  if (!conversation) {
+  // Show ready-to-chat UI when no conversation OR conversation is closed
+  // (user needs to start a new conversation)
+  if (!conversation || conversation.status === 'closed') {
     return (
       <div
         style={{
@@ -404,8 +405,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onSend={handleSendMessage}
         onTypingStart={startTyping}
         onTypingStop={stopTyping}
-        disabled={!isConnected || isLoading || conversation?.status === 'closed'}
-        placeholder={conversation?.status === 'closed' ? 'Cuộc trò chuyện đã đóng' : 'Nhập tin nhắn của bạn...'}
+        disabled={!isConnected || isLoading}
+        placeholder="Nhập tin nhắn của bạn..."
       />
 
       {/* Actions */}
@@ -447,19 +448,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           >
             Đóng cuộc trò chuyện
           </button>
-        )}
-        {conversation.status === 'closed' && (
-          <div
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              color: '#6b7280',
-              backgroundColor: '#f3f4f6',
-              borderRadius: '6px',
-            }}
-          >
-            Cuộc trò chuyện đã đóng
-          </div>
         )}
       </div>
 

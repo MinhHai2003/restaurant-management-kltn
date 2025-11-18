@@ -119,19 +119,18 @@ export const MessageList: React.FC<MessageListProps> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontSize: '13px',
-                  color: isOwnMessage ? '#ffffff' : '#1f2937',
-                  fontWeight: '600',
+                  color: isOwnMessage ? '#fef3c7' : '#1f2937',
+                  fontWeight: '700',
                 }}
               >
-                <span>{formatTime(message.createdAt)}</span>
+                <span style={{ fontWeight: '700' }}>{formatTime(message.createdAt)}</span>
                 {/* Read receipt - only show for own messages */}
                 {isOwnMessage && (
                   <span
                     style={{
-                      fontSize: '15px',
+                      fontSize: '16px',
                       fontWeight: 'bold',
-                      color: '#ffffff',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+                      color: '#fef3c7',
                       lineHeight: '1',
                       display: 'inline-block',
                     }}

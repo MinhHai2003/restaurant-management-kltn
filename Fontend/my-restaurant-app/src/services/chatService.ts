@@ -431,14 +431,41 @@ class ChatService {
     }
   }
 
-  // Close conversation
+  // Close conversation (Customer)
   async closeConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/${conversationId}/close`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(false), // Customer token
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to close conversation');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Close conversation error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to close conversation',
+      };
+    }
+  }
+
+  // Close conversation (Admin)
+  async closeAdminConversation(conversationId: string): Promise<ApiResponse<Conversation>> {
     try {
       const response = await fetch(
         `${API_CONFIG.CUSTOMER_API}/customers/chat/conversations/admin/${conversationId}/close`,
         {
           method: 'PATCH',
-          headers: this.getAuthHeaders(true),
+          headers: this.getAuthHeaders(true), // Admin token
         }
       );
 

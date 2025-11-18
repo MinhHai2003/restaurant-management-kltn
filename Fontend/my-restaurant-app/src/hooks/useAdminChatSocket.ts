@@ -8,10 +8,12 @@ interface UseAdminChatSocketOptions {
   onMessageReceived?: (message: Message) => void;
   onTyping?: (data: { userId: string; userName: string; isTyping: boolean }) => void;
   onNewConversation?: (data: any) => void;
+  onMessageRead?: (data: { messageId: string; isRead: boolean; readAt?: string }) => void;
+  onConversationClosed?: (data: { conversationId: string; closedBy: string; closedByName: string }) => void;
 }
 
 export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
-  const { conversationId, onMessageReceived, onTyping, onNewConversation } = options;
+  const { conversationId, onMessageReceived, onTyping, onNewConversation, onMessageRead, onConversationClosed } = options;
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +22,17 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onTypingRef = useRef(onTyping);
   const onNewConversationRef = useRef(onNewConversation);
+  const onMessageReadRef = useRef(onMessageRead);
+  const onConversationClosedRef = useRef(onConversationClosed);
   
   // Update refs when callbacks change
   useEffect(() => {
     onMessageReceivedRef.current = onMessageReceived;
     onTypingRef.current = onTyping;
     onNewConversationRef.current = onNewConversation;
-  }, [onMessageReceived, onTyping, onNewConversation]);
+    onMessageReadRef.current = onMessageRead;
+    onConversationClosedRef.current = onConversationClosed;
+  }, [onMessageReceived, onTyping, onNewConversation, onMessageRead, onConversationClosed]);
 
   useEffect(() => {
     const token = localStorage.getItem('employeeToken');
@@ -116,6 +122,20 @@ export const useAdminChatSocket = (options: UseAdminChatSocketOptions = {}) => {
 
     newSocket.on('message_sent', (data: { success: boolean; messageId?: string }) => {
       console.log('✅ [useAdminChatSocket] Message sent:', data);
+    });
+
+    newSocket.on('message_read', (data: { messageId: string; isRead: boolean; readAt?: string }) => {
+      console.log('✓✓ [useAdminChatSocket] Message read:', data);
+      if (onMessageReadRef.current) {
+        onMessageReadRef.current(data);
+      }
+    });
+
+    newSocket.on('conversation_closed', (data: { conversationId: string; closedBy: string; closedByName: string }) => {
+      console.log('🔒 [useAdminChatSocket] Conversation closed:', data);
+      if (onConversationClosedRef.current) {
+        onConversationClosedRef.current(data);
+      }
     });
 
     newSocket.on('new_customer_message', (data: any) => {

@@ -7,10 +7,12 @@ interface UseChatSocketOptions {
   conversationId?: string;
   onMessageReceived?: (message: Message) => void;
   onTyping?: (data: { userId: string; userName: string; isTyping: boolean }) => void;
+  onMessageRead?: (data: { messageId: string; isRead: boolean; readAt?: string }) => void;
+  onConversationClosed?: (data: { conversationId: string; closedBy: string; closedByName: string }) => void;
 }
 
 export const useChatSocket = (options: UseChatSocketOptions = {}) => {
-  const { conversationId, onMessageReceived, onTyping } = options;
+  const { conversationId, onMessageReceived, onTyping, onMessageRead, onConversationClosed } = options;
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,12 +20,16 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
   // Use refs to always use latest callbacks
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onTypingRef = useRef(onTyping);
+  const onMessageReadRef = useRef(onMessageRead);
+  const onConversationClosedRef = useRef(onConversationClosed);
   
   // Update refs when callbacks change
   useEffect(() => {
     onMessageReceivedRef.current = onMessageReceived;
     onTypingRef.current = onTyping;
-  }, [onMessageReceived, onTyping]);
+    onMessageReadRef.current = onMessageRead;
+    onConversationClosedRef.current = onConversationClosed;
+  }, [onMessageReceived, onTyping, onMessageRead, onConversationClosed]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -119,6 +125,20 @@ export const useChatSocket = (options: UseChatSocketOptions = {}) => {
 
     newSocket.on('message_sent', (data: { success: boolean; messageId?: string }) => {
       console.log('✅ [useChatSocket] Message sent:', data);
+    });
+
+    newSocket.on('message_read', (data: { messageId: string; isRead: boolean; readAt?: string }) => {
+      console.log('✓✓ [useChatSocket] Message read:', data);
+      if (onMessageReadRef.current) {
+        onMessageReadRef.current(data);
+      }
+    });
+
+    newSocket.on('conversation_closed', (data: { conversationId: string; closedBy: string; closedByName: string }) => {
+      console.log('🔒 [useChatSocket] Conversation closed:', data);
+      if (onConversationClosedRef.current) {
+        onConversationClosedRef.current(data);
+      }
     });
 
     newSocket.on('typing_indicator', (data: {

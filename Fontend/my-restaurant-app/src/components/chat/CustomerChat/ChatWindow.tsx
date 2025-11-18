@@ -23,8 +23,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserName, setTypingUserName] = useState<string>('');
 
+  const [notification, setNotification] = useState<{ message: string; type: 'info' | 'warning' | 'error' } | null>(null);
+
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } = useChatSocket({
     conversationId: conversation?.id || conversation?._id,
+    onConversationClosed: (data) => {
+      // Show notification when conversation is closed
+      setNotification({
+        message: `Cuộc trò chuyện đã được đóng bởi ${data.closedByName}`,
+        type: 'info',
+      });
+      // Update conversation status
+      if (onConversationCreated) {
+        onConversationCreated({ ...conversation, status: 'closed' } as Conversation);
+      }
+      // Hide notification after 5 seconds
+      setTimeout(() => setNotification(null), 5000);
+    },
+    onMessageRead: (data) => {
+      // Update message read status when notified via socket
+      setMessages((prev) =>
+        prev.map((m) =>
+          (m.id || m._id) === data.messageId
+            ? { ...m, isRead: data.isRead, readAt: data.readAt }
+            : m
+        )
+      );
+    },
     onMessageReceived: (message: Message) => {
       setMessages((prev) => {
         // Avoid duplicates - check by ID and also by content + timestamp to catch edge cases
@@ -45,10 +70,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       // Mark as read if it's from admin (fire and forget, don't block on errors)
       if (message.senderType === 'admin' && !message.isRead) {
-        chatService.markMessageAsRead(message.id || message._id).catch((error) => {
-          console.warn('Failed to mark message as read:', error);
-          // Don't throw - this is not critical
-        });
+        chatService.markMessageAsRead(message.id || message._id)
+          .then((response) => {
+            // Update message in state when marked as read
+            if (response.success && response.data) {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  (m.id || m._id) === (message.id || message._id)
+                    ? { ...m, isRead: true, readAt: response.data.readAt }
+                    : m
+                )
+              );
+            }
+          })
+          .catch((error) => {
+            console.warn('Failed to mark message as read:', error);
+            // Don't throw - this is not critical
+          });
       }
     },
     onTyping: (data) => {
@@ -337,9 +375,77 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         onSend={handleSendMessage}
         onTypingStart={startTyping}
         onTypingStop={stopTyping}
-        disabled={!isConnected || isLoading}
-        placeholder="Nhập tin nhắn của bạn..."
+        disabled={!isConnected || isLoading || conversation?.status === 'closed'}
+        placeholder={conversation?.status === 'closed' ? 'Cuộc trò chuyện đã đóng' : 'Nhập tin nhắn của bạn...'}
       />
+
+      {/* Actions */}
+      <div
+        style={{
+          padding: '8px 16px',
+          borderTop: '1px solid #e5e7eb',
+          display: 'flex',
+          gap: '8px',
+          backgroundColor: '#f9fafb',
+        }}
+      >
+        {conversation.status === 'open' && (
+          <button
+            onClick={async () => {
+              try {
+                const response = await chatService.closeConversation(conversation.id || conversation._id);
+                if (response.success && response.data) {
+                  // Update conversation with latest data from server
+                  if (onConversationCreated) {
+                    onConversationCreated(response.data);
+                  }
+                }
+              } catch (error) {
+                console.error('Failed to close conversation:', error);
+              }
+            }}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              fontSize: '12px',
+              backgroundColor: 'white',
+              color: '#374151',
+              cursor: 'pointer',
+            }}
+          >
+            Đóng cuộc trò chuyện
+          </button>
+        )}
+        {conversation.status === 'closed' && (
+          <div
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              color: '#6b7280',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '6px',
+            }}
+          >
+            Cuộc trò chuyện đã đóng
+          </div>
+        )}
+      </div>
+
+      {notification && (
+        <div
+          style={{
+            padding: '8px 16px',
+            backgroundColor: notification.type === 'info' ? '#dbeafe' : notification.type === 'warning' ? '#fef3c7' : '#fee2e2',
+            color: notification.type === 'info' ? '#1e40af' : notification.type === 'warning' ? '#92400e' : '#dc2626',
+            fontSize: '12px',
+            textAlign: 'center',
+            borderTop: '1px solid #e5e7eb',
+          }}
+        >
+          {notification.message}
+        </div>
+      )}
 
       {socketError && (
         <div

@@ -1,6 +1,7 @@
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
 const Customer = require("../models/Customer");
+const { getIO, emitToConversation, emitToCustomer, emitToAllAdmins } = require("../config/socket");
 
 // Get all conversations (different for customer vs admin)
 const getConversations = async (req, res) => {
@@ -194,16 +195,9 @@ const assignConversation = async (req, res) => {
   }
 };
 
-// Close conversation
+// Close conversation (can be done by customer or admin)
 const closeConversation = async (req, res) => {
   try {
-    if (!req.employeeId) {
-      return res.status(403).json({
-        success: false,
-        message: "Only employees can close conversations",
-      });
-    }
-
     const { id } = req.params;
 
     const conversation = await Conversation.findById(id);
@@ -215,8 +209,68 @@ const closeConversation = async (req, res) => {
       });
     }
 
+    // Check access: customer can only close their own conversation, admin can close any
+    if (req.customerId) {
+      if (conversation.customerId.toString() !== req.customerId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
+        });
+      }
+    } else if (!req.employeeId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
     conversation.status = "closed";
     await conversation.save();
+
+    // Emit socket event to notify both customer and admin
+    const io = getIO();
+    if (io) {
+      const closedBy = req.customerId ? "customer" : "admin";
+      const closedByName = req.customerId 
+        ? (await Customer.findById(req.customerId))?.name || "Customer"
+        : req.employeeName || "Admin";
+
+      // Notify all participants in the conversation
+      emitToConversation(
+        conversation._id.toString(),
+        "conversation_closed",
+        {
+          conversationId: conversation._id.toString(),
+          closedBy,
+          closedByName,
+          status: "closed",
+          timestamp: new Date(),
+        }
+      );
+
+      // Also notify customer directly if closed by admin
+      if (!req.customerId && conversation.customerId) {
+        emitToCustomer(conversation.customerId.toString(), "conversation_closed", {
+          conversationId: conversation._id.toString(),
+          closedBy: "admin",
+          closedByName: req.employeeName || "Admin",
+          status: "closed",
+          timestamp: new Date(),
+        });
+      }
+
+      // Notify all admins if closed by customer
+      if (req.customerId) {
+        emitToAllAdmins("conversation_closed", {
+          conversationId: conversation._id.toString(),
+          customerId: conversation.customerId.toString(),
+          customerName: (await Customer.findById(conversation.customerId))?.name || "Customer",
+          closedBy: "customer",
+          status: "closed",
+          timestamp: new Date(),
+        });
+      }
+    }
 
     res.json({
       success: true,

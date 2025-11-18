@@ -24,11 +24,28 @@ export const AdminChatDashboard: React.FC = () => {
     }
   }, []);
 
-  // Setup socket for new conversation notifications
+  // Setup socket for new conversation notifications and conversation closed
   useAdminChatSocket({
     onNewConversation: (data) => {
       console.log('New conversation notification:', data);
       // Reload conversations
+      loadConversations();
+    },
+    onConversationClosed: (data) => {
+      console.log('Conversation closed notification:', data);
+      // Update conversation status in list
+      setConversations((prev) =>
+        prev.map((conv) =>
+          (conv.id || conv._id) === data.conversationId
+            ? { ...conv, status: 'closed' as const }
+            : conv
+        )
+      );
+      // If current selected conversation was closed, update it
+      if (selectedConversation && (selectedConversation.id || selectedConversation._id) === data.conversationId) {
+        setSelectedConversation({ ...selectedConversation, status: 'closed' as const });
+      }
+      // Reload conversations to ensure data is in sync
       loadConversations();
     },
   });
@@ -103,8 +120,31 @@ export const AdminChatDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [loadConversations]);
 
-  const handleSelectConversation = (conversation: Conversation) => {
+  const handleSelectConversation = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    
+    // Mark all messages as read when admin selects conversation
+    // This will clear the unread count badge immediately
+    if (conversation.unreadCount?.admin > 0) {
+      try {
+        await chatService.markAdminAllAsRead(conversation.id || conversation._id);
+        
+        // Update local state immediately to clear badge without waiting for reload
+        setConversations((prev) =>
+          prev.map((conv) =>
+            (conv.id || conv._id) === (conversation.id || conversation._id)
+              ? { ...conv, unreadCount: { ...conv.unreadCount, admin: 0 } }
+              : conv
+          )
+        );
+        
+        // Also reload conversations to ensure data is in sync with server
+        loadConversations();
+      } catch (error) {
+        console.warn('Failed to mark all as read:', error);
+        // Don't block - continue anyway
+      }
+    }
   };
 
   const handleConversationUpdated = () => {

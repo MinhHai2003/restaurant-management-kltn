@@ -48,6 +48,12 @@ router.get(
   getUnreadCount
 );
 
+router.patch(
+  "/:id/close",
+  authenticateCustomer,
+  closeConversation
+);
+
 // Admin/Employee routes
 router.get(
   "/admin/all",

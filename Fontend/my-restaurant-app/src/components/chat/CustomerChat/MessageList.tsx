@@ -103,14 +103,29 @@ export const MessageList: React.FC<MessageListProps> = ({
               >
                 {message.content}
               </div>
-              <span
+              <div
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
                   fontSize: '11px',
-                  color: '#9ca3af',
+                  color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#9ca3af',
                 }}
               >
-                {formatTime(message.createdAt)}
-              </span>
+                <span>{formatTime(message.createdAt)}</span>
+                {/* Read receipt - only show for own messages */}
+                {isOwnMessage && (
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      opacity: message.isRead ? 1 : 0.5,
+                    }}
+                    title={message.isRead ? 'Đã xem' : 'Đã gửi'}
+                  >
+                    {message.isRead ? '✓✓' : '✓'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );

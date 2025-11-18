@@ -25,10 +25,34 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUserName, setTypingUserName] = useState<string>('');
+  const [notification, setNotification] = useState<{ message: string; type: 'info' | 'warning' | 'error' } | null>(null);
 
   const { sendMessage, startTyping, stopTyping, isConnected, error: socketError } =
     useAdminChatSocket({
       conversationId: conversation?.id || conversation?._id,
+      onConversationClosed: (data) => {
+        // Show notification when conversation is closed
+        setNotification({
+          message: `Cuộc trò chuyện đã được đóng bởi ${data.closedByName}`,
+          type: 'info',
+        });
+        // Notify parent to reload conversations
+        if (onAssign) {
+          onAssign();
+        }
+        // Hide notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      },
+      onMessageRead: (data) => {
+        // Update message read status when notified via socket
+        setMessages((prev) =>
+          prev.map((m) =>
+            (m.id || m._id) === data.messageId
+              ? { ...m, isRead: data.isRead, readAt: data.readAt }
+              : m
+          )
+        );
+      },
       onMessageReceived: (message: Message) => {
         setMessages((prev) => {
           // Avoid duplicates - check by ID and also by content + timestamp to catch edge cases
@@ -83,6 +107,9 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
 
         if (response.success && response.data) {
           setMessages(response.data.messages);
+          
+          // Note: Mark all as read is handled in AdminChatDashboard.handleSelectConversation
+          // to ensure unread count badge is cleared immediately when conversation is selected
         }
       } catch (error) {
         console.error('Failed to load messages:', error);
@@ -92,7 +119,7 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
     };
 
     loadMessages();
-  }, [conversation]);
+  }, [conversation, onAssign]);
 
   // Auto assign conversation if not assigned
   useEffect(() => {
@@ -133,7 +160,7 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
     if (!conversation) return;
 
     try {
-      await chatService.closeConversation(conversation.id || conversation._id);
+      await chatService.closeAdminConversation(conversation.id || conversation._id);
       if (onClose) {
         onClose();
       }
@@ -250,6 +277,21 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
           </button>
         )}
       </div>
+
+      {notification && (
+        <div
+          style={{
+            padding: '8px 16px',
+            backgroundColor: notification.type === 'info' ? '#dbeafe' : notification.type === 'warning' ? '#fef3c7' : '#fee2e2',
+            color: notification.type === 'info' ? '#1e40af' : notification.type === 'warning' ? '#92400e' : '#dc2626',
+            fontSize: '12px',
+            textAlign: 'center',
+            borderTop: '1px solid #e5e7eb',
+          }}
+        >
+          {notification.message}
+        </div>
+      )}
 
       {socketError && (
         <div

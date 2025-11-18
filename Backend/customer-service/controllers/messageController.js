@@ -1,5 +1,6 @@
 const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
+const { getIO } = require("../config/socket");
 const Customer = require("../models/Customer");
 
 // Get messages for a conversation
@@ -228,6 +229,18 @@ const markMessageAsRead = async (req, res) => {
       if (conversation.unreadCount[userType] > 0) {
         conversation.unreadCount[userType] -= 1;
         await conversation.save();
+      }
+
+      // Emit socket event to notify sender that message was read
+      const io = getIO();
+      if (io) {
+        // Notify the sender (customer or admin) that their message was read
+        io.to(`conversation_${conversation._id.toString()}`).emit("message_read", {
+          messageId: message._id.toString(),
+          conversationId: conversation._id.toString(),
+          isRead: true,
+          readAt: message.readAt,
+        });
       }
     }
 

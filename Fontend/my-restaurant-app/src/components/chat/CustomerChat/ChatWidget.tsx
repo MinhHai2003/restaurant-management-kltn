@@ -159,6 +159,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ currentUserId }) => {
             currentUserId={currentUserId}
             onClose={handleToggle}
             onConversationCreated={setConversation}
+            onConversationClosed={() => {
+              // When conversation is closed, close the widget
+              setConversation(null);
+              setIsOpen(false);
+            }}
           />
         </div>
       )}

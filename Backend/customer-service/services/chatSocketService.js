@@ -90,16 +90,27 @@ const handleCustomerMessage = async (socket, data) => {
       createdAt: message.createdAt,
     };
 
-    const { emitToConversation, emitToAllAdmins } = socketApi;
+    const { emitToConversation, emitToAllAdmins, emitToCustomer } = socketApi;
     if (typeof emitToConversation !== "function") {
       throw new Error("emitToConversation helper not available");
     }
 
+    // Emit to conversation room (for all participants)
     emitToConversation(
       conversation._id.toString(),
       "message_received",
       messageData
     );
+
+    // Also emit directly to customer socket to ensure they receive it
+    // (in case they haven't joined the room yet)
+    if (emitToCustomer && conversationWasCreated) {
+      emitToCustomer(
+        conversation.customerId.toString(),
+        "message_received",
+        messageData
+      );
+    }
 
     // Notify all admins about new message
     emitToAllAdmins &&

@@ -10,6 +10,7 @@ interface ChatWindowProps {
   currentUserId: string;
   onClose?: () => void;
   onConversationCreated?: (conversation: Conversation | null) => void;
+  onConversationClosed?: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -17,6 +18,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   currentUserId,
   onClose,
   onConversationCreated,
+  onConversationClosed,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,19 +46,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     },
     onConversationClosed: (data) => {
-      // Show notification when conversation is closed
-      setNotification({
-        message: `Cuộc trò chuyện đã được đóng bởi ${data.closedByName}`,
-        type: 'info',
-      });
       // Clear conversation state so user can start a new conversation
       if (onConversationCreated) {
         onConversationCreated(null);
       }
       // Clear messages
       setMessages([]);
-      // Hide notification after 5 seconds
-      setTimeout(() => setNotification(null), 5000);
+      // Notify parent to close widget immediately
+      if (onConversationClosed) {
+        onConversationClosed();
+      }
     },
     onMessageRead: (data) => {
       // Update message read status when notified via socket
@@ -70,8 +69,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     },
     onMessageReceived: (message: Message) => {
       setMessages((prev) => {
-        // Avoid duplicates - check by ID and also by content + timestamp to catch edge cases
         const messageId = message.id || message._id;
+        
+        // Check if this is replacing an optimistic message (same content, same sender, recent)
+        const optimisticIndex = prev.findIndex((m) => {
+          const existingId = m.id || m._id;
+          // Check if it's a temp message with same content and sender
+          if (existingId && existingId.toString().startsWith('temp-')) {
+            return m.content === message.content && 
+                   m.senderId === message.senderId &&
+                   m.senderType === message.senderType;
+          }
+          return false;
+        });
+        
+        if (optimisticIndex !== -1) {
+          // Replace optimistic message with real one
+          const newMessages = [...prev];
+          newMessages[optimisticIndex] = message;
+          return newMessages;
+        }
+        
+        // Avoid duplicates - check by ID
         const isDuplicate = prev.some((m) => {
           const existingId = m.id || m._id;
           return existingId === messageId || 
@@ -180,6 +199,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             if (onConversationCreated) {
               onConversationCreated(currentConversation);
             }
+            // Wait a bit for socket to join conversation room
+            await new Promise(resolve => setTimeout(resolve, 500));
           } else {
             throw new Error('Failed to create conversation');
           }
@@ -188,6 +209,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           if (onConversationCreated) {
             onConversationCreated(currentConversation);
           }
+          // Wait a bit for socket to join conversation room
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } catch (error) {
         console.error('Failed to create/load conversation:', error);
@@ -206,6 +229,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           if (onConversationCreated) {
             onConversationCreated(currentConversation);
           }
+          // Wait a bit for socket to join conversation room
+          await new Promise(resolve => setTimeout(resolve, 500));
         } else {
           throw new Error('Failed to create conversation');
         }
@@ -230,6 +255,35 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       return;
     }
 
+    // Get customer name from localStorage
+    let customerName = 'Bạn';
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        customerName = user.name || user.username || 'Bạn';
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // Optimistic update: Add message to UI immediately
+    const tempMessageId = `temp-${Date.now()}`;
+    const tempMessage: Message = {
+      id: tempMessageId,
+      _id: tempMessageId,
+      conversationId: conversationIdToUse,
+      senderId: currentUserId,
+      senderType: 'customer',
+      senderName: customerName,
+      content: content,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      attachments: [],
+    };
+    
+    setMessages((prev) => [...prev, tempMessage]);
+
     try {
       // Send via socket - pass conversationId explicitly to ensure it's used
       // even if hook's conversationId hasn't updated yet
@@ -237,8 +291,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       
       // Note: We don't send via API here to avoid duplicate messages
       // Socket will handle the message and emit it back via 'message_received' event
+      // The optimistic message will be replaced by the real one from socket
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((m) => (m.id || m._id) !== tempMessage.id));
     }
   };
 
@@ -458,6 +515,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   }
                   // Clear messages
                   setMessages([]);
+                  // Notify parent to close widget immediately
+                  if (onConversationClosed) {
+                    onConversationClosed();
+                  }
                 }
               } catch (error) {
                 console.error('Failed to close conversation:', error);

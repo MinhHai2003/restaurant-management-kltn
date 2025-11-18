@@ -74,10 +74,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           .then((response) => {
             // Update message in state when marked as read
             if (response.success && response.data) {
+              const messageData = response.data;
               setMessages((prev) =>
                 prev.map((m) =>
                   (m.id || m._id) === (message.id || message._id)
-                    ? { ...m, isRead: true, readAt: response.data.readAt }
+                    ? { ...m, isRead: true, readAt: messageData.readAt }
                     : m
                 )
               );

@@ -1,15 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatBot from './ChatBot';
 import ChatButton from './ChatButton';
 import { useCart } from '../../contexts/CartContext';
-import { ChatWidget } from '../chat/CustomerChat/ChatWidget';
+import { ChatWindow } from '../chat/CustomerChat/ChatWindow';
 import { useAuth } from '../../hooks/useAuth';
+import { chatService } from '../../services/chatService';
+import type { Conversation } from '../../services/chatService';
 
 const ChatBotContainer: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [chatType, setChatType] = useState<'bot' | 'admin' | null>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const { updateCartCount } = useCart();
   const { user } = useAuth();
+
+  // Load conversation when admin chat is opened
+  useEffect(() => {
+    const loadConversation = async () => {
+      if (chatType !== 'admin' || !user) return;
+
+      setIsLoadingConversation(true);
+      try {
+        const response = await chatService.getConversations({ status: 'open' });
+
+        if (response.success && response.data) {
+          const conversations = response.data.conversations;
+          if (conversations.length > 0) {
+            setConversation(conversations[0]);
+          } else {
+            const createResponse = await chatService.createConversation();
+            if (createResponse.success && createResponse.data) {
+              setConversation(createResponse.data);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load conversation:', error);
+      } finally {
+        setIsLoadingConversation(false);
+      }
+    };
+
+    loadConversation();
+  }, [chatType, user]);
 
   const toggleChat = () => {
     if (chatType) {
@@ -130,7 +164,25 @@ const ChatBotContainer: React.FC = () => {
             overflow: 'hidden',
           }}
         >
-          <ChatWidget currentUserId={user._id || user.id || ''} />
+          {isLoadingConversation ? (
+            <div
+              style={{
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#6b7280',
+              }}
+            >
+              Đang tải...
+            </div>
+          ) : (
+            <ChatWindow
+              conversation={conversation}
+              currentUserId={user._id || user.id || ''}
+              onClose={toggleChat}
+            />
+          )}
         </div>
       )}
 

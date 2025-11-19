@@ -180,12 +180,36 @@ const MenuManagement: React.FC = () => {
   };
 
   const updateIngredient = (index: number, field: keyof Ingredient, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.map((ingredient, i) => 
-        i === index ? { ...ingredient, [field]: value } : ingredient
-      )
-    }));
+    setFormData(prev => {
+      const updatedIngredients = [...prev.ingredients];
+      
+      // Nếu đang cập nhật tên nguyên liệu, tự động lấy đơn vị tính
+      if (field === 'name' && typeof value === 'string') {
+        const selectedItem = inventoryItems.find(item => item.name === value);
+        if (selectedItem) {
+          updatedIngredients[index] = {
+            ...updatedIngredients[index],
+            name: value,
+            unit: selectedItem.unit // Tự động điền đơn vị
+          };
+        } else {
+          updatedIngredients[index] = {
+            ...updatedIngredients[index],
+            [field]: value
+          };
+        }
+      } else {
+        updatedIngredients[index] = {
+          ...updatedIngredients[index],
+          [field]: value
+        };
+      }
+      
+      return {
+        ...prev,
+        ingredients: updatedIngredients
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -554,19 +578,21 @@ const MenuManagement: React.FC = () => {
                 
                 {formData.ingredients.map((ingredient, index) => (
                   <div key={index} style={{
-                    display: 'flex',
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1.2fr 1fr 50px',
                     gap: '8px',
                     marginBottom: '8px',
                     padding: '12px',
                     background: '#f8fafc',
                     borderRadius: '8px',
-                    border: '1px solid #e2e8f0'
+                    border: '1px solid #e2e8f0',
+                    alignItems: 'center'
                   }}>
                     <select
                       value={ingredient.name}
                       onChange={(e) => updateIngredient(index, 'name', e.target.value)}
                       style={{
-                        flex: '2',
+                        width: '100%',
                         padding: '8px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '6px',
@@ -590,7 +616,7 @@ const MenuManagement: React.FC = () => {
                       step="any"
                       min="0"
                       style={{
-                        flex: '1',
+                        width: '100%',
                         padding: '8px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '6px',
@@ -598,35 +624,39 @@ const MenuManagement: React.FC = () => {
                       }}
                     />
                     
-                    <select
+                    <input
+                      type="text"
                       value={ingredient.unit}
-                      onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                      readOnly
+                      placeholder="Đơn vị"
                       style={{
-                        flex: '1',
+                        width: '100%',
                         padding: '8px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '6px',
-                        fontSize: '13px'
+                        fontSize: '13px',
+                        backgroundColor: '#f8fafc',
+                        color: '#1f2937',
+                        cursor: 'not-allowed'
                       }}
-                    >
-                      <option value="kg">kg</option>
-                      <option value="lít">lít</option>
-                      <option value="cái">cái</option>
-                      <option value="hộp">hộp</option>
-                    </select>
+                    />
                     
                     <button
                       type="button"
                       onClick={() => removeIngredient(index)}
                       style={{
-                        padding: '8px',
+                        width: '100%',
+                        height: '36px',
+                        padding: '0',
                         background: '#ef4444',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
-                        fontSize: '12px',
+                        fontSize: '16px',
                         cursor: 'pointer',
-                        minWidth: '32px'
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       ✕

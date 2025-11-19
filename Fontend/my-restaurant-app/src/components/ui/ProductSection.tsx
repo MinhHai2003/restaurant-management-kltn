@@ -72,20 +72,9 @@ const ProductSection: React.FC<ProductSectionProps> = ({
               backgroundClip: 'text',
               marginBottom: '8px',
               textTransform: 'uppercase',
-              letterSpacing: '1.5px',
-              position: 'relative'
+              letterSpacing: '1.5px'
             }}>
               {title}
-              <div style={{
-                position: 'absolute',
-                bottom: '-12px',
-                left: 0,
-                width: '80px',
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea, #764ba2)',
-                borderRadius: '2px',
-                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
-              }} />
             </h2>
             <p style={{
               color: '#6b7280',

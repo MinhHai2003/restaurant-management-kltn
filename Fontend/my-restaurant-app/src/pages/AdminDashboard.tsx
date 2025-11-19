@@ -185,6 +185,12 @@ interface Order {
   items?: OrderItem[];
 }
 
+interface OrderFilters {
+  status: string;
+  orderType: string;
+  date: string;
+}
+
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [stats, setStats] = useState<Stats>({
@@ -245,6 +251,11 @@ const AdminDashboard: React.FC = () => {
   });
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [orderFilters, setOrderFilters] = useState<OrderFilters>({
+    status: '',
+    orderType: '',
+    date: ''
+  });
 
   // Real-time clock state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -347,13 +358,13 @@ const AdminDashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load orders list when switching to orders tab
+  // Load orders list when switching to orders tab or changing filters
   useEffect(() => {
     if (orderActiveTab === 'orders' && serviceStatus.orderService) {
       loadOrdersList(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderActiveTab, serviceStatus.orderService]);
+  }, [orderActiveTab, serviceStatus.orderService, orderFilters]);
 
   // Update order stats when ordersList changes
   useEffect(() => {
@@ -666,7 +677,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadOrdersList = async (page = 1, filters = {}) => {
+  const loadOrdersList = async (page = 1) => {
     if (!serviceStatus.orderService) return;
 
     setOrdersLoading(true);
@@ -674,8 +685,22 @@ const AdminDashboard: React.FC = () => {
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: '10',
-        ...filters
       });
+
+      if (orderFilters.status) {
+        queryParams.append('status', orderFilters.status);
+      }
+
+      if (orderFilters.orderType) {
+        queryParams.append('orderType', orderFilters.orderType);
+      }
+
+      if (orderFilters.date) {
+        const fromDate = new Date(`${orderFilters.date}T00:00:00.000Z`).toISOString();
+        const toDate = new Date(`${orderFilters.date}T23:59:59.999Z`).toISOString();
+        queryParams.append('fromDate', fromDate);
+        queryParams.append('toDate', toDate);
+      }
 
       const response = await fetch(`${API_CONFIG.ORDER_API}/admin/orders?${queryParams}`);
       if (response.ok) {
@@ -701,6 +726,14 @@ const AdminDashboard: React.FC = () => {
 
   const handleOrderRowClick = (orderId: string) => {
     setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  };
+
+  const handleOrderFilterChange = (field: keyof OrderFilters, value: string) => {
+    setOrderFilters(prev => (
+      prev[field] === value
+        ? prev
+        : { ...prev, [field]: value }
+    ));
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -2003,34 +2036,42 @@ const AdminDashboard: React.FC = () => {
                 marginBottom: '20px',
                 flexWrap: 'wrap'
               }}>
-                <select style={{
+                <select
+                  value={orderFilters.status}
+                  onChange={(e) => handleOrderFilterChange('status', e.target.value)}
+                  style={{
                   padding: '6px 10px',
                   border: '1px solid #d9d9d9',
                   borderRadius: '4px',
                   fontSize: '12px'
                 }}>
-                  <option>Tất cả trạng thái</option>
-                  <option>pending</option>
-                  <option>confirmed</option>
-                  <option>preparing</option>
-                  <option>ready</option>
-                  <option>completed</option>
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="pending">Chờ xử lý</option>
+                  <option value="confirmed">Đã xác nhận</option>
+                  <option value="preparing">Đang chuẩn bị</option>
+                  <option value="ready">Sẵn sàng</option>
+                  <option value="delivered">Đã hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
                 </select>
 
-                <select style={{
+                <select
+                  value={orderFilters.orderType}
+                  onChange={(e) => handleOrderFilterChange('orderType', e.target.value)}
+                  style={{
                   padding: '6px 10px',
                   border: '1px solid #d9d9d9',
                   borderRadius: '4px',
                   fontSize: '12px'
                 }}>
-                  <option>Tất cả loại</option>
-                  <option>pickup</option>
-                  <option>delivery</option>
-                  <option>dine-in</option>
+                  <option value="">Tất cả loại</option>
+                  <option value="delivery">Giao hàng</option>
+                  <option value="dine_in">Tại bàn</option>
                 </select>
 
                 <input
                   type="date"
+                  value={orderFilters.date}
+                  onChange={(e) => handleOrderFilterChange('date', e.target.value)}
                   style={{
                     padding: '6px 10px',
                     border: '1px solid #d9d9d9',

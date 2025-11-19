@@ -192,3 +192,20 @@
 .mobile-menu-overlay {
   transition: all 0.3s ease;
 }
+
+/* Fix login/register buttons to ensure consistent styling */
+.header-auth a[href="/login"],
+.header-auth a[href="/register"] {
+  background: white !important;
+  color: #667eea !important;
+  text-decoration: none !important;
+  border: 2px solid #667eea !important;
+}
+
+.mobile-menu-sidebar a[href="/login"],
+.mobile-menu-sidebar a[href="/register"] {
+  background: white !important;
+  color: #667eea !important;
+  text-decoration: none !important;
+  border: 2px solid #667eea !important;
+}

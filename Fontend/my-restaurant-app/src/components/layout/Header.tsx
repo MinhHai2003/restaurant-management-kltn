@@ -274,14 +274,16 @@ const Header: React.FC = () => {
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <a href="/login" style={{ 
                       padding: '0.5rem 1rem',
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                      color: 'white',
+                      background: 'white',
+                      color: '#667eea',
                       textDecoration: 'none',
                       fontSize: '0.85rem',
                       fontWeight: '600',
                       borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                      transition: 'all 0.3s ease'
+                      border: '2px solid #667eea',
+                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.2)',
+                      transition: 'all 0.3s ease',
+                      display: 'inline-block'
                     }}>
                       Đăng nhập
                     </a>
@@ -295,7 +297,8 @@ const Header: React.FC = () => {
                       borderRadius: '8px',
                       border: '2px solid #667eea',
                       boxShadow: '0 2px 6px rgba(102, 126, 234, 0.2)',
-                      transition: 'all 0.3s ease'
+                      transition: 'all 0.3s ease',
+                      display: 'inline-block'
                     }}>
                       Đăng ký
                     </a>
@@ -648,14 +651,15 @@ const Header: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'center',
                       padding: '0.75rem',
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                      color: 'white',
+                      background: 'white',
+                      color: '#667eea',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
                       fontWeight: '600',
                       borderRadius: '10px',
+                      border: '2px solid #667eea',
                       gap: '0.5rem',
-                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)'
                     }}
                   >
                     🔐 Đăng nhập

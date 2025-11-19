@@ -34,7 +34,7 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
       onConversationClosed: (data) => {
         // Show notification when conversation is closed
         setNotification({
-          message: `Cuộc trò chuyện đã được đóng bởi ${data.closedByName}`,
+          message: 'Cuộc trò chuyện đã được đóng bởi người dùng',
           type: 'info',
         });
         // Notify parent to reload conversations
@@ -357,6 +357,167 @@ export const AdminChatWindow: React.FC<AdminChatWindowProps> = ({
               }}
             >
               ✅ Đã giải quyết?
+            </button>
+            <button
+              onClick={() => setInsertText('Chúng tôi đang xử lý yêu cầu của bạn, vui lòng đợi trong giây lát.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              ⏳ Đang xử lý
+            </button>
+            <button
+              onClick={() => setInsertText('Chúng tôi đã nhận được thông tin của bạn và sẽ liên hệ lại sớm nhất.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              📝 Đã nhận thông tin
+            </button>
+            <button
+              onClick={() => setInsertText('Vui lòng xác nhận lại thông tin để chúng tôi có thể hỗ trợ bạn tốt hơn.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              🔍 Cần xác nhận
+            </button>
+            <button
+              onClick={() => setInsertText('Cảm ơn bạn đã phản hồi! Chúng tôi rất trân trọng ý kiến của bạn.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              💬 Cảm ơn phản hồi
+            </button>
+            <button
+              onClick={() => setInsertText('Bạn còn cần hỗ trợ gì thêm không? Chúng tôi luôn sẵn sàng giúp đỡ!')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              🤝 Cần hỗ trợ thêm?
+            </button>
+            <button
+              onClick={() => setInsertText('Chúc bạn có một ngày tốt lành! Nếu cần gì thêm, đừng ngại liên hệ với chúng tôi.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              🌟 Chúc tốt lành
+            </button>
+            <button
+              onClick={() => setInsertText('Chúng tôi rất xin lỗi vì sự bất tiện này. Chúng tôi sẽ cố gắng khắc phục sớm nhất.')}
+              style={{
+                padding: '6px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                backgroundColor: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.borderColor = '#0ea5e9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'white';
+                e.currentTarget.style.borderColor = '#d1d5db';
+              }}
+            >
+              😔 Xin lỗi
             </button>
           </div>
         )}

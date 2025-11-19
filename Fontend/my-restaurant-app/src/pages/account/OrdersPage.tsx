@@ -25,7 +25,7 @@ const getStatusColor = (status: string) => {
     case 'preparing': return '#8b5cf6';
     case 'ready': return '#10b981';
     case 'delivered': return '#059669';
-    case 'completed': return '#6b7280';
+    case 'completed': return '#059669'; // Giống delivered vì cả hai đều là "Đã hoàn thành"
     case 'cancelled': return '#ef4444';
     default: return '#6b7280';
   }
@@ -38,7 +38,7 @@ const getStatusText = (status: string) => {
     case 'preparing': return 'Đang chuẩn bị';
     case 'ready': return 'Sẵn sàng';
     case 'delivered': return 'Đã hoàn thành';
-    case 'completed': return 'Hoàn thành';
+    case 'completed': return 'Đã hoàn thành';
     case 'cancelled': return 'Đã hủy';
     default: return 'Không xác định';
   }
@@ -105,7 +105,7 @@ const OrdersPage: React.FC = () => {
   };
 
   const canRateOrder = (order: Order) => {
-    return order.status === 'delivered' && !order.itemRatings?.isRated;
+    return (order.status === 'delivered' || order.status === 'completed') && !order.itemRatings?.isRated;
   };
 
   useEffect(() => {
@@ -498,7 +498,7 @@ const OrdersPage: React.FC = () => {
                     >
                       ✅ Đã đánh giá
                     </span>
-                  ) : order.status !== 'delivered' ? (
+                  ) : order.status !== 'delivered' && order.status !== 'completed' ? (
                     <span
                       style={{
                         padding: '0.5rem 1rem',

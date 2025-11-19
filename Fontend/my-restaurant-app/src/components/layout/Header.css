@@ -196,7 +196,7 @@
 .header-nav-desktop > .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 1rem;
   display: flex;
   align-items: stretch;
 }
@@ -204,7 +204,7 @@
 .header-main-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 1rem;
   width: 100%;
 }
 

@@ -380,8 +380,19 @@ const AdminInventoryManagement: React.FC = () => {
   };
 
   // Helper functions
-  const getStatusInfo = (status: string) => {
-    switch (status) {
+  const getStatusInfo = (item: InventoryItem) => {
+    const quantity = Number(item.quantity || 0);
+    let derivedStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
+
+    if (quantity === 0) {
+      derivedStatus = 'out-of-stock';
+    } else if (quantity < 10) {
+      derivedStatus = 'low-stock';
+    } else {
+      derivedStatus = 'in-stock';
+    }
+
+    switch (derivedStatus) {
       case 'in-stock':
         return { bg: '#d1fae5', color: '#059669', label: 'Còn hàng', icon: '✅' };
       case 'low-stock':
@@ -389,7 +400,7 @@ const AdminInventoryManagement: React.FC = () => {
       case 'out-of-stock':
         return { bg: '#fee2e2', color: '#dc2626', label: 'Hết hàng', icon: '❌' };
       default:
-        return { bg: '#f3f4f6', color: '#6b7280', label: status, icon: '❓' };
+        return { bg: '#f3f4f6', color: '#6b7280', label: derivedStatus, icon: '❓' };
     }
   };
 
@@ -719,7 +730,7 @@ const AdminInventoryManagement: React.FC = () => {
 
             {/* Table Body */}
             {inventoryData.items.map(item => {
-              const statusInfo = getStatusInfo(item.status);
+              const statusInfo = getStatusInfo(item);
               const totalValue = item.quantity * item.price;
 
               return (
@@ -1015,7 +1026,7 @@ const AdminInventoryManagement: React.FC = () => {
                           fontWeight: '600',
                           marginLeft: '4px'
                         }}>
-                          {getStatusInfo(item.status).label}
+                      {getStatusInfo(item).label}
                         </span>
                       </span>
                     </div>

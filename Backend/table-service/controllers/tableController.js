@@ -301,18 +301,22 @@ exports.searchAvailableTables = async (req, res) => {
     const availableTables = [];
 
     for (const table of tables) {
+      // Convert date string to Date object for proper comparison
+      const searchDate = new Date(date + "T00:00:00.000Z");
+      const searchDateEnd = new Date(date + "T23:59:59.999Z");
+      
+      // Find conflicting reservations: same table, same date, overlapping time slots
+      // Two time slots overlap if: start1 < end2 AND end1 > start2
       const conflictingReservation = await Reservation.findOne({
         tableId: table._id,
         reservationDate: {
-          $gte: new Date(date + "T00:00:00.000Z"),
-          $lt: new Date(date + "T23:59:59.999Z"),
+          $gte: searchDate,
+          $lte: searchDateEnd,
         },
         status: { $in: ["confirmed", "pending", "seated"] },
-        $or: [
-          {
-            "timeSlot.startTime": { $lt: endTime },
-            "timeSlot.endTime": { $gt: startTime },
-          },
+        $and: [
+          { "timeSlot.startTime": { $lt: endTime } },
+          { "timeSlot.endTime": { $gt: startTime } },
         ],
       });
 

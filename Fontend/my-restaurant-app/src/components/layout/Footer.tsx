@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            ✨ Đối tác của Siêu thị hải sản Biển đông
+            ✨ Đối tác của Nhà hàng hải sản Biển Đông
           </h3>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
             {companyInfo.partners.map((partner, index) => (

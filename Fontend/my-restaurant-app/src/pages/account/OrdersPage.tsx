@@ -244,21 +244,6 @@ const OrdersPage: React.FC = () => {
           }}>
             Quản lý đơn hàng
           </h2>
-          
-          <button
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#0ea5e9',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.375rem',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}
-          >
-            Đặt hàng mới
-          </button>
         </div>
 
         {/* Filter Tabs */}
@@ -578,22 +563,6 @@ const OrdersPage: React.FC = () => {
           </div>
         </div>
       )}
-                  
-                  {order.status === 'delivered' && (
-                    <button
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: '#0ea5e9',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.375rem',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      Đặt lại
-                    </button>
-                  )}
                   
                   {(order.status === 'pending' || order.status === 'confirmed') && (
                     <button

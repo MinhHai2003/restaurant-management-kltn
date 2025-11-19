@@ -1419,18 +1419,6 @@ const AdminDashboard: React.FC = () => {
         <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>
           📝 Quản lý đặt bàn & Trạng thái bàn
         </h2>
-
-        <button style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '12px',
-          padding: '12px 24px',
-          cursor: 'pointer',
-          fontWeight: '600'
-        }}>
-          📊 Xuất báo cáo
-        </button>
       </div>
 
       {/* Reservations Section */}

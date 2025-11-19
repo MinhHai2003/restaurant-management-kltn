@@ -258,7 +258,7 @@ const StoreSystemPage: React.FC = () => {
             textAlign: 'center',
             marginBottom: '2rem'
           }}>
-            Đối tác của Siêu thị hải sản Biển đông
+            Đối tác của Nhà hàng hải sản Biển Đông
           </h2>
           
           <div style={{

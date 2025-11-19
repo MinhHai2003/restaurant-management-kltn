@@ -164,48 +164,14 @@ const ReservationsPage: React.FC = () => {
           paddingBottom: '1rem',
           borderBottom: '1px solid #e5e7eb'
         }}>
-          <div>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              margin: 0,
-              marginBottom: '0.5rem'
-            }}>
-              📋 Lịch sử đặt bàn
-            </h2>
-            {/* Socket status indicator */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.875rem',
-              color: isConnected ? '#059669' : '#dc2626'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: isConnected ? '#10b981' : '#ef4444'
-              }}></div>
-              {isConnected ? 'Real-time ON' : 'Disconnected'}
-            </div>
-          </div>
-          
-          <button
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#0ea5e9',
-              color: 'white',
-              border: 'none',
-              borderRadius: '0.375rem',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}
-          >
-            Đặt bàn mới
-          </button>
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            margin: 0
+          }}>
+            📋 Lịch sử đặt bàn
+          </h2>
         </div>
 
         {/* Filter Tabs */}
@@ -450,22 +416,6 @@ const ReservationsPage: React.FC = () => {
                   >
                     Xem chi tiết
                   </button>
-                  
-                  {reservation.status === 'completed' && (
-                    <button
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: '#0ea5e9',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.375rem',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      Đặt lại
-                    </button>
-                  )}
                   
                   {reservation.status === 'confirmed' && (
                     <>

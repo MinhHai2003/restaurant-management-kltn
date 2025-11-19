@@ -278,10 +278,9 @@ exports.searchAvailableTables = async (req, res) => {
       });
     }
 
-    // Build base query
+    // Build base query - Don't filter by status here, check availability based on reservations
     let query = {
       capacity: { $gte: parseInt(partySize) },
-      status: "available",
       isActive: true,
     };
 
@@ -301,17 +300,29 @@ exports.searchAvailableTables = async (req, res) => {
     const availableTables = [];
 
     for (const table of tables) {
-      // Convert date string to Date object for proper comparison
-      const searchDate = new Date(date + "T00:00:00.000Z");
-      const searchDateEnd = new Date(date + "T23:59:59.999Z");
+      // Parse date string (format: YYYY-MM-DD) and create date range for comparison
+      // Use start of day and end of day in UTC to avoid timezone issues
+      const dateParts = date.split('-');
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+      const day = parseInt(dateParts[2]);
+      
+      const searchDateStart = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const searchDateEnd = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+      
+      console.log(`[SEARCH] Checking table ${table.tableNumber} for date ${date}`);
+      console.log(`[SEARCH] Date range: ${searchDateStart.toISOString()} to ${searchDateEnd.toISOString()}`);
       
       // Find conflicting reservations: same table, same date, overlapping time slots
       // Two time slots overlap if: start1 < end2 AND end1 > start2
+      // Use $expr to compare dates by day only (ignoring time) to avoid timezone issues
       const conflictingReservation = await Reservation.findOne({
         tableId: table._id,
-        reservationDate: {
-          $gte: searchDate,
-          $lte: searchDateEnd,
+        $expr: {
+          $eq: [
+            { $dateToString: { format: "%Y-%m-%d", date: "$reservationDate", timezone: "UTC" } },
+            date
+          ]
         },
         status: { $in: ["confirmed", "pending", "seated"] },
         $and: [
@@ -319,6 +330,16 @@ exports.searchAvailableTables = async (req, res) => {
           { "timeSlot.endTime": { $gt: startTime } },
         ],
       });
+
+      if (conflictingReservation) {
+        console.log(`[SEARCH] Table ${table.tableNumber} has conflicting reservation:`, {
+          date: conflictingReservation.reservationDate,
+          timeSlot: conflictingReservation.timeSlot,
+          status: conflictingReservation.status
+        });
+      } else {
+        console.log(`[SEARCH] Table ${table.tableNumber} is available for ${date} ${startTime}-${endTime}`);
+      }
 
       if (!conflictingReservation) {
         // Calculate pricing for this time slot

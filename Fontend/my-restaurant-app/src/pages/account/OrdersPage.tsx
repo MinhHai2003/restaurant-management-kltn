@@ -215,13 +215,17 @@ const OrdersPage: React.FC = () => {
 
   const filteredOrders = orders.filter(order => {
     if (activeFilter === 'all') return true;
+    // Khi filter là 'delivered', bao gồm cả 'delivered' và 'completed' vì cả hai đều là "Đã hoàn thành"
+    if (activeFilter === 'delivered') {
+      return order.status === 'delivered' || order.status === 'completed';
+    }
     return order.status === activeFilter;
   });
 
   const filters = [
     { id: 'all', label: 'Tất cả', count: orders.length },
     { id: 'pending', label: 'Chờ xác nhận', count: orders.filter(o => o.status === 'pending').length },
-    { id: 'delivered', label: 'Đã hoàn thành', count: orders.filter(o => o.status === 'delivered').length },
+    { id: 'delivered', label: 'Đã hoàn thành', count: orders.filter(o => o.status === 'delivered' || o.status === 'completed').length },
     { id: 'cancelled', label: 'Đã hủy', count: orders.filter(o => o.status === 'cancelled').length }
   ];
 

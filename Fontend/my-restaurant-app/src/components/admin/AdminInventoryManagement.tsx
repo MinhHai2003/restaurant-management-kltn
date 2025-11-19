@@ -7,6 +7,8 @@ import AdminInventoryService, {
 } from '../../services/adminInventoryService';
 import { InventoryModal, type InventoryFormData } from './InventoryModal';
 
+const LOW_STOCK_THRESHOLD = 10;
+
 // Modal cho cập nhật số lượng
 const QuantityModal: React.FC<{
   isOpen: boolean;
@@ -277,7 +279,7 @@ const AdminInventoryManagement: React.FC = () => {
 
         if (quantity === 0) {
           acc.outOfStock += 1;
-        } else if (quantity < 10) {
+        } else if (quantity < LOW_STOCK_THRESHOLD) {
           acc.lowStock += 1;
         } else {
           acc.inStock += 1;
@@ -418,13 +420,11 @@ const AdminInventoryManagement: React.FC = () => {
   // Helper functions
   const getStatusInfo = (item: InventoryItem) => {
     const quantity = Number(item.quantity || 0);
-    const minimumStock =
-      typeof item.minimumStock === 'number' ? item.minimumStock : 10;
     let derivedStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
 
     if (quantity === 0) {
       derivedStatus = 'out-of-stock';
-    } else if (quantity <= minimumStock) {
+    } else if (quantity < LOW_STOCK_THRESHOLD) {
       derivedStatus = 'low-stock';
     } else {
       derivedStatus = 'in-stock';

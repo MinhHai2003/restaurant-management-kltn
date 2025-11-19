@@ -8,6 +8,7 @@ import AdminInventoryService, {
 import { InventoryModal, type InventoryFormData } from './InventoryModal';
 
 const LOW_STOCK_THRESHOLD = 10;
+const STATS_FETCH_LIMIT = 500;
 
 // Modal cho cập nhật số lượng
 const QuantityModal: React.FC<{
@@ -168,6 +169,7 @@ const AdminInventoryManagement: React.FC = () => {
     totalValue: 0,
     lastUpdated: ''
   });
+  const [allInventoryItems, setAllInventoryItems] = useState<InventoryItem[]>([]);
   
   const [inventoryData, setInventoryData] = useState<PaginatedInventoryResponse>({
     items: [],
@@ -224,14 +226,10 @@ const AdminInventoryManagement: React.FC = () => {
           sortOrder: 'desc' as const
         };
 
-        const [statsResult, inventoryResult] = await Promise.all([
-          AdminInventoryService.getInventoryStats(),
-          AdminInventoryService.getInventories(params)
-        ]);
+        const inventoryResult = await AdminInventoryService.getInventories(params);
         
-        setStats(statsResult);
         setInventoryData(inventoryResult);
-        setStats(statsResult);
+        await refreshStatsFromAllItems(inventoryResult.items);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
         setError(errorMessage);
@@ -296,6 +294,44 @@ const AdminInventoryManagement: React.FC = () => {
     };
   };
 
+  const fetchAllInventoryItems = async () => {
+    const allItems: InventoryItem[] = [];
+    const limit = STATS_FETCH_LIMIT;
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const response = await AdminInventoryService.getInventories({
+        page,
+        limit,
+        sortBy: 'updated_at',
+        sortOrder: 'desc'
+      });
+      allItems.push(...response.items);
+      totalPages = response.pagination.total;
+      page += 1;
+    } while (page <= totalPages);
+
+    return allItems;
+  };
+
+  const refreshStatsFromAllItems = async (fallbackItems: InventoryItem[] = []) => {
+    try {
+      const items = await fetchAllInventoryItems();
+      setAllInventoryItems(items);
+      setStats(deriveStatsFromItems(items));
+      return items;
+    } catch (err) {
+      console.error('⚠️ [AdminInventoryManagement] Không thể tải toàn bộ nguyên liệu để tính toán thống kê:', err);
+      if (fallbackItems.length) {
+        setAllInventoryItems(fallbackItems);
+        setStats(deriveStatsFromItems(fallbackItems));
+        return fallbackItems;
+      }
+      return [];
+    }
+  };
+
   const reloadAllData = async () => {
     setLoading(true);
     try {
@@ -309,20 +345,10 @@ const AdminInventoryManagement: React.FC = () => {
         sortOrder
       };
 
-      const [statsResult, inventoryResult] = await Promise.all([
-        AdminInventoryService.getInventoryStats().catch((error) => {
-          console.warn('⚠️ [AdminInventoryManagement] Stats API failed, will derive from items later:', error);
-          return null;
-        }),
-        AdminInventoryService.getInventories(params)
-      ]);
+      const inventoryResult = await AdminInventoryService.getInventories(params);
       
-      if (statsResult) {
-        setStats(statsResult);
-      } else {
-        setStats(deriveStatsFromItems(inventoryResult.items));
-      }
       setInventoryData(inventoryResult);
+      await refreshStatsFromAllItems(inventoryResult.items);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
       setError(errorMessage);
@@ -406,8 +432,32 @@ const AdminInventoryManagement: React.FC = () => {
   const generateReport = async (type: 'summary' | 'low-stock' | 'high-value' | 'by-supplier') => {
     try {
       setLoading(true);
-      const report = await AdminInventoryService.getReport(type);
-      setReportData(report);
+      if (type === 'low-stock') {
+        let items = allInventoryItems;
+        if (!items.length) {
+          items = await refreshStatsFromAllItems();
+        }
+
+        const lowStockItems = items
+          .filter(item => {
+            const quantity = Number(item.quantity || 0);
+            return quantity === 0 || quantity < LOW_STOCK_THRESHOLD;
+          })
+          .sort((a, b) => Number(a.quantity || 0) - Number(b.quantity || 0));
+
+        setReportData({
+          type: 'low-stock',
+          message: lowStockItems.length
+            ? 'Danh sách nguyên liệu sắp hết/đã hết'
+            : 'Không có nguyên liệu sắp hết/đã hết',
+          items: lowStockItems,
+          count: lowStockItems.length,
+          generatedAt: new Date().toISOString()
+        });
+      } else {
+        const report = await AdminInventoryService.getReport(type);
+        setReportData(report);
+      }
       setShowReportModal(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Lỗi khi tạo báo cáo';

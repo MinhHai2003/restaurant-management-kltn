@@ -59,7 +59,6 @@ const ProductSection: React.FC<ProductSectionProps> = ({
           justifyContent: 'space-between', 
           marginBottom: '40px',
           paddingBottom: '20px',
-          borderBottom: '2px solid #e2e8f0',
           flexWrap: 'wrap',
           gap: '16px'
         }}>

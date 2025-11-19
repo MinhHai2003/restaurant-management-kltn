@@ -134,6 +134,16 @@ interface AdminTable {
 }
 
 
+interface OrderItem {
+  _id?: string;
+  menuItemId?: string;
+  name: string;
+  price?: number;
+  quantity: number;
+  customizations?: string;
+  notes?: string;
+}
+
 interface Order {
   _id: string;
   orderNumber: string;
@@ -172,6 +182,7 @@ interface Order {
     kitchen?: string;
     delivery?: string;
   };
+  items?: OrderItem[];
 }
 
 const AdminDashboard: React.FC = () => {
@@ -232,6 +243,7 @@ const AdminDashboard: React.FC = () => {
     hasNext: false,
     hasPrev: false
   });
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   // Real-time clock state
@@ -685,6 +697,10 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setOrdersLoading(false);
     }
+  };
+
+  const handleOrderRowClick = (orderId: string) => {
+    setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -2129,26 +2145,30 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 ) : (
                   ordersList.map((order: Order) => (
-                    <div
-                      key={order._id}
-                      style={{
-                        padding: '12px',
-                        borderBottom: '1px solid #f0f0f0',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 0.9fr 1.1fr 1fr 0.8fr',
-                        gap: '10px',
-                        fontSize: '12px',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div style={{ fontWeight: '500', color: '#1890ff', fontSize: '11px' }}>
+                    <React.Fragment key={order._id}>
+                      <div
+                        onClick={() => handleOrderRowClick(order._id)}
+                        style={{
+                          padding: '12px',
+                          borderBottom: '1px solid #f0f0f0',
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1.2fr 1.3fr 0.7fr 0.8fr 1fr 0.9fr 0.9fr 1.1fr 1fr 0.8fr',
+                          gap: '10px',
+                          fontSize: '12px',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          backgroundColor: expandedOrderId === order._id ? '#f8fafc' : 'white',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                      >
+                        <div style={{ fontWeight: '500', color: '#1890ff', fontSize: '11px' }}>
                         {order.orderNumber}
-                      </div>
-                      <div>
+                        </div>
+                        <div>
                         <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '2px' }}>{order.customerInfo?.name || 'N/A'}</div>
                         <div style={{ fontSize: '10px', color: '#666' }}>{order.customerInfo?.email || ''}</div>
-                      </div>
-                      <div style={{ minHeight: '36px' }}>
+                        </div>
+                        <div style={{ minHeight: '36px' }}>
                         <div style={{
                           fontSize: '11px',
                           color: '#333',
@@ -2181,10 +2201,10 @@ const AdminDashboard: React.FC = () => {
                               'N/A'}
                           </span>
                         </div>
-                      </div>
+                        </div>
 
-                      {/* Table Number Column */}
-                      <div style={{ fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>
+                        {/* Table Number Column */}
+                        <div style={{ fontSize: '11px', textAlign: 'center', fontWeight: '600' }}>
                         {order.delivery?.type === 'dine_in' && order.diningInfo?.tableInfo?.tableNumber ? (
                           <span style={{
                             background: '#ffeaa7',
@@ -2203,18 +2223,18 @@ const AdminDashboard: React.FC = () => {
                         ) : (
                           <span style={{ color: '#ccc', fontSize: '10px' }}>-</span>
                         )}
-                      </div>
+                        </div>
 
-                      <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
+                        <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
                         {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' :
                           order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' :
                             order.delivery?.type === 'dine_in' ? '🍽️ Tại bàn' :
                               '🍽️ Tại bàn'}
-                      </div>
-                      <div style={{ fontWeight: '600', color: '#16a34a' }}>
+                        </div>
+                        <div style={{ fontWeight: '600', color: '#16a34a' }}>
                         {order.pricing?.total?.toLocaleString() || 0}đ
-                      </div>
-                      <div style={{ fontSize: '11px', textAlign: 'center' }}>
+                        </div>
+                        <div style={{ fontSize: '11px', textAlign: 'center' }}>
                         <span style={{
                           padding: '3px 6px',
                           borderRadius: '4px',
@@ -2240,8 +2260,8 @@ const AdminDashboard: React.FC = () => {
                             return '⏳ Chưa thanh toán';
                           })()}
                         </span>
-                      </div>
-                      <div>
+                        </div>
+                        <div>
                         <span style={{
                           padding: '4px 8px',
                           borderRadius: '4px',
@@ -2266,8 +2286,8 @@ const AdminDashboard: React.FC = () => {
                             return '❓ Chưa xác định';
                           })()}
                         </span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#666' }}>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666' }}>
                         <div style={{
                           maxHeight: '36px',
                           overflow: 'hidden',
@@ -2279,8 +2299,8 @@ const AdminDashboard: React.FC = () => {
                             order.notes?.delivery ||
                             'Không có ghi chú'}
                         </div>
-                      </div>
-                      <div>
+                        </div>
+                        <div>
                         <span style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
@@ -2317,8 +2337,8 @@ const AdminDashboard: React.FC = () => {
                                             order.status
                           }
                         </span>
-                      </div>
-                      <div>
+                        </div>
+                        <div onClick={(e) => e.stopPropagation()}>
                         {updatingOrderId === order._id ? (
                           <div style={{
                             fontSize: '10px',
@@ -2332,6 +2352,8 @@ const AdminDashboard: React.FC = () => {
                           <select
                             value={order.status}
                             onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
                             style={{
                               padding: '4px 6px',
                               border: '1px solid #d9d9d9',
@@ -2351,8 +2373,75 @@ const AdminDashboard: React.FC = () => {
                             <option value="cancelled">Đã hủy</option>
                           </select>
                         )}
+                        </div>
                       </div>
-                    </div>
+                      {expandedOrderId === order._id && (
+                        <div
+                          style={{
+                            padding: '12px 24px 16px',
+                            borderBottom: '1px solid #f0f0f0',
+                            backgroundColor: '#f8fafc',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
+                              📦 Danh sách món ({order.items?.length || 0})
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#475569' }}>
+                              Tổng tiền: <strong style={{ color: '#16a34a' }}>{order.pricing?.total?.toLocaleString() || 0}đ</strong>
+                            </div>
+                          </div>
+                          {order.items && order.items.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {order.items.map((item, index) => (
+                                <div
+                                  key={`${order._id}-item-${item._id || item.menuItemId || index}`}
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '10px 14px',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.05)'
+                                  }}
+                                >
+                                  <div style={{ fontSize: '12px', color: '#0f172a' }}>
+                                    <div style={{ fontWeight: 600 }}>
+                                      {item.name}{' '}
+                                      <span style={{ color: '#64748b', fontWeight: 500 }}>x{item.quantity}</span>
+                                    </div>
+                                    {item.customizations && (
+                                      <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                                        Tuỳ chỉnh: {item.customizations}
+                                      </div>
+                                    )}
+                                    {item.notes && (
+                                      <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                                        Ghi chú: {item.notes}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a' }}>
+                                    {item.price
+                                      ? `${(item.price * item.quantity).toLocaleString()}đ`
+                                      : '—'}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '12px', color: '#64748b' }}>
+                              Không có dữ liệu món ăn cho đơn này.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </div>

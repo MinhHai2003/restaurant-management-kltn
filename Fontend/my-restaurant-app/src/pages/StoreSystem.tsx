@@ -10,7 +10,7 @@ const StoreSystem: React.FC = () => {
       address: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
       phone: '0936.253.588',
       hours: '8:00 - 22:00 (Thứ 2 - Chủ nhật)',
-      image: 'https://via.placeholder.com/300x200?text=Cua+Hang+1',
+      image: 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&h=400&fit=crop',
       mapUrl: 'https://www.google.com/maps/search/123+Nguyễn+Văn+Linh+Q.7+TP.HCM'
     },
     {
@@ -19,7 +19,7 @@ const StoreSystem: React.FC = () => {
       address: '456 Võ Văn Tần, Q.3, TP.HCM',
       phone: '0936.253.589',
       hours: '8:00 - 22:00 (Thứ 2 - Chủ nhật)',
-      image: 'https://via.placeholder.com/300x200?text=Cua+Hang+2',
+      image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&h=400&fit=crop',
       mapUrl: 'https://www.google.com/maps/search/456+Võ+Văn+Tần+Q.3+TP.HCM'
     },
     {
@@ -27,8 +27,8 @@ const StoreSystem: React.FC = () => {
       name: 'Hải Sản Biển Đông - Chi nhánh 3',
       address: '789 Lê Lợi, Q.1, TP.HCM',
       phone: '0936.253.590',
-      hours: '8:00 - 22:00 (Thứ 2 - Chủ nhật)',
-      image: 'https://via.placeholder.com/300x200?text=Cua+Hang+3',
+      hours: '8:00 - 22:00 (Thứ 2 - Chủ nhất)',
+      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop',
       mapUrl: 'https://www.google.com/maps/search/789+Lê+Lợi+Q.1+TP.HCM'
     }
   ];
@@ -42,132 +42,216 @@ const StoreSystem: React.FC = () => {
   };
 
   return (
-    <div className="store-system-page">
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%)'
+    }}>
       <Header />
       
-      <main className="main-content">
-        {/* Breadcrumb */}
-        <div className="breadcrumb" style={{
-          background: '#f8f9fa',
-          padding: '1rem 0',
-          borderBottom: '1px solid #dee2e6'
-        }}>
-          <div className="container">
-            <nav>
-              <a href="/" style={{ color: '#007bff', textDecoration: 'none' }}>Trang chủ</a>
-              <span style={{ margin: '0 0.5rem', color: '#6c757d' }}>/</span>
-              <span style={{ color: '#6c757d' }}>Hệ thống cửa hàng</span>
-            </nav>
-          </div>
-        </div>
-
-        {/* Page Header */}
-        <div className="page-header" style={{
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+      <main style={{ flex: 1 }}>
+        {/* Hero Section */}
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          padding: '3rem 0',
-          textAlign: 'center'
+          padding: '4rem 0',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <div className="container">
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: 'bold',
-              marginBottom: '1rem'
-            }}>
-              HỆ THỐNG CỬA HÀNG
-            </h1>
-            <p style={{
-              fontSize: '1.2rem',
-              opacity: 0.9,
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
-              Hệ thống nhà hàng hải sản Biển Đông với các chi nhánh trên toàn thành phố
-            </p>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: 'url(https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.15
+          }} />
+          
+          <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+            <div style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+              <h1 style={{
+                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                fontWeight: 'bold',
+                marginBottom: '1.5rem',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+              }}>
+                🏪 HỆ THỐNG CỬA HÀNG
+              </h1>
+              <p style={{
+                fontSize: 'clamp(1rem, 2vw, 1.3rem)',
+                opacity: 0.95,
+                lineHeight: '1.6',
+                textShadow: '1px 1px 2px rgba(0,0,0,0.2)'
+              }}>
+                Hệ thống nhà hàng hải sản Biển Đông với các chi nhánh trên toàn thành phố
+              </p>
+              <div style={{
+                marginTop: '2rem',
+                display: 'flex',
+                gap: '1rem',
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏪</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>3</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Chi nhánh</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏰</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>8h-22h</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Mỗi ngày</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '1rem 2rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🚀</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>2h</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Giao hàng</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Store List */}
-        <div className="store-list" style={{
-          padding: '3rem 0'
-        }}>
-          <div className="container">
-            <div className="stores-grid" style={{
+        <div style={{ padding: '4rem 0' }}>
+          <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+            <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-              gap: '2rem',
-              marginBottom: '3rem'
+              gap: '2.5rem'
             }}>
               {stores.map((store) => (
-                <div key={store.id} className="store-card" style={{
+                <div key={store.id} style={{
                   background: 'white',
-                  borderRadius: '12px',
+                  borderRadius: '20px',
                   overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.3s ease'
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-10px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(102,126,234,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
                 }}>
-                  <div className="store-image" style={{
-                    height: '200px',
-                    background: `url(${store.image}) center/cover`,
+                  {/* Image */}
+                  <div style={{
+                    height: '240px',
+                    background: `url(${store.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     position: 'relative'
                   }}>
                     <div style={{
                       position: 'absolute',
                       top: '1rem',
                       right: '1rem',
-                      background: '#28a745',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                       color: 'white',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: 'bold'
+                      padding: '0.5rem 1.2rem',
+                      borderRadius: '25px',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold',
+                      boxShadow: '0 4px 12px rgba(16,185,129,0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}>
+                      <span style={{ 
+                        width: '8px', 
+                        height: '8px', 
+                        background: 'white',
+                        borderRadius: '50%',
+                        animation: 'pulse 2s infinite'
+                      }} />
                       Đang hoạt động
                     </div>
+                    
+                    {/* Gradient Overlay */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '50%',
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)'
+                    }} />
                   </div>
                   
-                  <div className="store-info" style={{
-                    padding: '1.5rem'
-                  }}>
+                  {/* Content */}
+                  <div style={{ padding: '1.8rem' }}>
                     <h3 style={{
-                      fontSize: '1.3rem',
+                      fontSize: '1.4rem',
                       fontWeight: 'bold',
-                      marginBottom: '1rem',
-                      color: '#0284c7'
+                      marginBottom: '1.2rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
                     }}>
                       {store.name}
                     </h3>
                     
-                    <div className="store-details" style={{
+                    <div style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.75rem'
+                      gap: '1rem'
                     }}>
                       <div style={{
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '0.5rem'
+                        gap: '0.8rem',
+                        padding: '0.8rem',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                        borderRadius: '12px'
                       }}>
-                        <span style={{ color: '#0284c7', fontSize: '1.1rem' }}>📍</span>
-                        <span style={{ color: '#6c757d' }}>{store.address}</span>
+                        <span style={{ fontSize: '1.3rem' }}>📍</span>
+                        <span style={{ color: '#475569', lineHeight: '1.6', flex: 1 }}>{store.address}</span>
                       </div>
                       
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.8rem',
+                        padding: '0.8rem',
+                        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                        borderRadius: '12px'
                       }}>
-                        <span style={{ color: '#0284c7', fontSize: '1.1rem' }}>📞</span>
+                        <span style={{ fontSize: '1.3rem' }}>📞</span>
                         <a 
                           href={`tel:${store.phone}`}
                           style={{ 
-                            color: '#0284c7', 
+                            color: '#d97706',
                             fontWeight: 'bold',
-                            fontSize: '1.1rem',
-                            textDecoration: 'none'
+                            fontSize: '1.15rem',
+                            textDecoration: 'none',
+                            flex: 1
                           }}
-                          onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                          onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
                         >
                           {store.phone}
                         </a>
@@ -176,54 +260,73 @@ const StoreSystem: React.FC = () => {
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.8rem',
+                        padding: '0.8rem',
+                        background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                        borderRadius: '12px'
                       }}>
-                        <span style={{ color: '#0284c7', fontSize: '1.1rem' }}>⏰</span>
-                        <span style={{ color: '#6c757d' }}>{store.hours}</span>
+                        <span style={{ fontSize: '1.3rem' }}>⏰</span>
+                        <span style={{ color: '#831843', fontWeight: '500', flex: 1 }}>{store.hours}</span>
                       </div>
                     </div>
                     
-                    <div className="store-actions" style={{
+                    {/* Actions */}
+                    <div style={{
                       marginTop: '1.5rem',
-                      display: 'flex',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
                       gap: '1rem'
                     }}>
                       <button 
                         onClick={() => handleViewOnMap(store.mapUrl)}
                         style={{
-                          flex: 1,
-                          background: '#0284c7',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                           color: 'white',
-                          padding: '0.75rem 1rem',
+                          padding: '0.9rem',
                           border: 'none',
-                          borderRadius: '6px',
+                          borderRadius: '12px',
                           fontWeight: 'bold',
+                          fontSize: '0.95rem',
                           cursor: 'pointer',
-                          transition: 'background 0.3s ease'
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 4px 12px rgba(102,126,234,0.3)'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = '#0369a1'}
-                        onMouseOut={(e) => e.currentTarget.style.background = '#0284c7'}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(102,126,234,0.4)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(102,126,234,0.3)';
+                        }}
                       >
-                        Xem trên bản đồ
+                        🗺️ Bản đồ
                       </button>
                       
                       <button 
                         onClick={handleBookTable}
                         style={{
-                          flex: 1,
-                          background: '#fbbf24',
+                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                           color: 'white',
-                          padding: '0.75rem 1rem',
+                          padding: '0.9rem',
                           border: 'none',
-                          borderRadius: '6px',
+                          borderRadius: '12px',
                           fontWeight: 'bold',
+                          fontSize: '0.95rem',
                           cursor: 'pointer',
-                          transition: 'background 0.3s ease'
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 4px 12px rgba(245,158,11,0.3)'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.background = '#f59e0b'}
-                        onMouseOut={(e) => e.currentTarget.style.background = '#fbbf24'}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(245,158,11,0.4)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(245,158,11,0.3)';
+                        }}
                       >
-                        Đặt bàn ngay
+                        🍽️ Đặt bàn
                       </button>
                     </div>
                   </div>
@@ -232,33 +335,35 @@ const StoreSystem: React.FC = () => {
             </div>
 
             {/* Map Section */}
-            <div className="map-section" style={{
+            <div style={{
+              marginTop: '4rem',
               background: 'white',
-              borderRadius: '12px',
+              borderRadius: '20px',
               overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
             }}>
-              <div className="map-header" style={{
-                background: '#0284c7',
+              <div style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
-                padding: '1.5rem',
+                padding: '2rem',
                 textAlign: 'center'
               }}>
                 <h2 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '2rem',
                   fontWeight: 'bold',
-                  margin: 0
+                  margin: 0,
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
                 }}>
-                  VỊ TRÍ CÁC CHI NHÁNH
+                  🗺️ VỊ TRÍ CÁC CHI NHÁNH
                 </h2>
               </div>
               
-              <div className="map-container" style={{ padding: '1rem' }}>
+              <div style={{ padding: '1.5rem' }}>
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.3251826451947!2d106.66408731480082!3d10.786834992313708!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ed2392c44df%3A0xd2ecb62e0d050fe9!2sBen%20Thanh%20Market!5e0!3m2!1sen!2s!4v1642567890123!5m2!1sen!2s"
                   width="100%"
-                  height="400"
-                  style={{ border: 0, borderRadius: '8px' }}
+                  height="450"
+                  style={{ border: 0, borderRadius: '16px' }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -267,47 +372,79 @@ const StoreSystem: React.FC = () => {
               </div>
             </div>
 
-            {/* Contact Info */}
-            <div className="contact-info" style={{
-              marginTop: '3rem',
-              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-              padding: '2rem',
-              borderRadius: '12px',
-              textAlign: 'center'
+            {/* Contact Section */}
+            <div style={{
+              marginTop: '4rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '3rem',
+              borderRadius: '20px',
+              color: 'white',
+              boxShadow: '0 10px 30px rgba(102,126,234,0.3)'
             }}>
               <h3 style={{
-                fontSize: '1.5rem',
+                fontSize: '2rem',
                 fontWeight: 'bold',
-                marginBottom: '1rem',
-                color: '#0284c7'
+                marginBottom: '2rem',
+                textAlign: 'center',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
               }}>
-                LIÊN HỆ VỚI CHÚNG TÔI
+                📞 LIÊN HỆ VỚI CHÚNG TÔI
               </h3>
               
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '2rem',
-                marginTop: '1.5rem'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '2rem'
               }}>
-                <div>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📞</div>
-                  <div style={{ fontWeight: 'bold', color: '#0284c7' }}>Hotline</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fbbf24' }}>
-                    0936.253.588
-                  </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '2rem',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📞</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Hotline</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>0936.253.588</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '0.5rem' }}>(8h - 21h từ T2-CN)</div>
                 </div>
                 
-                <div>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📧</div>
-                  <div style={{ fontWeight: 'bold', color: '#0284c7' }}>Email</div>
-                  <div style={{ color: '#6c757d' }}>info@haisanbiendong.vn</div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '2rem',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Email</div>
+                  <div style={{ fontSize: '1.1rem' }}>info@haisanbiendong.vn</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '0.5rem' }}>Phản hồi trong 24h</div>
                 </div>
                 
-                <div>
-                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚡</div>
-                  <div style={{ fontWeight: 'bold', color: '#0284c7' }}>Giao hàng</div>
-                  <div style={{ color: '#28a745', fontWeight: 'bold' }}>Trong vòng 2 giờ</div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
+                  padding: '2rem',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Giao hàng</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Trong 2 giờ</div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginTop: '0.5rem' }}>Miễn phí đơn từ 300K</div>
                 </div>
               </div>
             </div>

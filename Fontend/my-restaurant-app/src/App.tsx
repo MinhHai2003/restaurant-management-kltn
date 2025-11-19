@@ -27,6 +27,7 @@ import ProtectedEmployeeRoute from './components/ProtectedEmployeeRoute'
 import { ChatWidget } from './components/chat/CustomerChat/ChatWidget'
 import { useAuth } from './hooks/useAuth'
 import './App.css'
+import PromotionPricingPage from './pages/PromotionPricingPage'
 
 function AppContent() {
   const { user } = useAuth();
@@ -53,6 +54,8 @@ function AppContent() {
             <Route path="/he-thong-cua-hang" element={<StoreSystem />} />
             <Route path="/cua-hang" element={<StoreSystem />} />
             <Route path="/store-system" element={<StoreSystem />} />
+            <Route path="/khuyen-mai" element={<PromotionPricingPage />} />
+            <Route path="/bang-gia-khuyen-mai" element={<PromotionPricingPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/gio-hang" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />

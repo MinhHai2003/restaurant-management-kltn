@@ -504,19 +504,17 @@ const Header: React.FC = () => {
             </div>
 
             {/* Other Navigation Items */}
-            <div style={{ display: 'flex', flex: 1 }}>
+            <div style={{ display: 'flex', flex: 1, justifyContent: 'space-evenly' }}>
               <a href="/khuyen-mai" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 1.5rem',
+                padding: '0 2rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
-                flex: 1,
-                justifyContent: 'center',
-                borderRight: '1px solid rgba(255,255,255,0.1)'
+                whiteSpace: 'nowrap'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -528,15 +526,13 @@ const Header: React.FC = () => {
               <a href="/he-thong-cua-hang" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 1.5rem',
+                padding: '0 2rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
-                flex: 1,
-                justifyContent: 'center',
-                borderRight: '1px solid rgba(255,255,255,0.1)'
+                whiteSpace: 'nowrap'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -548,15 +544,13 @@ const Header: React.FC = () => {
               <a href="/dat-ban" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 1.5rem',
+                padding: '0 2rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
-                flex: 1,
-                justifyContent: 'center',
-                borderRight: '1px solid rgba(255,255,255,0.1)'
+                whiteSpace: 'nowrap'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}

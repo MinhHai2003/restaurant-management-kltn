@@ -5,11 +5,32 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import './auth.css';
 
+const validationFields = ['name', 'email', 'phone', 'password', 'confirmPassword'] as const;
+type FieldName = typeof validationFields[number];
+
+interface RegisterFormState {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
+  showPassword: boolean;
+  showConfirmPassword: boolean;
+}
+
+type FieldErrors = Record<FieldName, string>;
+
+const nameRegex = /^[A-Za-zÀ-ỹ\s]{2,50}$/u;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^0[0-9]{9}$/;
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
+
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { register, isLoading, error } = useAuth();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormState>({
     name: '',
     email: '',
     phone: '',
@@ -21,13 +42,117 @@ const RegisterPage: React.FC = () => {
   });
 
   const [localError, setLocalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const isValidatableField = (field: string): field is FieldName =>
+    validationFields.some(validField => validField === field);
+
+  const getFieldError = (
+    fieldName: FieldName,
+    value: string,
+    data: RegisterFormState = formData
+  ): string => {
+    switch (fieldName) {
+      case 'name': {
+        const trimmed = value.trim();
+        if (!trimmed) return 'Vui lòng nhập họ và tên.';
+        if (!nameRegex.test(trimmed)) {
+          return 'Họ và tên chỉ được chứa chữ cái và khoảng trắng (2-50 ký tự).';
+        }
+        return '';
+      }
+      case 'email': {
+        const trimmed = value.trim();
+        if (!trimmed) return 'Vui lòng nhập email.';
+        if (!emailRegex.test(trimmed.toLowerCase())) {
+          return 'Email không hợp lệ. Ví dụ: ten@domain.com';
+        }
+        return '';
+      }
+      case 'phone': {
+        const trimmed = value.trim();
+        if (!trimmed) return 'Vui lòng nhập số điện thoại.';
+        if (!phoneRegex.test(trimmed)) {
+          return 'Số điện thoại phải bắt đầu bằng số 0 và đủ 10 chữ số.';
+        }
+        return '';
+      }
+      case 'password':
+        if (!value) return 'Vui lòng nhập mật khẩu.';
+        if (!passwordRegex.test(value)) {
+          return 'Mật khẩu phải có tối thiểu 6 ký tự, gồm chữ và số.';
+        }
+        return '';
+      case 'confirmPassword':
+        if (!value) return 'Vui lòng nhập lại mật khẩu.';
+        if (value !== data.password) {
+          return 'Mật khẩu xác nhận không khớp.';
+        }
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const updateFieldError = (
+    fieldName: FieldName,
+    value: string,
+    data: RegisterFormState = formData
+  ) => {
+    const errorMessage = getFieldError(fieldName, value, data);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: errorMessage
+    }));
+    return errorMessage;
+  };
+
+  const validateForm = (data: RegisterFormState = formData) => {
+    const newErrors = validationFields.reduce<FieldErrors>((acc, field) => {
+      acc[field] = getFieldError(field, data[field], data);
+      return acc;
+    }, {} as FieldErrors);
+
+    setFieldErrors(newErrors);
+    return Object.values(newErrors).every(message => message === '');
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    let newValue: string | boolean = type === 'checkbox' ? checked : value;
+
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '');
+      newValue = digitsOnly.slice(0, 10);
+    }
+
+    if (name === 'name' && typeof newValue === 'string') {
+      newValue = newValue.replace(/\s+/g, ' ');
+    }
+
+    const updatedData = {
+      ...formData,
+      [name]: newValue
+    } as RegisterFormState;
+
+    setFormData(updatedData);
+
+    if (isValidatableField(name)) {
+      updateFieldError(name, updatedData[name], updatedData);
+      if (name === 'password' && updatedData.confirmPassword) {
+        updateFieldError('confirmPassword', updatedData.confirmPassword, updatedData);
+      }
+    }
+
+    if (localError) {
+      setLocalError(null);
+    }
   };
 
   const togglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
@@ -42,11 +167,12 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setLocalError(null);
     
-    if (formData.password !== formData.confirmPassword) {
-      setLocalError('Mật khẩu xác nhận không khớp!');
+    const isFormValid = validateForm();
+    if (!isFormValid) {
+      setLocalError('Vui lòng kiểm tra lại các thông tin bên dưới.');
       return;
     }
-    
+
     if (!formData.acceptTerms) {
       setLocalError('Vui lòng đồng ý với điều khoản sử dụng!');
       return;
@@ -54,9 +180,9 @@ const RegisterPage: React.FC = () => {
     
     try {
       await register({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
         password: formData.password
       });
       // Redirect to home page after successful registration
@@ -130,6 +256,10 @@ const RegisterPage: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Nhập họ và tên đầy đủ"
                 required
+                maxLength={50}
+                pattern="[A-Za-zÀ-ỹ ]{2,50}"
+                title="Chỉ nhập chữ cái và khoảng trắng, từ 2 đến 50 ký tự"
+                autoComplete="name"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -142,6 +272,11 @@ const RegisterPage: React.FC = () => {
                 onFocus={(e) => e.target.style.borderColor = '#0f766e'}
                 onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
               />
+              {fieldErrors.name && (
+                <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
 
             {/* Email Input */}
@@ -161,6 +296,8 @@ const RegisterPage: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Nhập địa chỉ email"
                 required
+                maxLength={100}
+                autoComplete="email"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -173,6 +310,11 @@ const RegisterPage: React.FC = () => {
                 onFocus={(e) => e.target.style.borderColor = '#0f766e'}
                 onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
               />
+              {fieldErrors.email && (
+                <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             {/* Phone Input */}
@@ -192,6 +334,9 @@ const RegisterPage: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Nhập số điện thoại"
                 required
+                pattern="0[0-9]{9}"
+                inputMode="numeric"
+                title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 chữ số"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -204,6 +349,11 @@ const RegisterPage: React.FC = () => {
                 onFocus={(e) => e.target.style.borderColor = '#0f766e'}
                 onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
               />
+              {fieldErrors.phone && (
+                <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {fieldErrors.phone}
+                </p>
+              )}
             </div>
 
             {/* Password Input */}
@@ -225,6 +375,7 @@ const RegisterPage: React.FC = () => {
                   placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   style={{
                     width: '100%',
                     padding: '0.75rem 1rem',
@@ -256,6 +407,11 @@ const RegisterPage: React.FC = () => {
                   {formData.showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             {/* Confirm Password Input */}
@@ -276,6 +432,7 @@ const RegisterPage: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Nhập lại mật khẩu"
                   required
+                  autoComplete="new-password"
                   style={{
                     width: '100%',
                     padding: '0.75rem 1rem',
@@ -307,6 +464,11 @@ const RegisterPage: React.FC = () => {
                   {formData.showConfirmPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
+              {fieldErrors.confirmPassword && (
+                <p style={{ color: '#dc2626', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {fieldErrors.confirmPassword}
+                </p>
+              )}
             </div>
 
             {/* Terms Checkbox */}

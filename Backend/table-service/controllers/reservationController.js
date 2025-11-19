@@ -30,7 +30,7 @@ exports.createReservation = async (req, res) => {
       guestInfo,
     } = req.body;
 
-    // Validate table exists and is available
+    // Validate table exists and is active
     const table = await Table.findById(tableId);
     if (!table) {
       return res.status(404).json({
@@ -39,10 +39,11 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    if (!table.canBeReserved()) {
+    // Check if table is active (not deleted)
+    if (!table.isActive) {
       return res.status(400).json({
         success: false,
-        message: "Table is not available for reservation",
+        message: "Table is not active",
       });
     }
 
@@ -53,19 +54,27 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Check for time conflicts
+    // Check for time conflicts - use same logic as searchAvailableTables
+    // Parse date string and compare by day only to avoid timezone issues
+    const dateParts = reservationDate.split('-');
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+    const day = parseInt(dateParts[2]);
+    
+    // Check for conflicting reservations: same table, same date, overlapping time slots
+    // Two time slots overlap if: start1 < end2 AND end1 > start2
     const conflictingReservation = await Reservation.findOne({
       tableId,
-      reservationDate: {
-        $gte: new Date(reservationDate + "T00:00:00.000Z"),
-        $lt: new Date(reservationDate + "T23:59:59.999Z"),
+      $expr: {
+        $eq: [
+          { $dateToString: { format: "%Y-%m-%d", date: "$reservationDate", timezone: "UTC" } },
+          reservationDate
+        ]
       },
       status: { $in: ["confirmed", "pending", "seated"] },
-      $or: [
-        {
-          "timeSlot.startTime": { $lt: endTime },
-          "timeSlot.endTime": { $gt: startTime },
-        },
+      $and: [
+        { "timeSlot.startTime": { $lt: endTime } },
+        { "timeSlot.endTime": { $gt: startTime } },
       ],
     });
 

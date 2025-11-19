@@ -193,6 +193,21 @@
   transition: all 0.3s ease;
 }
 
+.header-nav-desktop > .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: stretch;
+}
+
+.header-main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
 /* Fix login/register buttons to ensure consistent styling */
 .header-auth a[href="/login"],
 .header-auth a[href="/register"] {

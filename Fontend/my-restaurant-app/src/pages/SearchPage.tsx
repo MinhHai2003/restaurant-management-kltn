@@ -34,27 +34,40 @@ const SearchPage: React.FC = () => {
           setItems([]);
           return;
         }
-        // Use getMenuItems with search param to match backend API
-        const res = await menuService.getMenuItems({ search: query, limit: 200 });
-        if (res.success) {
-          const fetched = ((res.data?.items as any) || []) as MenuItem[];
-          // Client-side filter (accent-insensitive) in case backend ignores search
-          const normalize = (s: string) => s
+
+        const normalize = (s: string) =>
+          s
             .toLowerCase()
             .normalize('NFD')
             .replace(/\p{Diacritic}+/gu, '');
-          const q = normalize(query);
-          const filtered = fetched.filter((it) => {
-            const name = normalize(it.name || '');
-            const desc = normalize((it as any).description || '');
-            return name.includes(q) || desc.includes(q);
+        const normalizedQuery = normalize(query);
+
+        const applyLocalFilter = (source: MenuItem[]) =>
+          source.filter((item) => {
+            const name = normalize(item.name || '');
+            return name.includes(normalizedQuery);
           });
-          setItems(filtered);
+
+        let fetched: MenuItem[] = [];
+
+        // Try dedicated search endpoint first for better accuracy
+        const searchRes = await menuService.searchMenuItems(query);
+        if (searchRes.success && Array.isArray(searchRes.data?.items)) {
+          fetched = searchRes.data?.items || [];
         } else {
-          setError(res.error || 'Không thể tìm kiếm');
+          // Fallback to general listing if search API unavailable
+          const fallbackRes = await menuService.getMenuItems({ search: query, limit: 200 });
+          if (!fallbackRes.success) {
+            throw new Error(fallbackRes.error || 'Không thể tìm kiếm');
+          }
+          fetched = ((fallbackRes.data?.items as any) || []) as MenuItem[];
         }
+
+        const filtered = applyLocalFilter(fetched);
+        setItems(filtered);
       } catch (e) {
-        setError('Không thể tìm kiếm');
+        console.error('❌ [SEARCH PAGE] Error searching menu:', e);
+        setError('Không thể tìm kiếm món ăn theo từ khóa này. Vui lòng thử lại sau.');
       } finally {
         setLoading(false);
       }

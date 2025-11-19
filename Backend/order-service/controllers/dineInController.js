@@ -460,8 +460,44 @@ exports.completeTableOrders = async (req, res) => {
           method: paymentMethod === "cash" ? "cash" : "banking",
           timestamp: new Date().toISOString(),
         });
+
+        // 🔔 Emit order_status_updated for each updated order to notify admin dashboard
+        // Fetch updated orders to emit their full data
+        const updatedOrders = await Order.find({
+          $or: [
+            { tableNumber: tableNumber },
+            { "diningInfo.tableInfo.tableNumber": tableNumber },
+          ],
+          "delivery.type": "dine_in",
+          status: "completed",
+          "payment.status": "paid",
+        }).select("-__v");
+
+        console.log(`🔔 [COMPLETE] Emitting order_status_updated for ${updatedOrders.length} orders`);
+
+        // Emit order_status_updated for each order to notify admin dashboard
+        updatedOrders.forEach((order) => {
+          req.io
+            .to("role_admin")
+            .to("role_manager")
+            .to("role_waiter")
+            .to("role_chef")
+            .to("role_cashier")
+            .to("role_delivery")
+            .to("role_receptionist")
+            .emit("order_status_updated", {
+              type: "order_status_updated",
+              orderId: order._id.toString(),
+              orderNumber: order.orderNumber,
+              oldStatus: "pending", // Previous status before payment
+              newStatus: "completed",
+              order: order, // Include full order object for frontend
+              updatedBy: "payment",
+              message: `Đơn hàng ${order.orderNumber} đã được thanh toán và hoàn thành`,
+            });
+        });
       } catch (emitErr) {
-        console.error("[SOCKET] Emit table_session_closed error:", emitErr.message);
+        console.error("[SOCKET] Emit error:", emitErr.message);
       }
     }
 

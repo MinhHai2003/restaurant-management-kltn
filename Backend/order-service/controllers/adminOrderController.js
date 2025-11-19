@@ -503,6 +503,57 @@ exports.updateTablePaymentOrders = async (req, res) => {
       console.log(`✅ [ADMIN] Updated table payment order ${tablePaymentOrder.orderNumber} to completed`);
     }
 
+    // 🔔 Emit socket events to notify admin dashboard about status updates
+    if (req.io) {
+      try {
+        // Emit order_status_updated for each original order
+        for (const originalOrder of originalOrders) {
+          req.io
+            .to("role_admin")
+            .to("role_manager")
+            .to("role_waiter")
+            .to("role_chef")
+            .to("role_cashier")
+            .to("role_delivery")
+            .to("role_receptionist")
+            .emit("order_status_updated", {
+              type: "order_status_updated",
+              orderId: originalOrder._id.toString(),
+              orderNumber: originalOrder.orderNumber,
+              oldStatus: "pending", // Previous status before payment
+              newStatus: "completed",
+              order: originalOrder, // Include full order object for frontend
+              updatedBy: "payment",
+              message: `Đơn hàng ${originalOrder.orderNumber} đã được thanh toán và hoàn thành`,
+            });
+        }
+
+        // Emit for table payment order as well
+        req.io
+          .to("role_admin")
+          .to("role_manager")
+          .to("role_waiter")
+          .to("role_chef")
+          .to("role_cashier")
+          .to("role_delivery")
+          .to("role_receptionist")
+          .emit("order_status_updated", {
+            type: "order_status_updated",
+            orderId: tablePaymentOrder._id.toString(),
+            orderNumber: tablePaymentOrder.orderNumber,
+            oldStatus: "pending",
+            newStatus: "completed",
+            order: tablePaymentOrder,
+            updatedBy: "payment",
+            message: `Đơn thanh toán tổng ${tablePaymentOrder.orderNumber} đã hoàn thành`,
+          });
+
+        console.log(`🔔 [ADMIN] Emitted order_status_updated for ${originalOrders.length + 1} orders`);
+      } catch (emitErr) {
+        console.error("[SOCKET] Emit error in updateTablePaymentOrders:", emitErr.message);
+      }
+    }
+
     console.log(`💳 [ADMIN] ===== UPDATE TABLE PAYMENT ORDERS SUCCESS =====`);
     console.log(`💳 [ADMIN] Updated ${updatedOrders.length} original orders`);
     console.log(`💳 [ADMIN] Table payment order status: ${tablePaymentOrder.status}`);

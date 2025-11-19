@@ -2348,7 +2348,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                         ) : (
                           <select
-                            value={order.status}
+                            value={order.status || 'pending'}
                             onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
@@ -2367,6 +2367,7 @@ const AdminDashboard: React.FC = () => {
                             <option value="preparing">Đang chuẩn bị</option>
                             <option value="ready">Sẵn sàng</option>
                             <option value="delivered">Đã hoàn thành</option>
+                            <option value="completed">Đã hoàn thành</option>
                             <option value="cancelled">Đã hủy</option>
                           </select>
                         )}

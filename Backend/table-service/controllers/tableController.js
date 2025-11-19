@@ -345,8 +345,13 @@ exports.searchAvailableTables = async (req, res) => {
         // Calculate pricing for this time slot
         const price = table.calculatePrice(date, startTime);
 
+        // Set status to "available" for search results since there's no conflict
+        // This allows frontend to show the table as bookable
+        const tableData = table.toObject();
+        tableData.status = "available"; // Override status for search results
+
         availableTables.push({
-          ...table.toObject(),
+          ...tableData,
           pricing: {
             ...table.pricing,
             calculatedPrice: price,

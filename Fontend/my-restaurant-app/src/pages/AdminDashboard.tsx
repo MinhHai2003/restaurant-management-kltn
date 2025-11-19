@@ -2057,7 +2057,7 @@ const AdminDashboard: React.FC = () => {
                   gap: '10px',
                   fontSize: '12px',
                   fontWeight: '600',
-                  color: '#666'
+                  color: '#1f2937'
                 }}>
                   <div>Mã đơn</div>
                   <div>Khách hàng</div>
@@ -2079,11 +2079,11 @@ const AdminDashboard: React.FC = () => {
                     <small>Khởi động Order Service để xem danh sách đơn hàng</small>
                   </div>
                 ) : ordersLoading ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#374151' }}>
                     <div>🔄 Đang tải danh sách đơn hàng...</div>
                   </div>
                 ) : ordersList.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#374151' }}>
                     <div>📋 Chưa có đơn hàng nào</div>
                     <button
                       onClick={() => loadOrdersList(1)}
@@ -2123,8 +2123,8 @@ const AdminDashboard: React.FC = () => {
                         {order.orderNumber}
                         </div>
                         <div>
-                        <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '2px' }}>{order.customerInfo?.name || 'N/A'}</div>
-                        <div style={{ fontSize: '10px', color: '#666' }}>{order.customerInfo?.email || ''}</div>
+                        <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '2px', color: '#1f2937' }}>{order.customerInfo?.name || 'N/A'}</div>
+                        <div style={{ fontSize: '10px', color: '#4b5563' }}>{order.customerInfo?.email || ''}</div>
                         </div>
                         <div style={{ minHeight: '36px' }}>
                         <div style={{
@@ -2140,7 +2140,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div style={{
                           fontSize: '10px',
-                          color: '#666',
+                          color: '#4b5563',
                           lineHeight: '1.3',
                           display: 'flex',
                           alignItems: 'flex-start',
@@ -2175,15 +2175,15 @@ const AdminDashboard: React.FC = () => {
                             🍽️ {order.diningInfo.tableInfo.tableNumber}
                           </span>
                         ) : order.delivery?.type === 'delivery' ? (
-                          <span style={{ color: '#666', fontSize: '10px' }}>Giao hàng</span>
+                          <span style={{ color: '#374151', fontSize: '10px', fontWeight: '500' }}>Giao hàng</span>
                         ) : order.delivery?.type === 'pickup' ? (
-                          <span style={{ color: '#666', fontSize: '10px' }}>Lấy tại quầy</span>
+                          <span style={{ color: '#374151', fontSize: '10px', fontWeight: '500' }}>Lấy tại quầy</span>
                         ) : (
-                          <span style={{ color: '#ccc', fontSize: '10px' }}>-</span>
+                          <span style={{ color: '#9ca3af', fontSize: '10px' }}>-</span>
                         )}
                         </div>
 
-                        <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px' }}>
+                        <div style={{ fontSize: '11px', textAlign: 'left', paddingLeft: '8px', color: '#1f2937', fontWeight: '500' }}>
                         {order.delivery?.type === 'delivery' ? '🚚 Giao hàng' :
                           order.delivery?.type === 'pickup' ? '🏪 Lấy tại quầy' :
                             order.delivery?.type === 'dine_in' ? '🍽️ Tại bàn' :

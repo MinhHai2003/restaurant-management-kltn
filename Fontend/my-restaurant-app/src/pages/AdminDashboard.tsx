@@ -2369,7 +2369,6 @@ const AdminDashboard: React.FC = () => {
                             <option value="preparing">Đang chuẩn bị</option>
                             <option value="ready">Sẵn sàng</option>
                             <option value="delivered">Đã hoàn thành</option>
-                            <option value="completed">Hoàn thành</option>
                             <option value="cancelled">Đã hủy</option>
                           </select>
                         )}

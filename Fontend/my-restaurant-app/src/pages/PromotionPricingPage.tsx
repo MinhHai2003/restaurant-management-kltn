@@ -200,7 +200,9 @@ const PromotionPricingPage: React.FC = () => {
                 <div className="tier-card__icon" style={{ color: tier.color }}>
                   {tier.icon}
                 </div>
-                <p className="tier-name">{tier.tier}</p>
+                <p className="tier-name" style={{ color: tier.color }}>
+                  {tier.tier}
+                </p>
                 <p className="tier-price">{tier.price}</p>
                 <ul>
                   {tier.perks.map((perk) => (

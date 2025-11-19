@@ -12,6 +12,15 @@ import { useCart } from '../contexts/CartContext';
 import type { Cart } from '../services/cartService';
 import { API_CONFIG } from '../config/api';
 
+interface NewAddressForm {
+  label: 'Nhà' | 'Văn phòng';
+  address: string;
+  district: string;
+  city: string;
+  phone: string;
+  isDefault: boolean;
+}
+
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,7 +59,7 @@ const CheckoutPage: React.FC = () => {
   // State cho popup thêm địa chỉ mới
   const [showNewAddressModal, setShowNewAddressModal] = useState(false);
   const [addingAddress, setAddingAddress] = useState(false);
-  const [newAddressForm, setNewAddressForm] = useState({
+  const [newAddressForm, setNewAddressForm] = useState<NewAddressForm>({
     label: 'Nhà',
     address: '',
     district: '',
@@ -59,6 +68,68 @@ const CheckoutPage: React.FC = () => {
     isDefault: false
   });
   const [newAddressError, setNewAddressError] = useState('');
+  const handleNewAddressInputChange = <K extends keyof NewAddressForm>(
+    field: K,
+    value: NewAddressForm[K]
+  ) => {
+    if (field === 'phone') {
+      const strValue = (value as string) || '';
+      const phoneRegex = /^[0-9]{0,10}$/;
+      if (!phoneRegex.test(strValue)) {
+        return;
+      }
+    }
+
+    if (field === 'address') {
+      const strValue = (value as string) || '';
+      if (strValue.length > 200) {
+        return;
+      }
+    }
+
+    setNewAddressForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const validateNewAddressForm = () => {
+    if (!newAddressForm.phone || !newAddressForm.phone.trim()) {
+      setNewAddressError('Vui lòng nhập số điện thoại!');
+      return false;
+    }
+
+    const phoneRegex = /^0[0-9]{9}$/;
+    if (!phoneRegex.test(newAddressForm.phone.trim())) {
+      setNewAddressError('Số điện thoại không hợp lệ! Phải bắt đầu bằng số 0 và có đúng 10 chữ số (VD: 0912345678).');
+      return false;
+    }
+
+    const addressValue = newAddressForm.address?.trim() || '';
+    if (addressValue.length < 5) {
+      setNewAddressError('Địa chỉ chi tiết phải có ít nhất 5 ký tự!');
+      return false;
+    }
+
+    if (addressValue.length > 200) {
+      setNewAddressError('Địa chỉ chi tiết không được quá 200 ký tự!');
+      return false;
+    }
+
+    if (!newAddressForm.city) {
+      setNewAddressError('Vui lòng chọn Tỉnh/Thành phố!');
+      return false;
+    }
+
+    if (!newAddressForm.district) {
+      setNewAddressError('Vui lòng chọn Quận/Huyện!');
+      return false;
+    }
+
+    setNewAddressError('');
+    return true;
+  };
+
 
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -673,7 +744,7 @@ const CheckoutPage: React.FC = () => {
                           <div style={{ marginBottom: 16 }}>
                             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>Số điện thoại *</label>
                             <input type="tel" value={newAddressForm.phone} required
-                              onChange={e => setNewAddressForm(f => ({ ...f, phone: e.target.value }))}
+                              onChange={e => handleNewAddressInputChange('phone', e.target.value)}
                               style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
                               placeholder="Nhập số điện thoại" />
                           </div>
@@ -682,7 +753,7 @@ const CheckoutPage: React.FC = () => {
                             <div style={{ flex: 1 }}>
                               <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>Tỉnh/Thành phố *</label>
                               <select value={newAddressForm.city} required
-                                onChange={e => setNewAddressForm(f => ({ ...f, city: e.target.value }))}
+                                onChange={e => handleNewAddressInputChange('city', e.target.value)}
                                 style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
                                 <option value="">Chọn Tỉnh/Thành phố</option>
                                 <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
@@ -697,7 +768,7 @@ const CheckoutPage: React.FC = () => {
                             <div style={{ flex: 1 }}>
                               <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>Quận/Huyện *</label>
                               <select value={newAddressForm.district} required
-                                onChange={e => setNewAddressForm(f => ({ ...f, district: e.target.value }))}
+                                onChange={e => handleNewAddressInputChange('district', e.target.value)}
                                 style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
                                 <option value="">Chọn Quận/Huyện</option>
                                 <option value="Quận 1">Quận 1</option>
@@ -726,14 +797,14 @@ const CheckoutPage: React.FC = () => {
                           <div style={{ marginBottom: 16 }}>
                             <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>Địa chỉ cụ thể *</label>
                             <input type="text" value={newAddressForm.address} required
-                              onChange={e => setNewAddressForm(f => ({ ...f, address: e.target.value }))}
+                              onChange={e => handleNewAddressInputChange('address', e.target.value)}
                               style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
                               placeholder="Ví dụ: Số 123 Đường ABC, Phường XYZ" />
                           </div>
                           {/* Đặt làm mặc định */}
                           <div style={{ display: 'flex', alignItems: 'center', background: '#f9fafb', padding: 12, borderRadius: 8, marginBottom: 16 }}>
                             <input type="checkbox" id="isDefault" checked={newAddressForm.isDefault}
-                              onChange={e => setNewAddressForm(f => ({ ...f, isDefault: e.target.checked }))}
+                              onChange={e => handleNewAddressInputChange('isDefault', e.target.checked)}
                               style={{ width: 16, height: 16, accentColor: '#ea580c', borderRadius: 4 }} />
                             <label htmlFor="isDefault" style={{ marginLeft: 12, fontSize: 14, color: '#374151', cursor: 'pointer' }}>Đặt làm địa chỉ giao hàng mặc định</label>
                           </div>
@@ -741,14 +812,20 @@ const CheckoutPage: React.FC = () => {
                           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                             <button type="button" onClick={() => setShowNewAddressModal(false)}
                               style={{ padding: '10px 20px', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}>Hủy</button>
-                            <button type="button" disabled={addingAddress}
+                            <button
+                              type="button"
+                              disabled={addingAddress}
                               onClick={async () => {
-                                setAddingAddress(true);
                                 setNewAddressError('');
+                                if (!validateNewAddressForm()) {
+                                  return;
+                                }
+
+                                setAddingAddress(true);
                                 console.log('🔍 Thêm địa chỉ mới:', newAddressForm);
                                 try {
                                   const userToken = localStorage.getItem('token');
-                                  
+
                                   if (userToken) {
                                     // User đã đăng nhập - lưu địa chỉ vào database
                                     const res = await customerService.addAddress(newAddressForm);
@@ -759,38 +836,38 @@ const CheckoutPage: React.FC = () => {
                                       if (addrRes.success && addrRes.data) {
                                         setAddresses(addrRes.data);
                                         setSelectedAddressId(res.data._id);
-                                        setCustomerInfo(info => ({
+                                        setCustomerInfo((info) => ({
                                           ...info,
-                                        address: res.data?.address || '',
-                                        city: res.data?.city || '',
-                                        district: res.data?.district || '',
-                                        phone: res.data?.phone || ''
-                                      }));
+                                          address: res.data?.address || '',
+                                          city: res.data?.city || '',
+                                          district: res.data?.district || '',
+                                          phone: res.data?.phone || '',
+                                        }));
+                                      }
+                                      setShowNewAddressModal(false);
+                                    } else {
+                                      setNewAddressError(res.error || 'Có lỗi xảy ra khi thêm địa chỉ');
                                     }
-                                    setShowNewAddressModal(false);
                                   } else {
-                                    setNewAddressError(res.error || 'Có lỗi xảy ra khi thêm địa chỉ');
+                                    // Guest user - lưu địa chỉ vào local state
+                                    console.log('👤 Guest user - lưu địa chỉ local');
+                                    const newAddress = {
+                                      _id: `guest_${Date.now()}`,
+                                      ...newAddressForm,
+                                    };
+
+                                    // Thêm vào danh sách địa chỉ local
+                                    setAddresses((prev) => [...prev, newAddress]);
+                                    setSelectedAddressId(newAddress._id);
+                                    setCustomerInfo((info) => ({
+                                      ...info,
+                                      address: newAddressForm.address || '',
+                                      city: newAddressForm.city || '',
+                                      district: newAddressForm.district || '',
+                                      phone: newAddressForm.phone || '',
+                                    }));
+                                    setShowNewAddressModal(false);
                                   }
-                                } else {
-                                  // Guest user - lưu địa chỉ vào local state
-                                  console.log('👤 Guest user - lưu địa chỉ local');
-                                  const newAddress = {
-                                    _id: `guest_${Date.now()}`,
-                                    ...newAddressForm
-                                  };
-                                  
-                                  // Thêm vào danh sách địa chỉ local
-                                  setAddresses(prev => [...prev, newAddress]);
-                                  setSelectedAddressId(newAddress._id);
-                                  setCustomerInfo(info => ({
-                                    ...info,
-                                    address: newAddressForm.address || '',
-                                    city: newAddressForm.city || '',
-                                    district: newAddressForm.district || '',
-                                    phone: newAddressForm.phone || ''
-                                  }));
-                                  setShowNewAddressModal(false);
-                                }
                                 } catch (error) {
                                   console.error('❌ Lỗi thêm địa chỉ:', error);
                                   setNewAddressError('Có lỗi xảy ra khi thêm địa chỉ');

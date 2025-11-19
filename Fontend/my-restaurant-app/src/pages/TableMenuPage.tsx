@@ -118,6 +118,17 @@ const TableMenuPage: React.FC = () => {
 
   const [sessionOrderNumber] = useState(() => generateSessionOrderNumber());
 
+  const getOrderItemsSummary = (order: Order) => {
+    if (!order?.items || order.items.length === 0) {
+      return order.orderNumber || `Đơn ${order._id?.slice(-4)}`;
+    }
+    const previewItems = order.items.slice(0, 2).map(item => `${item.name} x${item.quantity}`);
+    const remainingCount = order.items.length - previewItems.length;
+    return remainingCount > 0
+      ? `${previewItems.join(', ')} +${remainingCount} món`
+      : previewItems.join(', ');
+  };
+
   // Generate table payment order number
   const generateTablePaymentOrderNumber = () => {
     const now = new Date();
@@ -1156,8 +1167,11 @@ const TableMenuPage: React.FC = () => {
                   fontSize: '12px',
                   gap: '8px'
                 }} className="session-order-item">
-                  <span style={{ color: '#9a3412', flex: '1', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {order.orderNumber || order._id?.slice(-8) || `Đơn ${index + 1}`}
+                  <span
+                    style={{ color: '#9a3412', flex: '1', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={order.items?.map(item => `${item.name} x${item.quantity}`).join(', ') || order.orderNumber}
+                  >
+                    {getOrderItemsSummary(order)}
                   </span>
                   <span style={{ fontWeight: '600', color: '#ea580c', flexShrink: 0 }}>
                     {formatPrice(order.pricing?.total || 0)}

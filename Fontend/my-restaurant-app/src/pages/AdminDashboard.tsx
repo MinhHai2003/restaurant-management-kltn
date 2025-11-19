@@ -2348,7 +2348,11 @@ const AdminDashboard: React.FC = () => {
                           </div>
                         ) : (
                           <select
-                            value={order.status || 'pending'}
+                            value={(() => {
+                              // Map "delivered" to "completed" để hiển thị đúng trong dropdown
+                              const status = order.status || 'pending';
+                              return status === 'delivered' ? 'completed' : status;
+                            })()}
                             onChange={(e) => updateOrderStatus(order._id, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
@@ -2366,7 +2370,6 @@ const AdminDashboard: React.FC = () => {
                             <option value="confirmed">Đã xác nhận</option>
                             <option value="preparing">Đang chuẩn bị</option>
                             <option value="ready">Sẵn sàng</option>
-                            <option value="delivered">Đã hoàn thành</option>
                             <option value="completed">Đã hoàn thành</option>
                             <option value="cancelled">Đã hủy</option>
                           </select>

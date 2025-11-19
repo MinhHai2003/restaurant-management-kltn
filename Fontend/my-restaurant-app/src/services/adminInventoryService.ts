@@ -8,6 +8,7 @@ export interface InventoryItem {
   unit: string;
   price: number; // ✅ Thêm trường giá
   status: 'in-stock' | 'low-stock' | 'out-of-stock';
+  minimumStock?: number;
   note?: string;
   supplier: string; // ✅ Required
   category: string; // ✅ Required

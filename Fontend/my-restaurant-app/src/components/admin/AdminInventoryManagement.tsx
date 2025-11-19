@@ -265,6 +265,35 @@ const AdminInventoryManagement: React.FC = () => {
     loadData();
   }, [currentPage, searchTerm, filterStatus, filterSupplier, sortBy, sortOrder]);
 
+  const deriveStatsFromItems = (items: InventoryItem[]) => {
+    const totals = items.reduce(
+      (acc, item) => {
+        const quantity = Number(item.quantity || 0);
+        const price = Number(item.price || 0);
+        const totalItemValue = quantity * price;
+
+        acc.totalValue += totalItemValue;
+        acc.totalItems += 1;
+
+        if (quantity === 0) {
+          acc.outOfStock += 1;
+        } else if (quantity < 10) {
+          acc.lowStock += 1;
+        } else {
+          acc.inStock += 1;
+        }
+
+        return acc;
+      },
+      { totalItems: 0, inStock: 0, lowStock: 0, outOfStock: 0, totalValue: 0 }
+    );
+
+    return {
+      ...totals,
+      lastUpdated: new Date().toISOString(),
+    };
+  };
+
   const reloadAllData = async () => {
     setLoading(true);
     try {
@@ -279,11 +308,18 @@ const AdminInventoryManagement: React.FC = () => {
       };
 
       const [statsResult, inventoryResult] = await Promise.all([
-        AdminInventoryService.getInventoryStats(),
+        AdminInventoryService.getInventoryStats().catch((error) => {
+          console.warn('⚠️ [AdminInventoryManagement] Stats API failed, will derive from items later:', error);
+          return null;
+        }),
         AdminInventoryService.getInventories(params)
       ]);
       
-      setStats(statsResult);
+      if (statsResult) {
+        setStats(statsResult);
+      } else {
+        setStats(deriveStatsFromItems(inventoryResult.items));
+      }
       setInventoryData(inventoryResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Lỗi khi tải dữ liệu';
@@ -382,11 +418,13 @@ const AdminInventoryManagement: React.FC = () => {
   // Helper functions
   const getStatusInfo = (item: InventoryItem) => {
     const quantity = Number(item.quantity || 0);
+    const minimumStock =
+      typeof item.minimumStock === 'number' ? item.minimumStock : 10;
     let derivedStatus: 'in-stock' | 'low-stock' | 'out-of-stock';
 
     if (quantity === 0) {
       derivedStatus = 'out-of-stock';
-    } else if (quantity < 10) {
+    } else if (quantity <= minimumStock) {
       derivedStatus = 'low-stock';
     } else {
       derivedStatus = 'in-stock';
@@ -1009,28 +1047,31 @@ const AdminInventoryManagement: React.FC = () => {
             <div style={{ fontSize: '14px' }}>
               {reportData.type === 'low-stock' && reportData.items && (
                 <div>
-                  {reportData.items.map(item => (
-                    <div key={item._id} style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      background: '#fef3c7',
-                      borderRadius: '6px',
-                      marginBottom: '8px'
-                    }}>
-                      <span>{getItemIcon(item.name)} {item.name}</span>
-                      <span>
-                        {Number(item.quantity).toFixed(2)} {item.unit} - 
-                        <span style={{
-                          color: item.status === 'out-of-stock' ? '#dc2626' : '#d97706',
-                          fontWeight: '600',
-                          marginLeft: '4px'
-                        }}>
-                      {getStatusInfo(item).label}
+                  {reportData.items.map(item => {
+                    const statusInfo = getStatusInfo(item);
+                    return (
+                      <div key={item._id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        background: '#fef3c7',
+                        borderRadius: '6px',
+                        marginBottom: '8px'
+                      }}>
+                        <span>{getItemIcon(item.name)} {item.name}</span>
+                        <span>
+                          {Number(item.quantity).toFixed(2)} {item.unit} - 
+                          <span style={{
+                            color: statusInfo.color,
+                            fontWeight: '600',
+                            marginLeft: '4px'
+                          }}>
+                            {statusInfo.label}
+                          </span>
                         </span>
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

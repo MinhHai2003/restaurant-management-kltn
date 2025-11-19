@@ -3,29 +3,33 @@ const Inventory = require("../models/Inventory");
 // 📊 Dashboard thống kê cho admin
 exports.getInventoryStats = async (req, res) => {
   try {
-    const stats = await Promise.all([
-      Inventory.countDocuments(), // Tổng số mặt hàng
-      Inventory.countDocuments({ status: "in-stock" }), // Hàng còn đủ
-      Inventory.countDocuments({ status: "low-stock" }), // Hàng sắp hết
-      Inventory.countDocuments({ status: "out-of-stock" }), // Hàng hết
-      Inventory.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalValue: { $sum: { $multiply: ["$quantity", "$price"] } },
-          },
-        },
-      ]), // Tổng giá trị kho
-    ]);
+    const items = await Inventory.find({}, "quantity price minimumStock");
 
-    const totalValue = stats[4][0]?.totalValue || 0;
+    const stats = items.reduce(
+      (acc, item) => {
+        const quantity = Number(item.quantity) || 0;
+        const price = Number(item.price) || 0;
+        const minimumStock =
+          typeof item.minimumStock === "number" ? item.minimumStock : 10;
+
+        acc.totalItems += 1;
+        acc.totalValue += quantity * price;
+
+        if (quantity === 0) {
+          acc.outOfStock += 1;
+        } else if (quantity <= minimumStock) {
+          acc.lowStock += 1;
+        } else {
+          acc.inStock += 1;
+        }
+
+        return acc;
+      },
+      { totalItems: 0, inStock: 0, lowStock: 0, outOfStock: 0, totalValue: 0 }
+    );
 
     res.json({
-      totalItems: stats[0],
-      inStock: stats[1],
-      lowStock: stats[2],
-      outOfStock: stats[3],
-      totalValue: totalValue,
+      ...stats,
       lastUpdated: new Date().toISOString(),
     });
   } catch (err) {
@@ -266,10 +270,18 @@ exports.getInventoryReport = async (req, res) => {
     const reportType = req.query.type || "summary";
 
     switch (reportType) {
-      case "low-stock":
-        const lowStockItems = await Inventory.find({
-          $or: [{ status: "low-stock" }, { status: "out-of-stock" }],
-        }).sort({ quantity: 1 });
+      case "low-stock": {
+        const allItems = await Inventory.find().sort({ quantity: 1 });
+        const lowStockItems = allItems.filter((item) => {
+          const quantity = Number(item.quantity) || 0;
+          const minimumStock =
+            typeof item.minimumStock === "number" ? item.minimumStock : 10;
+
+          if (quantity === 0) return true;
+          if (quantity < 0) return true;
+
+          return quantity > 0 && quantity <= minimumStock;
+        });
 
         res.json({
           type: "low-stock",
@@ -278,6 +290,7 @@ exports.getInventoryReport = async (req, res) => {
           count: lowStockItems.length,
         });
         break;
+      }
 
       case "high-value":
         const highValueItems = await Inventory.find()

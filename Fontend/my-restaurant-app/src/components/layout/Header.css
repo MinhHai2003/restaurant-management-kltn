@@ -225,10 +225,10 @@
   border: 2px solid #667eea !important;
 }
 
-/* Large screen adjustments - prevent header from spreading too wide */
+/* Large screen adjustments - keep header aligned with body content */
 @media (min-width: 1400px) {
   .header-main-container {
-    max-width: 1400px !important;
+    max-width: 1200px !important;
     margin: 0 auto !important;
   }
   
@@ -252,7 +252,7 @@
 
 @media (min-width: 1600px) {
   .header-main-container {
-    max-width: 1600px !important;
+    max-width: 1200px !important;
   }
   
   .header-right {

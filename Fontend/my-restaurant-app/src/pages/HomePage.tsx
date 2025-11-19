@@ -156,121 +156,123 @@ const HomePage: React.FC = () => {
     <div style={{ minHeight: '100vh', background: 'white' }}>
       <Header />
 
-      {/* Modern Hero Section */}
-      <div className="modern-hero">
-        <div className="modern-hero-content">
-          <h1 className="modern-hero-title">🦀 HẢI SẢN BIỂN ĐÔNG</h1>
-          <p className="modern-hero-subtitle">
-            Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
-          </p>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="modern-features">
-        <div className="modern-features-grid">
-          <div className="modern-feature-card">
-            <div className="modern-feature-icon">🎯</div>
-            <h3 className="modern-feature-title">Hải sản tươi sống</h3>
-            <p className="modern-feature-description">
-              Nhập khẩu trực tiếp từ biển, đảm bảo độ tươi ngon và chất lượng cao nhất
-            </p>
-          </div>
-          <div className="modern-feature-card">
-            <div className="modern-feature-icon">👨‍🍳</div>
-            <h3 className="modern-feature-title">Đầu bếp chuyên nghiệp</h3>
-            <p className="modern-feature-description">
-              Đội ngũ đầu bếp 5 sao với hơn 15 năm kinh nghiệm trong ẩm thực hải sản
-            </p>
-          </div>
-          <div className="modern-feature-card">
-            <div className="modern-feature-icon">🚚</div>
-            <h3 className="modern-feature-title">Giao hàng nhanh chóng</h3>
-            <p className="modern-feature-description">
-              Giao hàng trong vòng 60 phút, đảm bảo món ăn còn nóng hổi khi đến tay bạn
+      <div className="home-page-shell">
+        {/* Modern Hero Section */}
+        <div className="modern-hero">
+          <div className="modern-hero-content">
+            <h1 className="modern-hero-title">🦀 HẢI SẢN BIỂN ĐÔNG</h1>
+            <p className="modern-hero-subtitle">
+              Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Stats Section */}
-      <div className="modern-stats">
-        <div className="modern-stats-grid">
-          <div className="modern-stat-card">
-            <span className="modern-stat-number">15+</span>
-            <span className="modern-stat-label">Năm kinh nghiệm</span>
-          </div>
-          <div className="modern-stat-card">
-            <span className="modern-stat-number">50K+</span>
-            <span className="modern-stat-label">Khách hàng hài lòng</span>
-          </div>
-          <div className="modern-stat-card">
-            <span className="modern-stat-number">200+</span>
-            <span className="modern-stat-label">Món ăn đa dạng</span>
-          </div>
-          <div className="modern-stat-card">
-            <span className="modern-stat-number">4.9⭐</span>
-            <span className="modern-stat-label">Đánh giá trung bình</span>
+        {/* Features Section */}
+        <div className="modern-features">
+          <div className="modern-features-grid">
+            <div className="modern-feature-card">
+              <div className="modern-feature-icon">🎯</div>
+              <h3 className="modern-feature-title">Hải sản tươi sống</h3>
+              <p className="modern-feature-description">
+                Nhập khẩu trực tiếp từ biển, đảm bảo độ tươi ngon và chất lượng cao nhất
+              </p>
+            </div>
+            <div className="modern-feature-card">
+              <div className="modern-feature-icon">👨‍🍳</div>
+              <h3 className="modern-feature-title">Đầu bếp chuyên nghiệp</h3>
+              <p className="modern-feature-description">
+                Đội ngũ đầu bếp 5 sao với hơn 15 năm kinh nghiệm trong ẩm thực hải sản
+              </p>
+            </div>
+            <div className="modern-feature-card">
+              <div className="modern-feature-icon">🚚</div>
+              <h3 className="modern-feature-title">Giao hàng nhanh chóng</h3>
+              <p className="modern-feature-description">
+                Giao hàng trong vòng 60 phút, đảm bảo món ăn còn nóng hổi khi đến tay bạn
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Stats Section */}
+        <div className="modern-stats">
+          <div className="modern-stats-grid">
+            <div className="modern-stat-card">
+              <span className="modern-stat-number">15+</span>
+              <span className="modern-stat-label">Năm kinh nghiệm</span>
+            </div>
+            <div className="modern-stat-card">
+              <span className="modern-stat-number">50K+</span>
+              <span className="modern-stat-label">Khách hàng hài lòng</span>
+            </div>
+            <div className="modern-stat-card">
+              <span className="modern-stat-number">200+</span>
+              <span className="modern-stat-label">Món ăn đa dạng</span>
+            </div>
+            <div className="modern-stat-card">
+              <span className="modern-stat-number">4.9⭐</span>
+              <span className="modern-stat-label">Đánh giá trung bình</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Section */}
+        <Categories />
+
+        {/* Featured Products Section */}
+        <ProductSection
+          title="MÓN ĂN NỔI BẬT"
+          products={featuredProducts}
+          viewAllLink="/sp/group/mon-an-noi-bat"
+          backgroundColor="white"
+          onCartUpdate={updateCartCount}
+        />
+
+        {/* Rice & Noodle Section */}
+        <ProductSection
+          title="CƠM CHIÊN & PHỞ"
+          products={riceAndNoodleProducts}
+          viewAllLink="/sp/group/com-chien-pho"
+          backgroundColor="#f9fafb"
+          onCartUpdate={updateCartCount}
+        />
+
+        {/* Seafood & Grill Section */}
+        <ProductSection
+          title="HẢI SẢN & NƯỚNG"
+          products={seafoodAndGrillProducts}
+          viewAllLink="/sp/group/hai-san-nuong"
+          backgroundColor="white"
+          onCartUpdate={updateCartCount}
+        />
+
+        {/* Hotpot & Soup Section */}
+        <ProductSection
+          title="LẨU & CANH"
+          products={hotpotAndSoupProducts}
+          viewAllLink="/sp/group/lau-canh"
+          backgroundColor="#f9fafb"
+          onCartUpdate={updateCartCount}
+        />
+
+        {/* Snacks & Rolls Section */}
+        <ProductSection
+          title="BÁNH & GỎI CUỐN"
+          products={snacksAndRollsProducts}
+          viewAllLink="/sp/group/banh-goi-cuon"
+          backgroundColor="white"
+          onCartUpdate={updateCartCount}
+        />
+
+        {/* Drinks & Dessert Section */}
+        <ProductSection
+          title="NƯỚC UỐNG & TRÁNG MIỆNG"
+          products={drinksAndDessertProducts}
+          viewAllLink="/sp/group/nuoc-uong-trang-mieng"
+          backgroundColor="#f9fafb"
+          onCartUpdate={updateCartCount}
+        />
       </div>
-
-      {/* Categories Section */}
-      <Categories />
-
-      {/* Featured Products Section */}
-      <ProductSection
-        title="MÓN ĂN NỔI BẬT"
-        products={featuredProducts}
-        viewAllLink="/sp/group/mon-an-noi-bat"
-        backgroundColor="white"
-        onCartUpdate={updateCartCount}
-      />
-
-      {/* Rice & Noodle Section */}
-      <ProductSection
-        title="CƠM CHIÊN & PHỞ"
-        products={riceAndNoodleProducts}
-        viewAllLink="/sp/group/com-chien-pho"
-        backgroundColor="#f9fafb"
-        onCartUpdate={updateCartCount}
-      />
-
-      {/* Seafood & Grill Section */}
-      <ProductSection
-        title="HẢI SẢN & NƯỚNG"
-        products={seafoodAndGrillProducts}
-        viewAllLink="/sp/group/hai-san-nuong"
-        backgroundColor="white"
-        onCartUpdate={updateCartCount}
-      />
-
-      {/* Hotpot & Soup Section */}
-      <ProductSection
-        title="LẨU & CANH"
-        products={hotpotAndSoupProducts}
-        viewAllLink="/sp/group/lau-canh"
-        backgroundColor="#f9fafb"
-        onCartUpdate={updateCartCount}
-      />
-
-      {/* Snacks & Rolls Section */}
-      <ProductSection
-        title="BÁNH & GỎI CUỐN"
-        products={snacksAndRollsProducts}
-        viewAllLink="/sp/group/banh-goi-cuon"
-        backgroundColor="white"
-        onCartUpdate={updateCartCount}
-      />
-
-      {/* Drinks & Dessert Section */}
-      <ProductSection
-        title="NƯỚC UỐNG & TRÁNG MIỆNG"
-        products={drinksAndDessertProducts}
-        viewAllLink="/sp/group/nuoc-uong-trang-mieng"
-        backgroundColor="#f9fafb"
-        onCartUpdate={updateCartCount}
-      />
 
       <Footer />
       

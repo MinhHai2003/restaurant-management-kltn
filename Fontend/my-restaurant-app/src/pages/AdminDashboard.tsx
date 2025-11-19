@@ -1659,36 +1659,6 @@ const AdminDashboard: React.FC = () => {
             >
               ➕ Tạo bàn mới
             </button>
-            <button
-              onClick={resetMaintenanceTables}
-              style={{
-                background: '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              🔧➡️✅ Reset bảo trì
-            </button>
-            <button
-              onClick={loadTables}
-              style={{
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '600'
-              }}
-            >
-              🔄 Làm mới
-            </button>
           </div>
         </div>
 
@@ -3296,13 +3266,34 @@ const AdminDashboard: React.FC = () => {
                   Giá mặc định (VNĐ)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  value={tableFormData.pricing.basePrice}
-                  onChange={(e) => setTableFormData(prev => ({
-                    ...prev,
-                    pricing: { ...prev.pricing, basePrice: parseInt(e.target.value) || 0 }
-                  }))}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Nhập giá mặc định..."
+                  value={
+                    tableFormData.pricing.basePrice > 0
+                      ? tableFormData.pricing.basePrice.toString()
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (!raw) {
+                      setTableFormData(prev => ({
+                        ...prev,
+                        pricing: { ...prev.pricing, basePrice: 0 }
+                      }));
+                      return;
+                    }
+                    const digitsOnly = raw.replace(/\D/g, '');
+                    if (!digitsOnly) return;
+                    const parsed = parseInt(digitsOnly, 10);
+                    if (isNaN(parsed)) return;
+                    if (parsed < 0) return;
+                    setTableFormData(prev => ({
+                      ...prev,
+                      pricing: { ...prev.pricing, basePrice: parsed }
+                    }));
+                  }}
                   style={{
                     width: '100%',
                     padding: '8px 12px',

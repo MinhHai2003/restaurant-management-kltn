@@ -409,9 +409,9 @@ const Header: React.FC = () => {
         zIndex: 50
       }}>
         <div className="container">
-          <div style={{ display: 'flex', alignItems: 'stretch' }}>
+          <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
             {/* DANH MỤC - Special styling with Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', flex: '0 0 auto' }}>
               <div style={{
                 background: 'rgba(255,255,255,0.1)',
                 backdropFilter: 'blur(10px)',
@@ -504,17 +504,20 @@ const Header: React.FC = () => {
             </div>
 
             {/* Other Navigation Items */}
-            <div style={{ display: 'flex', flex: 1, justifyContent: 'space-evenly' }}>
+            <div style={{ display: 'flex', flex: 1, width: '100%' }}>
               <a href="/khuyen-mai" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 2rem',
+                padding: '0 1.5rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
-                whiteSpace: 'nowrap'
+                flex: 1,
+                whiteSpace: 'nowrap',
+                borderRight: '1px solid rgba(255,255,255,0.1)'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -526,13 +529,16 @@ const Header: React.FC = () => {
               <a href="/he-thong-cua-hang" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 2rem',
+                padding: '0 1.5rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
-                whiteSpace: 'nowrap'
+                flex: 1,
+                whiteSpace: 'nowrap',
+                borderRight: '1px solid rgba(255,255,255,0.1)'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -544,12 +550,14 @@ const Header: React.FC = () => {
               <a href="/dat-ban" style={{
                 color: 'white',
                 textDecoration: 'none',
-                padding: '0 2rem',
+                padding: '0 1.5rem',
                 height: '50px',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.5rem',
                 transition: 'background-color 0.3s ease',
+                flex: 1,
                 whiteSpace: 'nowrap'
               }}
               onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}

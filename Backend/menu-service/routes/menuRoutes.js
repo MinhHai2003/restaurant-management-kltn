@@ -6,12 +6,7 @@ const { uploadCloudinary } = require("../config/cloudinary");
 // Basic CRUD routes với Cloudinary
 router.get("/", menuController.getAllMenuItems); // Lấy tất cả
 router.get("/:id", menuController.getMenuItemById); // Lấy theo ID
-router.post(
-  "/",
-  uploadCloudinary.single("image"),
-  menuController.createMenuItem
-); // Tạo món với Cloudinary
-// Middleware xử lý lỗi multer
+// Middleware xử lý lỗi multer - phải đặt trước routes
 const handleMulterError = (err, req, res, next) => {
   if (err) {
     console.error("❌ Multer error:", err.message);
@@ -34,6 +29,13 @@ const handleMulterError = (err, req, res, next) => {
   }
   next();
 };
+
+router.post(
+  "/",
+  uploadCloudinary.single("image"),
+  handleMulterError,
+  menuController.createMenuItem
+); // Tạo món với Cloudinary
 
 router.put(
   "/:id",

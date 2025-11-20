@@ -2,6 +2,7 @@ const MenuItem = require("../models/MenuItem");
 const {
   deleteCloudinaryFile,
   getThumbnailUrl,
+  uploadToCloudinary,
 } = require("../config/cloudinary");
 
 // Helper function để xóa file ảnh từ Cloudinary
@@ -60,9 +61,16 @@ exports.createMenuItem = async (req, res) => {
 
     // Xử lý file upload nếu có
     if (req.file) {
-      // Cloudinary upload - multer-storage-cloudinary tự động upload và trả về URL
-      itemData.image = req.file.path; // Cloudinary URL
-      console.log(`📁 File uploaded to Cloudinary: ${req.file.filename}`);
+      try {
+        // Upload file lên Cloudinary
+        console.log(`📤 Uploading file to Cloudinary: ${req.file.path}`);
+        const uploadResult = await uploadToCloudinary(req.file.path);
+        console.log(`✅ File uploaded successfully: ${uploadResult.secure_url}`);
+        itemData.image = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error("❌ Error uploading to Cloudinary:", uploadError);
+        throw new Error(`Failed to upload image: ${uploadError.message}`);
+      }
     }
 
     // Nếu có hình ảnh từ URL (không phải file upload), validate format
@@ -131,6 +139,8 @@ exports.createMenuItem = async (req, res) => {
 };
 
 exports.updateMenuItem = async (req, res) => {
+  let uploadedPublicId = null; // Để xóa file nếu có lỗi
+  
   try {
     console.log("📝 Update menu item request:", {
       id: req.params.id,
@@ -178,13 +188,26 @@ exports.updateMenuItem = async (req, res) => {
 
     // Xử lý file upload mới (nếu có)
     if (req.file) {
-      // Xóa ảnh cũ nếu có
-      if (existingItem.image) {
-        await deleteImageFile(existingItem.image);
+      try {
+        // Upload file lên Cloudinary
+        console.log(`📤 Uploading file to Cloudinary: ${req.file.path}`);
+        const uploadResult = await uploadToCloudinary(req.file.path);
+        console.log(`✅ File uploaded successfully: ${uploadResult.secure_url}`);
+        
+        // Lưu public_id để xóa nếu có lỗi sau này
+        uploadedPublicId = uploadResult.public_id;
+        
+        // Xóa ảnh cũ nếu có
+        if (existingItem.image) {
+          await deleteImageFile(existingItem.image);
+        }
+        
+        // Đặt ảnh mới từ Cloudinary
+        updateData.image = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error("❌ Error uploading to Cloudinary:", uploadError);
+        throw new Error(`Failed to upload image: ${uploadError.message}`);
       }
-      // Đặt ảnh mới từ Cloudinary
-      updateData.image = req.file.path; // Cloudinary URL
-      console.log(`📁 New image uploaded to Cloudinary: ${req.file.path}`);
     } else if (updateData.image && updateData.image !== existingItem.image) {
       // Nếu cập nhật bằng URL mới và khác ảnh cũ
       // Validate URL format - chỉ chấp nhận HTTP/HTTPS
@@ -245,12 +268,11 @@ exports.updateMenuItem = async (req, res) => {
       ...updated.toObject(),
       hasImage: !!updated.image,
       imageUrl: updated.image,
-      thumbnailUrl: updated.image ? getThumbnailUrl(req.file?.filename) : null,
+      thumbnailUrl: updated.image ? updated.image : null,
       uploadedFile: req.file
         ? {
             originalName: req.file.originalname,
             filename: req.file.filename,
-            path: req.file.path,
             size: req.file.size,
           }
         : null,
@@ -267,12 +289,10 @@ exports.updateMenuItem = async (req, res) => {
     });
 
     // Xóa file Cloudinary mới upload nếu có lỗi
-    if (req.file && req.file.filename) {
+    if (uploadedPublicId) {
       try {
-        await deleteCloudinaryFile(req.file.filename);
-        console.log(
-          `🗑️ Deleted failed Cloudinary upload: ${req.file.filename}`
-        );
+        await deleteCloudinaryFile(uploadedPublicId);
+        console.log(`🗑️ Deleted failed Cloudinary upload: ${uploadedPublicId}`);
       } catch (deleteError) {
         console.error("❌ Error deleting failed upload:", deleteError.message);
       }

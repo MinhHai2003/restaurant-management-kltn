@@ -1,6 +1,8 @@
 const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 // Cấu hình Cloudinary
 cloudinary.config({
@@ -9,34 +11,33 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Cấu hình storage cho multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "restaurant-menu", // Thư mục trên Cloudinary
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"], // Định dạng được phép
-    transformation: [
-      {
-        width: 800,
-        height: 600,
-        crop: "limit", // Giữ tỷ lệ, resize nếu lớn hơn
-        quality: "auto:good", // Tự động optimize chất lượng
-      },
-    ],
-    public_id: (req, file) => {
-      // Tạo tên file duy nhất
-      const timestamp = Date.now();
-      const randomNum = Math.round(Math.random() * 1e9);
-      const originalName = file.originalname
-        .split(".")[0]
-        .replace(/[^a-zA-Z0-9]/g, "-");
-      return `menu-${timestamp}-${randomNum}-${originalName}`;
-    },
+// Cấu hình multer để lưu file tạm thời
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(os.tmpdir(), "menu-uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const timestamp = Date.now();
+    const randomNum = Math.round(Math.random() * 1e9);
+    const originalName = file.originalname
+      .split(".")[0]
+      .replace(/[^a-zA-Z0-9]/g, "-");
+    const ext = path.extname(file.originalname);
+    cb(null, `menu-${timestamp}-${randomNum}-${originalName}${ext}`);
   },
 });
 
 // File filter
 const fileFilter = (req, file, cb) => {
+  // Cho phép không có file (optional upload)
+  if (!file) {
+    return cb(null, true);
+  }
+
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const extname = allowedTypes.test(file.originalname.toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
@@ -50,7 +51,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Cấu hình multer với Cloudinary
+// Cấu hình multer
 const uploadCloudinary = multer({
   storage: storage,
   limits: {
@@ -58,6 +59,46 @@ const uploadCloudinary = multer({
   },
   fileFilter: fileFilter,
 });
+
+// Helper function để upload file lên Cloudinary
+const uploadToCloudinary = async (filePath, options = {}) => {
+  try {
+    const defaultOptions = {
+      folder: "restaurant-menu",
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      transformation: [
+        {
+          width: 800,
+          height: 600,
+          crop: "limit",
+          quality: "auto:good",
+        },
+      ],
+      ...options,
+    };
+
+    const result = await cloudinary.uploader.upload(filePath, defaultOptions);
+    
+    // Xóa file tạm thời sau khi upload
+    try {
+      fs.unlinkSync(filePath);
+    } catch (unlinkError) {
+      console.warn("⚠️ Could not delete temp file:", unlinkError.message);
+    }
+
+    return result;
+  } catch (error) {
+    // Xóa file tạm thời nếu có lỗi
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (unlinkError) {
+      console.warn("⚠️ Could not delete temp file after error:", unlinkError.message);
+    }
+    throw error;
+  }
+};
 
 // Helper function để xóa file từ Cloudinary
 const deleteCloudinaryFile = async (publicId) => {
@@ -119,6 +160,7 @@ const getThumbnailUrl = (publicId, width = 200, height = 150) => {
 
 module.exports = {
   uploadCloudinary,
+  uploadToCloudinary,
   deleteCloudinaryFile,
   getOptimizedUrl,
   getThumbnailUrl,

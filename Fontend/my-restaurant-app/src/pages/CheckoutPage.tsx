@@ -42,6 +42,68 @@ const CheckoutPage: React.FC = () => {
     notes: (location.state && location.state.notes) ? location.state.notes : ''
   });
 
+  // Field errors for validation
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Regex patterns
+  const regexPatterns = {
+    name: /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵýỷỹ\s]+$/,
+    email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    phone: /^(\+84|84|0)(3|5|7|8|9)([0-9]{8})$/,
+    address: /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵýỷỹ\s\/,.-]+$/
+  };
+
+  // Validate individual field
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          return 'Họ tên là bắt buộc';
+        }
+        if (value.trim().length < 2 || value.trim().length > 50) {
+          return 'Họ tên phải có từ 2-50 ký tự';
+        }
+        if (!regexPatterns.name.test(value.trim())) {
+          return 'Họ tên chỉ được chứa chữ cái và dấu cách';
+        }
+        return '';
+      
+      case 'email':
+        if (!value.trim()) {
+          return 'Email là bắt buộc';
+        }
+        if (!regexPatterns.email.test(value.trim())) {
+          return 'Email không hợp lệ (VD: example@email.com)';
+        }
+        return '';
+      
+      case 'phone':
+        if (!value.trim()) {
+          return 'Số điện thoại là bắt buộc';
+        }
+        const phoneValue = value.replace(/\s/g, '');
+        if (!regexPatterns.phone.test(phoneValue)) {
+          return 'Số điện thoại không hợp lệ (VD: 0123456789 hoặc +84912345678)';
+        }
+        return '';
+      
+      case 'address':
+        if (!value.trim()) {
+          return 'Địa chỉ là bắt buộc';
+        }
+        if (value.trim().length < 5) {
+          return 'Địa chỉ phải có ít nhất 5 ký tự';
+        }
+        if (value.trim().length > 200) {
+          return 'Địa chỉ không được vượt quá 200 ký tự';
+        }
+        return '';
+      
+      default:
+        return '';
+    }
+  };
+
   // Customer membership info
   const [customerMembership, setCustomerMembership] = useState({
     membershipLevel: 'bronze',
@@ -303,7 +365,7 @@ const CheckoutPage: React.FC = () => {
     setSelectedAddressId(addressId);
     if (addressId === 'new') {
       setShowNewAddressModal(true);
-      setNewAddressForm({ label: 'Nhà', address: '', district: '', city: '', phone: '', isDefault: false });
+      setNewAddressForm({ label: 'Nhà', address: '', district: '', city: 'TP. Hồ Chí Minh', phone: '', isDefault: false });
       setNewAddressError('');
     } else {
       const addr = addresses.find(a => a._id === addressId);
@@ -325,6 +387,26 @@ const CheckoutPage: React.FC = () => {
 
     if (!cart || cart.items.length === 0) {
       alert('Giỏ hàng trống!');
+      return;
+    }
+
+    // Validate all fields before submitting
+    const errors: Record<string, string> = {};
+    const nameError = validateField('name', customerInfo.name);
+    if (nameError) errors.name = nameError;
+    
+    const emailError = validateField('email', customerInfo.email);
+    if (emailError) errors.email = emailError;
+    
+    const phoneError = validateField('phone', customerInfo.phone);
+    if (phoneError) errors.phone = phoneError;
+    
+    const addressError = validateField('address', customerInfo.address);
+    if (addressError) errors.address = addressError;
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Vui lòng kiểm tra lại thông tin giao hàng');
       return;
     }
 
@@ -767,12 +849,6 @@ const CheckoutPage: React.FC = () => {
                                 style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}>
                                 <option value="">Chọn Tỉnh/Thành phố</option>
                                 <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                                <option value="Hà Nội">Hà Nội</option>
-                                <option value="Đà Nẵng">Đà Nẵng</option>
-                                <option value="Cần Thơ">Cần Thơ</option>
-                                <option value="Hải Phòng">Hải Phòng</option>
-                                <option value="Nha Trang">Nha Trang</option>
-                                <option value="Hạ Long">Hạ Long</option>
                               </select>
                             </div>
                             <div style={{ flex: 1 }}>
@@ -900,10 +976,37 @@ const CheckoutPage: React.FC = () => {
                     <input
                       type="text"
                       value={customerInfo.name}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setCustomerInfo({ ...customerInfo, name: value });
+                        const error = validateField('name', value);
+                        setFieldErrors(prev => ({ ...prev, name: error }));
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField('name', e.target.value);
+                        setFieldErrors(prev => ({ ...prev, name: error }));
+                      }}
                       required
-                      style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '16px' }}
+                      maxLength={50}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 16px', 
+                        border: fieldErrors.name ? '2px solid #ef4444' : '1px solid #e2e8f0', 
+                        borderRadius: '8px', 
+                        fontSize: '16px',
+                        transition: 'border-color 0.2s'
+                      }}
+                      placeholder="Nhập họ và tên (chỉ chữ cái)"
                     />
+                    {fieldErrors.name && (
+                      <div style={{
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        marginTop: '4px'
+                      }}>
+                        {fieldErrors.name}
+                      </div>
+                    )}
                   </div>
 
                   {/* Số điện thoại */}
@@ -914,10 +1017,36 @@ const CheckoutPage: React.FC = () => {
                     <input
                       type="tel"
                       value={customerInfo.phone}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setCustomerInfo({ ...customerInfo, phone: value });
+                        const error = validateField('phone', value);
+                        setFieldErrors(prev => ({ ...prev, phone: error }));
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField('phone', e.target.value);
+                        setFieldErrors(prev => ({ ...prev, phone: error }));
+                      }}
                       required
-                      style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '16px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 16px', 
+                        border: fieldErrors.phone ? '2px solid #ef4444' : '1px solid #e2e8f0', 
+                        borderRadius: '8px', 
+                        fontSize: '16px',
+                        transition: 'border-color 0.2s'
+                      }}
+                      placeholder="0123456789 hoặc +84912345678"
                     />
+                    {fieldErrors.phone && (
+                      <div style={{
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        marginTop: '4px'
+                      }}>
+                        {fieldErrors.phone}
+                      </div>
+                    )}
                   </div>
 
                   {/* Email */}
@@ -928,10 +1057,37 @@ const CheckoutPage: React.FC = () => {
                     <input
                       type="email"
                       value={customerInfo.email}
-                      onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setCustomerInfo({ ...customerInfo, email: value });
+                        const error = validateField('email', value);
+                        setFieldErrors(prev => ({ ...prev, email: error }));
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField('email', e.target.value);
+                        setFieldErrors(prev => ({ ...prev, email: error }));
+                      }}
                       required
-                      style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '16px' }}
+                      maxLength={100}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 16px', 
+                        border: fieldErrors.email ? '2px solid #ef4444' : '1px solid #e2e8f0', 
+                        borderRadius: '8px', 
+                        fontSize: '16px',
+                        transition: 'border-color 0.2s'
+                      }}
+                      placeholder="example@email.com"
                     />
+                    {fieldErrors.email && (
+                      <div style={{
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        marginTop: '4px'
+                      }}>
+                        {fieldErrors.email}
+                      </div>
+                    )}
                   </div>
 
                   {/* Địa chỉ cụ thể */}
@@ -942,10 +1098,37 @@ const CheckoutPage: React.FC = () => {
                     <input
                       type="text"
                       value={customerInfo.address}
-                      onChange={e => setCustomerInfo({ ...customerInfo, address: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setCustomerInfo({ ...customerInfo, address: value });
+                        const error = validateField('address', value);
+                        setFieldErrors(prev => ({ ...prev, address: error }));
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField('address', e.target.value);
+                        setFieldErrors(prev => ({ ...prev, address: error }));
+                      }}
                       required
-                      style={{ width: '100%', padding: '12px 16px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 16 }}
+                      maxLength={200}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px 16px', 
+                        border: fieldErrors.address ? '2px solid #ef4444' : '1px solid #e2e8f0', 
+                        borderRadius: 8, 
+                        fontSize: 16,
+                        transition: 'border-color 0.2s'
+                      }}
+                      placeholder="Nhập địa chỉ chi tiết (tối đa 200 ký tự)"
                     />
+                    {fieldErrors.address && (
+                      <div style={{
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        marginTop: '4px'
+                      }}>
+                        {fieldErrors.address}
+                      </div>
+                    )}
                   </div>
 
                 

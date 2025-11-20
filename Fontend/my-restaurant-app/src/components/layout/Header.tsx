@@ -271,19 +271,32 @@ const Header: React.FC = () => {
                 {user ? (
                   <UserProfile />
                 ) : (
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
                     <a href="/login" style={{ 
                       padding: '0.5rem 1rem',
-                      background: 'white',
-                      color: '#667eea',
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      backdropFilter: 'blur(10px)',
+                      color: 'white',
                       textDecoration: 'none',
-                      fontSize: '0.85rem',
+                      fontSize: '0.8125rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
-                      border: '2px solid #667eea',
-                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.2)',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block'
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'inline-block',
+                      letterSpacing: '0.2px',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
                     }}>
                       Đăng nhập
                     </a>
@@ -292,13 +305,27 @@ const Header: React.FC = () => {
                       background: 'white',
                       color: '#667eea',
                       textDecoration: 'none',
-                      fontSize: '0.85rem',
+                      fontSize: '0.8125rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
-                      border: '2px solid #667eea',
-                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.2)',
-                      transition: 'all 0.3s ease',
-                      display: 'inline-block'
+                      borderRadius: '10px',
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'inline-block',
+                      letterSpacing: '0.2px',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
+                      e.currentTarget.style.background = 'white';
+                      e.currentTarget.style.color = '#667eea';
                     }}>
                       Đăng ký
                     </a>
@@ -639,11 +666,11 @@ const Header: React.FC = () => {
               {/* Auth section for mobile - Show at top if not logged in */}
               {!user && (
                 <div style={{
-                  padding: '1rem 1.5rem',
-                  background: '#f0f9ff',
-                  borderBottom: '2px solid #e0f2fe',
+                  padding: '0.875rem 1rem',
+                  background: 'rgba(102, 126, 234, 0.05)',
+                  borderBottom: '1px solid rgba(102, 126, 234, 0.1)',
                   display: 'flex',
-                  gap: '0.75rem'
+                  gap: '0.625rem'
                 }}>
                   <a
                     href="/login"
@@ -652,19 +679,28 @@ const Header: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '0.75rem',
-                      background: 'white',
+                      padding: '0.625rem 0.875rem',
+                      background: 'rgba(255, 255, 255, 0.9)',
                       color: '#667eea',
                       textDecoration: 'none',
-                      fontSize: '0.95rem',
+                      fontSize: '0.8125rem',
                       fontWeight: '600',
                       borderRadius: '10px',
-                      border: '2px solid #667eea',
-                      gap: '0.5rem',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)'
+                      border: '1px solid rgba(102, 126, 234, 0.2)',
+                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.15)',
+                      transition: 'all 0.3s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)';
                     }}
                   >
-                    🔐 Đăng nhập
+                    Đăng nhập
                   </a>
                   <a
                     href="/register"
@@ -673,19 +709,28 @@ const Header: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '0.75rem',
-                      background: 'white',
-                      color: '#667eea',
+                      padding: '0.625rem 0.875rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
                       textDecoration: 'none',
-                      fontSize: '0.95rem',
+                      fontSize: '0.8125rem',
                       fontWeight: '600',
                       borderRadius: '10px',
-                      border: '2px solid #667eea',
-                      gap: '0.5rem',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.2)'
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                      transition: 'all 0.3s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.3)';
                     }}
                   >
-                    ✍️ Đăng ký
+                    Đăng ký
                   </a>
                 </div>
               )}

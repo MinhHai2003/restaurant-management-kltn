@@ -5,11 +5,21 @@ const path = require("path");
 const os = require("os");
 
 // Cấu hình Cloudinary
-cloudinary.config({
+const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+};
+
+// Validate config
+if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConfig.api_secret) {
+  console.error("❌ Cloudinary configuration is missing! Please check environment variables:");
+  console.error("   - CLOUDINARY_CLOUD_NAME:", cloudinaryConfig.cloud_name ? "✓" : "✗");
+  console.error("   - CLOUDINARY_API_KEY:", cloudinaryConfig.api_key ? "✓" : "✗");
+  console.error("   - CLOUDINARY_API_SECRET:", cloudinaryConfig.api_secret ? "✓" : "✗");
+}
+
+cloudinary.config(cloudinaryConfig);
 
 // Cấu hình multer để lưu file tạm thời
 const storage = multer.diskStorage({
@@ -63,21 +73,29 @@ const uploadCloudinary = multer({
 // Helper function để upload file lên Cloudinary
 const uploadToCloudinary = async (filePath, options = {}) => {
   try {
-    const defaultOptions = {
+    // Kiểm tra file tồn tại
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+
+    // Đơn giản hóa options để tránh lỗi signature
+    // Chỉ giữ các tham số cần thiết, transformation sẽ được apply sau
+    const uploadOptions = {
       folder: "restaurant-menu",
-      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-      transformation: [
-        {
-          width: 800,
-          height: 600,
-          crop: "limit",
-          quality: "auto:good",
-        },
-      ],
+      // Không dùng allowed_formats, transformation trong upload options
+      // vì chúng gây lỗi signature khi Cloudinary tự động tạo signature
       ...options,
     };
 
-    const result = await cloudinary.uploader.upload(filePath, defaultOptions);
+    console.log(`📤 Uploading to Cloudinary with options:`, {
+      folder: uploadOptions.folder,
+      hasCustomOptions: Object.keys(options).length > 0,
+    });
+
+    // Upload file với options đơn giản
+    const result = await cloudinary.uploader.upload(filePath, uploadOptions);
+    
+    console.log(`✅ Uploaded to Cloudinary: ${result.public_id} -> ${result.secure_url}`);
     
     // Xóa file tạm thời sau khi upload
     try {

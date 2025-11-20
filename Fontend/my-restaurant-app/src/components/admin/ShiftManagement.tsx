@@ -879,11 +879,12 @@ const ShiftManagement: React.FC = () => {
                   border: 'none',
                   padding: '12px 20px',
                   borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
+                  fontSize: '15px',
+                  fontWeight: '700',
                   cursor: newShift.name && newShift.date && newShift.startTime && newShift.endTime
                     ? 'pointer'
-                    : 'not-allowed'
+                    : 'not-allowed',
+                  letterSpacing: '0.3px'
                 }}
               >
                 💾 Tạo ca làm việc

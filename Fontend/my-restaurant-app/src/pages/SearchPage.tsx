@@ -14,6 +14,7 @@ interface UIProduct {
   originalPrice?: number | null;
   image: string;
   category: string;
+  description?: string;
   isNew?: boolean;
   isBestSeller?: boolean;
 }
@@ -80,6 +81,7 @@ const SearchPage: React.FC = () => {
       id: idx + 1,
       menuItemId: (it as any)._id,
       name: it.name,
+      description: it.description,
       price: it.price,
       unit: 'phần',
       originalPrice: undefined,

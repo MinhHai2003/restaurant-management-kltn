@@ -997,28 +997,6 @@ const AdminInventoryManagement: React.FC = () => {
       )}
 
       {/* Warning for low stock */}
-      {(stats.lowStock > 0 || stats.outOfStock > 0) && (
-        <div style={{
-          marginTop: '24px',
-          padding: '16px',
-          background: '#fef3c7',
-          border: '1px solid #f59e0b',
-          borderRadius: '12px',
-          color: '#92400e'
-        }}>
-          <div style={{ fontWeight: '600', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⚠️</span>
-            <span>Cảnh báo tồn kho</span>
-          </div>
-          <div style={{ fontSize: '14px' }}>
-            {stats.outOfStock > 0 && `Có ${stats.outOfStock} mặt hàng đã hết hàng`}
-            {stats.outOfStock > 0 && stats.lowStock > 0 && ' và '}
-            {stats.lowStock > 0 && `${stats.lowStock} mặt hàng sắp hết`}.
-            <br />Vui lòng nhập hàng kịp thời để đảm bảo hoạt động nhà hàng.
-          </div>
-        </div>
-      )}
-
       {/* Modals */}
       <InventoryModal
         isOpen={showCreateModal}

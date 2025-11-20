@@ -9,6 +9,7 @@ interface Product {
   originalPrice?: number | null;
   image: string;
   category: string;
+  description?: string;
   isNew?: boolean;
   isBestSeller?: boolean;
 }

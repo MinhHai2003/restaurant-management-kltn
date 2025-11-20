@@ -132,15 +132,41 @@ exports.createMenuItem = async (req, res) => {
 
 exports.updateMenuItem = async (req, res) => {
   try {
+    console.log("📝 Update menu item request:", {
+      id: req.params.id,
+      hasFile: !!req.file,
+      bodyKeys: Object.keys(req.body),
+      body: req.body,
+    });
+
     const updateData = { ...req.body };
 
-    // Parse ingredients từ JSON string nếu cần
-    if (updateData.ingredients && typeof updateData.ingredients === "string") {
-      try {
-        updateData.ingredients = JSON.parse(updateData.ingredients);
-      } catch (e) {
-        console.warn("Failed to parse ingredients:", e);
-        updateData.ingredients = [];
+    // Parse dữ liệu từ FormData (tất cả đều là string)
+    if (req.file || req.headers["content-type"]?.includes("multipart/form-data")) {
+      // Convert price từ string sang number
+      if (updateData.price) {
+        updateData.price = parseFloat(updateData.price);
+        if (isNaN(updateData.price)) {
+          return res.status(400).json({
+            message: "Invalid price",
+            error: "Price must be a valid number",
+          });
+        }
+      }
+
+      // Convert available từ string sang boolean
+      if (updateData.available !== undefined) {
+        updateData.available = updateData.available === "true" || updateData.available === true;
+      }
+
+      // Parse ingredients từ JSON string
+      if (updateData.ingredients && typeof updateData.ingredients === "string") {
+        try {
+          updateData.ingredients = JSON.parse(updateData.ingredients);
+        } catch (e) {
+          console.warn("Failed to parse ingredients:", e);
+          updateData.ingredients = [];
+        }
       }
     }
 
@@ -158,13 +184,9 @@ exports.updateMenuItem = async (req, res) => {
       }
       // Đặt ảnh mới từ Cloudinary
       updateData.image = req.file.path; // Cloudinary URL
-    } else if (updateData.image) {
+      console.log(`📁 New image uploaded to Cloudinary: ${req.file.path}`);
+    } else if (updateData.image && updateData.image !== existingItem.image) {
       // Nếu cập nhật bằng URL mới và khác ảnh cũ
-      if (updateData.image !== existingItem.image) {
-        // Xóa ảnh cũ nếu là file upload
-        await deleteImageFile(existingItem.image);
-      }
-
       // Validate URL format - chỉ chấp nhận HTTP/HTTPS
       if (!/^https?:\/\//.test(updateData.image)) {
         return res.status(400).json({
@@ -172,6 +194,13 @@ exports.updateMenuItem = async (req, res) => {
           error: "Image must be a valid HTTP/HTTPS URL",
         });
       }
+      // Xóa ảnh cũ nếu là file upload
+      if (existingItem.image && existingItem.image !== updateData.image) {
+        await deleteImageFile(existingItem.image);
+      }
+    } else {
+      // Nếu không có file mới và không có URL mới, giữ nguyên ảnh cũ
+      delete updateData.image;
     }
 
     // Cập nhật imageAlt nếu có thay đổi name
@@ -179,11 +208,37 @@ exports.updateMenuItem = async (req, res) => {
       updateData.imageAlt = `${updateData.name} image`;
     }
 
+    // Validate ingredients format nếu có
+    if (updateData.ingredients && Array.isArray(updateData.ingredients)) {
+      updateData.ingredients = updateData.ingredients.map(ing => {
+        // Đảm bảo quantity là number
+        if (typeof ing.quantity === 'string') {
+          ing.quantity = parseFloat(ing.quantity) || 0;
+        }
+        return ing;
+      });
+    }
+
+    // Chỉ giữ lại các trường hợp lệ để update
+    const allowedFields = ['name', 'description', 'price', 'category', 'available', 'image', 'imageAlt', 'ingredients'];
+    const filteredUpdateData = {};
+    for (const key of allowedFields) {
+      if (updateData[key] !== undefined) {
+        filteredUpdateData[key] = updateData[key];
+      }
+    }
+
+    console.log("📤 Updating with data:", filteredUpdateData);
+
     const updated = await MenuItem.findByIdAndUpdate(
       req.params.id,
-      updateData,
-      { new: true }
+      { $set: filteredUpdateData },
+      { new: true, runValidators: true }
     );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Item not found" });
+    }
 
     // Thêm thông tin hình ảnh vào response
     const responseItem = {
@@ -208,6 +263,7 @@ exports.updateMenuItem = async (req, res) => {
       message: err.message,
       stack: err.stack,
       name: err.name,
+      errors: err.errors,
     });
 
     // Xóa file Cloudinary mới upload nếu có lỗi
@@ -220,6 +276,16 @@ exports.updateMenuItem = async (req, res) => {
       } catch (deleteError) {
         console.error("❌ Error deleting failed upload:", deleteError.message);
       }
+    }
+
+    // Xử lý lỗi validation của Mongoose
+    if (err.name === 'ValidationError') {
+      const validationErrors = Object.values(err.errors || {}).map(e => e.message);
+      return res.status(400).json({
+        message: "Validation failed",
+        error: validationErrors.join(', ') || err.message,
+        details: process.env.NODE_ENV === "development" ? err.stack : undefined,
+      });
     }
 
     res.status(500).json({

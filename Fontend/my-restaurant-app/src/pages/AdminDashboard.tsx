@@ -223,7 +223,7 @@ const AdminDashboard: React.FC = () => {
   const [deletingTable, setDeletingTable] = useState('');
 
   // Order management states
-  const [orderActiveTab, setOrderActiveTab] = useState('dashboard');
+  const [orderActiveTab, setOrderActiveTab] = useState('orders');
 
   // Service status states
   const [serviceStatus, setServiceStatus] = useState({
@@ -1868,7 +1868,6 @@ const AdminDashboard: React.FC = () => {
         <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e5e5' }}>
           <div style={{ display: 'flex', padding: '0 24px' }}>
             {[
-              { key: 'dashboard', label: '📊 Dashboard' },
               { key: 'orders', label: '📋 Danh sách đơn hàng' },
               { key: 'menu', label: '🍽️ Quản lý Menu' }
             ].map(tab => (
@@ -1898,114 +1897,6 @@ const AdminDashboard: React.FC = () => {
           borderRadius: '0 0 16px 16px',
           minHeight: '400px'
         }}>
-          {orderActiveTab === 'dashboard' && (
-            <div style={{ padding: '24px' }}>
-
-              {/* Recent Notifications */}
-              {notifications.length > 0 && (
-                <div style={{
-                  backgroundColor: '#fefce8',
-                  border: '1px solid #facc15',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '24px'
-                }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#854d0e' }}>
-                    📢 Thông báo mới ({notifications.slice(-3).length})
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {notifications.slice(-3).reverse().map((notification, index) => {
-                      // Xử lý thông báo để hiển thị rõ ràng hơn
-                      let displayMessage = notification.message;
-                      if (notification.message && notification.message.includes('undefined')) {
-                        displayMessage = 'Trạng thái đơn hàng đã được cập nhật';
-                      }
-                      
-                      return (
-                        <div key={`notification-${notification.timestamp || Date.now()}-${index}`} style={{
-                          fontSize: '12px',
-                          color: '#713f12',
-                          padding: '8px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                          borderRadius: '4px'
-                        }}>
-                          <strong>{displayMessage}</strong>
-                          {notification.timestamp && (
-                            <div style={{ fontSize: '10px', color: '#a16207', marginTop: '4px' }}>
-                              {notification.timestamp.toLocaleTimeString('vi-VN')}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Stats Cards */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px',
-                marginBottom: '24px'
-              }}>
-                <div style={{
-                  backgroundColor: '#f0f9ff',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  border: '1px solid #0ea5e9',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#0ea5e9', fontSize: '14px' }}>Đơn hàng hôm nay</h4>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0284c7' }}>
-                    {serviceStatus.orderService ? realTimeOrderStats.todayOrders : '0'}
-                  </div>
-                </div>
-                <div style={{
-                  backgroundColor: '#f0fdf4',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  border: '1px solid #22c55e',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>💰</div>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#22c55e', fontSize: '14px' }}>Doanh thu hôm nay</h4>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#16a34a' }}>
-                    {serviceStatus.orderService ? `${realTimeOrderStats.todayRevenue.toLocaleString()}đ` : '0đ'}
-                  </div>
-                </div>
-                <div style={{
-                  backgroundColor: '#fffbeb',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  border: '1px solid #f59e0b',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#f59e0b', fontSize: '14px' }}>Đơn TB/ngày</h4>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d97706' }}>
-                    {serviceStatus.orderService ? realTimeOrderStats.avgOrders : '0'}
-                  </div>
-                </div>
-                <div style={{
-                  backgroundColor: '#fdf2f8',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  border: '1px solid #ec4899',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>⏱️</div>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#ec4899', fontSize: '14px' }}>Chờ xử lý</h4>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#be185d' }}>
-                    {serviceStatus.orderService ? realTimeOrderStats.pendingOrders : '0'}
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          )}
-
           {orderActiveTab === 'orders' && (
             <div style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>

@@ -264,11 +264,23 @@ const MenuManagement: React.FC = () => {
         });
         alert(editingItem ? 'Cập nhật món ăn thành công!' : 'Thêm món ăn thành công!');
       } else {
-        throw new Error('Failed to save menu item');
+        // Lấy thông báo lỗi chi tiết từ response
+        let errorMessage = 'Lỗi khi lưu món ăn';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || errorMessage;
+          if (errorData.details) {
+            console.error('Chi tiết lỗi:', errorData.details);
+          }
+        } catch (e) {
+          console.error('Không thể parse error response:', e);
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error saving menu item:', error);
-      alert('Lỗi khi lưu món ăn');
+      const errorMsg = error instanceof Error ? error.message : 'Lỗi khi lưu món ăn';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }

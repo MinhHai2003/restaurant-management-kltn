@@ -17,6 +17,12 @@ if (!cloudinaryConfig.cloud_name || !cloudinaryConfig.api_key || !cloudinaryConf
   console.error("   - CLOUDINARY_CLOUD_NAME:", cloudinaryConfig.cloud_name ? "✓" : "✗");
   console.error("   - CLOUDINARY_API_KEY:", cloudinaryConfig.api_key ? "✓" : "✗");
   console.error("   - CLOUDINARY_API_SECRET:", cloudinaryConfig.api_secret ? "✓" : "✗");
+} else {
+  console.log("✅ Cloudinary configuration loaded:", {
+    cloud_name: cloudinaryConfig.cloud_name,
+    api_key: cloudinaryConfig.api_key ? `${cloudinaryConfig.api_key.substring(0, 8)}...` : "missing",
+    api_secret: cloudinaryConfig.api_secret ? "***" : "missing",
+  });
 }
 
 cloudinary.config(cloudinaryConfig);
@@ -78,21 +84,38 @@ const uploadToCloudinary = async (filePath, options = {}) => {
       throw new Error(`File not found: ${filePath}`);
     }
 
-    // Đơn giản hóa options để tránh lỗi signature
-    // Chỉ giữ các tham số cần thiết, transformation sẽ được apply sau
+    // Kiểm tra Cloudinary config
+    const config = cloudinary.config();
+    if (!config.cloud_name || !config.api_key || !config.api_secret) {
+      throw new Error("Cloudinary configuration is incomplete. Please check environment variables.");
+    }
+
+    // Upload với options tối thiểu để tránh lỗi signature
+    // Không dùng folder trong options vì nó gây lỗi signature
+    // Thay vào đó, sẽ tạo public_id với folder path
+    const timestamp = Date.now();
+    const randomNum = Math.round(Math.random() * 1e9);
+    const fileName = path.basename(filePath, path.extname(filePath));
+    const publicId = `restaurant-menu/menu-${timestamp}-${randomNum}-${fileName}`;
+
     const uploadOptions = {
-      folder: "restaurant-menu",
-      // Không dùng allowed_formats, transformation trong upload options
-      // vì chúng gây lỗi signature khi Cloudinary tự động tạo signature
+      public_id: publicId,
+      // Không dùng folder vì nó gây lỗi signature
+      // public_id đã bao gồm folder path
+      use_filename: false,
+      unique_filename: false,
+      overwrite: false,
       ...options,
     };
 
-    console.log(`📤 Uploading to Cloudinary with options:`, {
-      folder: uploadOptions.folder,
-      hasCustomOptions: Object.keys(options).length > 0,
+    console.log(`📤 Uploading to Cloudinary:`, {
+      public_id: uploadOptions.public_id,
+      cloud_name: config.cloud_name,
+      has_api_key: !!config.api_key,
+      has_api_secret: !!config.api_secret,
     });
 
-    // Upload file với options đơn giản
+    // Upload file
     const result = await cloudinary.uploader.upload(filePath, uploadOptions);
     
     console.log(`✅ Uploaded to Cloudinary: ${result.public_id} -> ${result.secure_url}`);

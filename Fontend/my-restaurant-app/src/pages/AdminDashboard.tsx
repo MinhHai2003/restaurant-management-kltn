@@ -2418,7 +2418,7 @@ const AdminDashboard: React.FC = () => {
       return (
         <div style={{ padding: '48px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-          <p>Đang tải dữ liệu thống kê...</p>
+          <p style={{ color: '#000000', fontSize: '16px', fontWeight: '500' }}>Đang tải dữ liệu thống kê...</p>
         </div>
       );
     }
@@ -2980,7 +2980,7 @@ const AdminDashboard: React.FC = () => {
         {loading && (
           <div style={{ padding: '48px', textAlign: 'center' }}>
             <div style={{ fontSize: '24px', marginBottom: '16px' }}>⏳</div>
-            <p>Đang tải dữ liệu...</p>
+            <p style={{ color: '#000000', fontSize: '16px', fontWeight: '500' }}>Đang tải dữ liệu...</p>
           </div>
         )}
 

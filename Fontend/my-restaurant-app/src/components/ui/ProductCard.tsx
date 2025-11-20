@@ -79,24 +79,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
       background: '#ffffff',
       borderRadius: '24px',
       overflow: 'hidden',
-      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04)',
+      boxShadow: '0 4px 20px rgba(102, 126, 234, 0.1)',
       transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
       cursor: 'pointer',
-      border: '1px solid rgba(226, 232, 240, 0.8)',
+      border: '1px solid rgba(102, 126, 234, 0.15)',
       position: 'relative',
       height: '100%',
       display: 'flex',
       flexDirection: 'column'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-6px)';
-      e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06)';
-      e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 1)';
+      e.currentTarget.style.transform = 'translateY(-8px)';
+      e.currentTarget.style.boxShadow = '0 20px 40px rgba(102, 126, 234, 0.2)';
+      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04)';
-      e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.8)';
+      e.currentTarget.style.boxShadow = '0 4px 20px rgba(102, 126, 234, 0.1)';
+      e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.15)';
     }}
     >
       {/* Product Image */}
@@ -188,7 +188,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
         <h3 style={{
           fontSize: '18px',
           fontWeight: '800',
-          background: 'linear-gradient(135deg, #1e293b, #475569)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
@@ -277,10 +277,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
           style={{
             width: '100%',
             background: showSuccess 
-              ? '#10b981' 
+              ? 'linear-gradient(135deg, #10b981, #059669)' 
               : isAddingToCart 
-                ? '#94a3b8'
-                : '#1e293b',
+                ? 'linear-gradient(135deg, #94a3b8, #64748b)'
+                : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             border: 'none',
             borderRadius: '12px',
@@ -291,26 +291,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onCartUpdate }) => {
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             letterSpacing: '0.3px',
             boxShadow: showSuccess 
-              ? '0 4px 12px rgba(16, 185, 129, 0.25)'
+              ? '0 4px 12px rgba(16, 185, 129, 0.3)'
               : isAddingToCart
                 ? '0 2px 6px rgba(148, 163, 184, 0.2)'
-                : '0 4px 12px rgba(30, 41, 59, 0.15)',
+                : '0 8px 16px rgba(102, 126, 234, 0.3)',
             opacity: isAddingToCart ? 0.7 : 1,
             position: 'relative',
             overflow: 'hidden'
           }}
           onMouseEnter={(e) => {
             if (!isAddingToCart && !showSuccess) {
-              e.currentTarget.style.background = '#0f172a';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(30, 41, 59, 0.25)';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 24px rgba(102, 126, 234, 0.4)';
             }
           }}
           onMouseLeave={(e) => {
             if (!isAddingToCart && !showSuccess) {
-              e.currentTarget.style.background = '#1e293b';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(30, 41, 59, 0.15)';
+              e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.3)';
             }
           }}
         >

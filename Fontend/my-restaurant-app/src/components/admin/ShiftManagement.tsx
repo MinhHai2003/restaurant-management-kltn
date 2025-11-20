@@ -873,7 +873,7 @@ const ShiftManagement: React.FC = () => {
                 disabled={!newShift.name || !newShift.date || !newShift.startTime || !newShift.endTime}
                 style={{
                   background: newShift.name && newShift.date && newShift.startTime && newShift.endTime
-                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    ? '#6b7280'
                     : '#d1d5db',
                   color: 'white',
                   border: 'none',

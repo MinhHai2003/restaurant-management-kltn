@@ -90,33 +90,35 @@ const uploadToCloudinary = async (filePath, options = {}) => {
       throw new Error("Cloudinary configuration is incomplete. Please check environment variables.");
     }
 
-    // Upload với options tối thiểu để tránh lỗi signature
-    // Không dùng folder trong options vì nó gây lỗi signature
-    // Thay vào đó, sẽ tạo public_id với folder path
-    const timestamp = Date.now();
-    const randomNum = Math.round(Math.random() * 1e9);
-    const fileName = path.basename(filePath, path.extname(filePath));
-    const publicId = `restaurant-menu/menu-${timestamp}-${randomNum}-${fileName}`;
-
-    const uploadOptions = {
-      public_id: publicId,
-      // Không dùng folder vì nó gây lỗi signature
-      // public_id đã bao gồm folder path
-      use_filename: false,
-      unique_filename: false,
-      overwrite: false,
-      ...options,
-    };
-
-    console.log(`📤 Uploading to Cloudinary:`, {
-      public_id: uploadOptions.public_id,
+    // Upload file KHÔNG có options gì cả để tránh lỗi signature
+    // Cloudinary sẽ tự động tạo public_id và upload
+    console.log(`📤 Uploading to Cloudinary (no options):`, {
       cloud_name: config.cloud_name,
       has_api_key: !!config.api_key,
       has_api_secret: !!config.api_secret,
+      file_path: filePath,
     });
 
-    // Upload file
+    // Upload file KHÔNG có options - để Cloudinary tự động xử lý
+    // Chỉ merge options nếu thực sự cần thiết
+    const uploadOptions = Object.keys(options).length > 0 ? options : {};
+    
     const result = await cloudinary.uploader.upload(filePath, uploadOptions);
+    
+    // Sau khi upload thành công, rename file để có folder structure
+    if (result.public_id && !result.public_id.startsWith('restaurant-menu/')) {
+      const newPublicId = `restaurant-menu/${result.public_id}`;
+      try {
+        const renameResult = await cloudinary.uploader.rename(result.public_id, newPublicId);
+        // Cập nhật result với public_id mới
+        result.public_id = renameResult.public_id;
+        result.secure_url = renameResult.secure_url;
+        console.log(`📁 Renamed to folder: ${newPublicId}`);
+      } catch (renameError) {
+        console.warn("⚠️ Could not rename file to folder:", renameError.message);
+        // Giữ nguyên public_id nếu không rename được
+      }
+    }
     
     console.log(`✅ Uploaded to Cloudinary: ${result.public_id} -> ${result.secure_url}`);
     
@@ -137,6 +139,24 @@ const uploadToCloudinary = async (filePath, options = {}) => {
     } catch (unlinkError) {
       console.warn("⚠️ Could not delete temp file after error:", unlinkError.message);
     }
+    
+    // Log chi tiết lỗi để debug
+    console.error("❌ Cloudinary upload error details:", {
+      message: error.message,
+      http_code: error.http_code,
+      name: error.name,
+      config: {
+        cloud_name: cloudinary.config().cloud_name,
+        has_api_key: !!cloudinary.config().api_key,
+        has_api_secret: !!cloudinary.config().api_secret,
+      }
+    });
+    
+    // Nếu là lỗi signature, có thể là do API secret không đúng
+    if (error.message && error.message.includes("Invalid Signature")) {
+      throw new Error(`Cloudinary signature error. Please verify CLOUDINARY_API_SECRET is correct. Original error: ${error.message}`);
+    }
+    
     throw error;
   }
 };

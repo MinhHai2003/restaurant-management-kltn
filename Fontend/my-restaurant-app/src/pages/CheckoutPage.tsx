@@ -514,8 +514,18 @@ const CheckoutPage: React.FC = () => {
 
     } catch (error) {
       console.error('❌ Lỗi đặt hàng:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
-      alert(`Có lỗi xảy ra khi đặt hàng: ${errorMessage}. Vui lòng thử lại!`);
+      
+      // Kiểm tra xem có thông tin chi tiết về nguyên liệu hết không
+      const errorWithItems = error as any;
+      if (errorWithItems.unavailableItems && Array.isArray(errorWithItems.unavailableItems) && errorWithItems.unavailableItems.length > 0) {
+        // Hiển thị thông báo chi tiết về nguyên liệu hết
+        const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
+        alert(errorMessage);
+      } else {
+        // Hiển thị thông báo lỗi thông thường
+        const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định';
+        alert(`Có lỗi xảy ra khi đặt hàng: ${errorMessage}. Vui lòng thử lại!`);
+      }
     } finally {
       setProcessing(false);
     }

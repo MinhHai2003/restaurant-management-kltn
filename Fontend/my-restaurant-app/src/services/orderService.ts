@@ -80,7 +80,11 @@ class OrderService {
           error: errorData,
           url: ORDER_API_BASE
         });
-        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}: Failed to create order`);
+        
+        // Tạo error object với thông tin chi tiết về unavailableItems
+        const error = new Error(errorData.message || errorData.error || `HTTP ${response.status}: Failed to create order`);
+        (error as any).unavailableItems = errorData.unavailableItems || [];
+        throw error;
       }
 
       const result = await response.json();

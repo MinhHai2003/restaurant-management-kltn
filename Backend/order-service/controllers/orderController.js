@@ -87,21 +87,42 @@ exports.createOrder = async (req, res) => {
 
       // Convert to format expected by frontend
       const unavailableItems = (stockCheck.unavailableItems || []).map(
-        (item) => ({
-          itemId: null, // Menu item không có ID trong inventory
-          name: item.menuItem,
-          requestedQuantity: item.orderQuantity,
-          availableStock: 0, // Không áp dụng cho recipe-based checking
-          reason: `Missing ingredients: ${(item.ingredients || [])
+        (item) => {
+          const missingIngredients = (item.ingredients || [])
             .filter((ing) => !ing.available)
-            .map((ing) => `${ing.ingredientName} (${ing.reason})`)
-            .join(", ")}`,
-        })
+            .map((ing) => {
+              if (ing.reason === "Not found in inventory") {
+                return `${ing.ingredientName} (không tìm thấy trong kho)`;
+              } else if (ing.reason === "Insufficient stock") {
+                return `${ing.ingredientName} (thiếu ${ing.quantityNeeded - (ing.quantityAvailable || 0)} ${ing.unit})`;
+              }
+              return `${ing.ingredientName} (${ing.reason})`;
+            });
+          
+          return {
+            itemId: null, // Menu item không có ID trong inventory
+            name: item.menuItem,
+            requestedQuantity: item.orderQuantity,
+            availableStock: 0, // Không áp dụng cho recipe-based checking
+            missingIngredients: missingIngredients,
+            reason: `Thiếu nguyên liệu: ${missingIngredients.join(", ")}`,
+          };
+        }
       );
+
+      // Tạo message chi tiết
+      const itemNames = unavailableItems.map(item => item.name).join(", ");
+      const allMissingIngredients = unavailableItems
+        .flatMap(item => item.missingIngredients)
+        .filter((value, index, self) => self.indexOf(value) === index); // Remove duplicates
+      
+      const detailedMessage = unavailableItems.length === 1
+        ? `Món "${itemNames}" không thể đặt vì thiếu nguyên liệu: ${unavailableItems[0].missingIngredients.join(", ")}`
+        : `Các món "${itemNames}" không thể đặt vì thiếu nguyên liệu: ${allMissingIngredients.join(", ")}`;
 
       return res.status(400).json({
         success: false,
-        message: "Some items are not available",
+        message: detailedMessage,
         unavailableItems: unavailableItems,
       });
     }

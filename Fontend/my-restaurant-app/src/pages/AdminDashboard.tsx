@@ -1940,7 +1940,7 @@ const AdminDashboard: React.FC = () => {
                   <option value="confirmed">Đã xác nhận</option>
                   <option value="preparing">Đang chuẩn bị</option>
                   <option value="ready">Sẵn sàng</option>
-                  <option value="delivered">Đã hoàn thành</option>
+                  <option value="completed">Đã hoàn thành</option>
                   <option value="cancelled">Đã hủy</option>
                 </select>
 
@@ -2206,7 +2206,8 @@ const AdminDashboard: React.FC = () => {
                                           '#f8fafc',
                           color:
                             order.status === 'completed' ? '#166534' :
-                              order.status === 'delivered' ? '#166534' :
+                              order.status === 'completed' ? '#166534' :
+                            order.status === 'delivered' ? '#166534' :
                                 order.status === 'picked_up' ? '#15803d' :
                                   order.status === 'ready' ? '#15803d' :
                                     order.status === 'confirmed' ? '#1e40af' :

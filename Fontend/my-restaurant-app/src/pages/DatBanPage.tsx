@@ -88,6 +88,13 @@ const DatBanPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'tableNumber' | 'capacity' | 'location' | 'price'>('tableNumber');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
+  // Validation errors state
+  const [validationErrors, setValidationErrors] = useState<{
+    guestName?: string;
+    guestEmail?: string;
+    phoneNumber?: string;
+  }>({});
+  
   // Payment states
   const [showPayment, setShowPayment] = useState(false);
   const [reservationData, _setReservationData] = useState<any>(null);
@@ -288,6 +295,7 @@ const DatBanPage: React.FC = () => {
       console.log('📋 [MODAL] Updated form data with table ID:', updated);
       return updated;
     });
+    setValidationErrors({}); // Reset validation errors when opening modal
     setShowReservationModal(true);
     console.log('✅ [MODAL] Reservation modal opened');
   };
@@ -302,51 +310,46 @@ const DatBanPage: React.FC = () => {
     setSuccess('');
     setLoading(true);
     
+    // Validate all fields and collect errors
+    const errors: { guestName?: string; guestEmail?: string; phoneNumber?: string } = {};
+    
     try {
       // Validate phone number
-      if (!formData.phoneNumber || formData.phoneNumber.trim() === '') {
-        console.log('❌ [VALIDATION] Phone number missing');
-        setError('Vui lòng nhập số điện thoại');
-        setLoading(false);
-        return;
+      const phoneError = validatePhone(formData.phoneNumber);
+      if (phoneError) {
+        errors.phoneNumber = phoneError;
       }
-
-      // Updated phone number validation (Vietnamese format - support both 10 and 11 digits)
-      const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8,9})$/;
-      if (!phoneRegex.test(formData.phoneNumber.trim())) {
-        console.log('❌ [VALIDATION] Phone number invalid:', formData.phoneNumber);
-        setError('Số điện thoại không hợp lệ (VD: 0912345678 hoặc 03430985081)');
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ [VALIDATION] Phone number valid:', formData.phoneNumber);
 
       // For guest users, validate required fields
       if (!user) {
         console.log('🔍 [VALIDATION] Validating guest user fields...');
-        if (!formData.guestName || formData.guestName.trim() === '') {
-          console.log('❌ [VALIDATION] Guest name missing');
-          setError('Vui lòng nhập họ tên');
-          setLoading(false);
-          return;
+        
+        const nameError = validateName(formData.guestName || '');
+        if (nameError) {
+          errors.guestName = nameError;
         }
-        if (!formData.guestEmail || formData.guestEmail.trim() === '') {
-          console.log('❌ [VALIDATION] Guest email missing');
-          setError('Vui lòng nhập email');
-          setLoading(false);
-          return;
+        
+        const emailError = validateEmail(formData.guestEmail || '');
+        if (emailError) {
+          errors.guestEmail = emailError;
         }
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.guestEmail.trim())) {
-          console.log('❌ [VALIDATION] Guest email invalid:', formData.guestEmail);
-          setError('Email không hợp lệ');
-          setLoading(false);
-          return;
-        }
-        console.log('✅ [VALIDATION] Guest fields validated successfully');
       }
+      
+      // If there are validation errors, display them and stop
+      if (Object.keys(errors).length > 0) {
+        console.log('❌ [VALIDATION] Validation errors:', errors);
+        setValidationErrors(errors);
+        setLoading(false);
+        // Scroll to first error
+        const firstErrorField = Object.keys(errors)[0];
+        const errorElement = document.querySelector(`input[name="${firstErrorField}"], textarea[name="${firstErrorField}"]`);
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+      
+      console.log('✅ [VALIDATION] All fields validated successfully');
 
       // Prepare headers and reservation data
       const headers: Record<string, string> = {
@@ -408,6 +411,7 @@ const DatBanPage: React.FC = () => {
         setSuccess(`Đặt bàn thành công! Mã đặt bàn: ${data.data.reservation.reservationNumber}`);
         setShowReservationModal(false);
         setSelectedTable(null);
+        setValidationErrors({}); // Reset validation errors on success
         
         // Reset form but keep user info if logged in
         setFormData(prev => ({ 
@@ -476,6 +480,72 @@ const DatBanPage: React.FC = () => {
   const getFeatureLabel = (feature: string) => {
     const found = FEATURES.find(f => f.value === feature);
     return found ? found.label : feature;
+  };
+
+  // Validation regex patterns
+  const VALIDATION_PATTERNS = {
+    // Vietnamese phone number: starts with 0, followed by 3,5,7,8,9, then 8-9 digits
+    phone: /^(0[3|5|7|8|9])+([0-9]{8,9})$/,
+    // Email pattern
+    email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    // Vietnamese name: letters, spaces, and Vietnamese characters, minimum 2 characters
+    name: /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ\s]{2,}$/
+  };
+
+  // Validation functions
+  const validateName = (name: string): string | undefined => {
+    if (!name || name.trim() === '') {
+      return 'Vui lòng nhập họ tên';
+    }
+    if (name.trim().length < 2) {
+      return 'Họ tên phải có ít nhất 2 ký tự';
+    }
+    if (!VALIDATION_PATTERNS.name.test(name.trim())) {
+      return 'Họ tên chỉ được chứa chữ cái và khoảng trắng';
+    }
+    return undefined;
+  };
+
+  const validateEmail = (email: string): string | undefined => {
+    if (!email || email.trim() === '') {
+      return 'Vui lòng nhập email';
+    }
+    if (!VALIDATION_PATTERNS.email.test(email.trim())) {
+      return 'Email không hợp lệ (VD: example@email.com)';
+    }
+    return undefined;
+  };
+
+  const validatePhone = (phone: string): string | undefined => {
+    if (!phone || phone.trim() === '') {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    if (!VALIDATION_PATTERNS.phone.test(phone.trim())) {
+      return 'Số điện thoại không hợp lệ (VD: 0912345678 hoặc 03430985081)';
+    }
+    return undefined;
+  };
+
+  // Handle field validation on change/blur
+  const handleFieldValidation = (field: 'guestName' | 'guestEmail' | 'phoneNumber', value: string) => {
+    let error: string | undefined;
+    
+    switch (field) {
+      case 'guestName':
+        error = validateName(value);
+        break;
+      case 'guestEmail':
+        error = validateEmail(value);
+        break;
+      case 'phoneNumber':
+        error = validatePhone(value);
+        break;
+    }
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: error
+    }));
   };
 
   return (
@@ -1335,17 +1405,34 @@ const DatBanPage: React.FC = () => {
                         <input
                           type="text"
                           value={formData.guestName || ''}
-                          onChange={e => setFormData(prev => ({ ...prev, guestName: e.target.value }))}
+                          onChange={e => {
+                            setFormData(prev => ({ ...prev, guestName: e.target.value }));
+                            if (validationErrors.guestName) {
+                              handleFieldValidation('guestName', e.target.value);
+                            }
+                          }}
+                          onBlur={e => handleFieldValidation('guestName', e.target.value)}
                           placeholder="Nhập họ và tên"
                           required
                           style={{ 
                             width: '100%',
                             padding: '12px 16px', 
                             borderRadius: '12px', 
-                            border: '2px solid #e5e7eb',
-                            fontSize: '16px'
+                            border: `2px solid ${validationErrors.guestName ? '#dc2626' : '#e5e7eb'}`,
+                            fontSize: '16px',
+                            transition: 'border-color 0.2s'
                           }}
                         />
+                        {validationErrors.guestName && (
+                          <p style={{ 
+                            color: '#dc2626', 
+                            fontSize: '14px', 
+                            marginTop: '4px',
+                            marginBottom: 0
+                          }}>
+                            ⚠️ {validationErrors.guestName}
+                          </p>
+                        )}
                       </div>
 
                       <div style={{ marginBottom: '20px' }}>
@@ -1360,17 +1447,34 @@ const DatBanPage: React.FC = () => {
                         <input
                           type="email"
                           value={formData.guestEmail || ''}
-                          onChange={e => setFormData(prev => ({ ...prev, guestEmail: e.target.value }))}
-                          placeholder="Nhập địa chỉ email"
+                          onChange={e => {
+                            setFormData(prev => ({ ...prev, guestEmail: e.target.value }));
+                            if (validationErrors.guestEmail) {
+                              handleFieldValidation('guestEmail', e.target.value);
+                            }
+                          }}
+                          onBlur={e => handleFieldValidation('guestEmail', e.target.value)}
+                          placeholder="Nhập địa chỉ email (VD: example@email.com)"
                           required
                           style={{ 
                             width: '100%',
                             padding: '12px 16px', 
                             borderRadius: '12px', 
-                            border: '2px solid #e5e7eb',
-                            fontSize: '16px'
+                            border: `2px solid ${validationErrors.guestEmail ? '#dc2626' : '#e5e7eb'}`,
+                            fontSize: '16px',
+                            transition: 'border-color 0.2s'
                           }}
                         />
+                        {validationErrors.guestEmail && (
+                          <p style={{ 
+                            color: '#dc2626', 
+                            fontSize: '14px', 
+                            marginTop: '4px',
+                            marginBottom: 0
+                          }}>
+                            ⚠️ {validationErrors.guestEmail}
+                          </p>
+                        )}
                       </div>
                     </>
                   )}
@@ -1413,17 +1517,34 @@ const DatBanPage: React.FC = () => {
                     <input
                       type="tel"
                       value={formData.phoneNumber}
-                      onChange={e => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                      placeholder="VD: 0912345678"
+                      onChange={e => {
+                        setFormData(prev => ({ ...prev, phoneNumber: e.target.value }));
+                        if (validationErrors.phoneNumber) {
+                          handleFieldValidation('phoneNumber', e.target.value);
+                        }
+                      }}
+                      onBlur={e => handleFieldValidation('phoneNumber', e.target.value)}
+                      placeholder="VD: 0912345678 hoặc 03430985081"
                       required
                       style={{ 
                         width: '100%',
                         padding: '12px 16px', 
                         borderRadius: '12px', 
-                        border: '2px solid #e5e7eb',
-                        fontSize: '16px'
+                        border: `2px solid ${validationErrors.phoneNumber ? '#dc2626' : '#e5e7eb'}`,
+                        fontSize: '16px',
+                        transition: 'border-color 0.2s'
                       }}
                     />
+                    {validationErrors.phoneNumber && (
+                      <p style={{ 
+                        color: '#dc2626', 
+                        fontSize: '14px', 
+                        marginTop: '4px',
+                        marginBottom: 0
+                      }}>
+                        ⚠️ {validationErrors.phoneNumber}
+                      </p>
+                    )}
                   </div>
 
                   <div style={{ marginBottom: '24px' }}>

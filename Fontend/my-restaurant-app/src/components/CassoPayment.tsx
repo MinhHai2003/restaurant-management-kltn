@@ -607,12 +607,12 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
               <div style={{ display: 'grid', gap: '10px', fontSize: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280' }}>Ngân hàng:</span>
-                  <span style={{ fontWeight: '600' }}>{info.bankName}</span>
+                  <span style={{ fontWeight: '600', color: '#000000' }}>{info.bankName}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280' }}>Số tài khoản:</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: '600', fontFamily: 'monospace' }}>
+                    <span style={{ fontWeight: '600', fontFamily: 'monospace', color: '#000000' }}>
                       {info.accountNumber}
                     </span>
                     <button
@@ -632,7 +632,7 @@ const CassoPayment: React.FC<CassoPaymentProps> = ({
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280' }}>Chủ tài khoản:</span>
-                  <span style={{ fontWeight: '600' }}>{info.accountName}</span>
+                  <span style={{ fontWeight: '600', color: '#000000' }}>{info.accountName}</span>
                 </div>
                 <div style={{ 
                   display: 'flex', 

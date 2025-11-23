@@ -80,13 +80,60 @@
   50% { opacity: 1; background-position: 100% 100%; }
 }
 
-.modern-hero-content {
+.modern-hero-container {
   position: relative;
   z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
-  text-align: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.modern-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: left;
   color: white;
+}
+
+.modern-hero-image {
+  position: relative;
+  z-index: 2;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeInRight 1s ease-out;
+}
+
+.hero-seafood-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 400px;
+}
+
+.hero-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  pointer-events: none;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .modern-hero-title {
@@ -97,6 +144,7 @@
     0 4px 12px rgba(0, 0, 0, 0.3),
     0 0 40px rgba(255, 255, 255, 0.5);
   animation: fadeInUp 0.8s ease-out, glow 3s ease-in-out infinite alternate;
+  text-align: left;
 }
 
 @keyframes glow {
@@ -549,15 +597,29 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .modern-hero {
-    padding: 70px 20px;
+    padding: 60px 20px;
+  }
+
+  .modern-hero-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .modern-hero-content {
+    text-align: center;
   }
 
   .modern-hero-title {
     font-size: 2.8rem;
+    text-align: center;
   }
 
   .modern-hero-subtitle {
     font-size: 1.3rem;
+  }
+
+  .modern-hero-buttons {
+    justify-content: center;
   }
 
   .modern-section-title {
@@ -624,4 +686,139 @@
 .animate-on-scroll {
   opacity: 0;
   animation: slideInUp 0.8s ease-out forwards;
+}
+
+/* Seafood Promotional Banners */
+.seafood-banner {
+  margin: 48px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.seafood-banner:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.seafood-banner-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: center;
+  min-height: 300px;
+}
+
+.seafood-banner-text {
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.seafood-banner-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.seafood-banner-desc {
+  font-size: 1.1rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.seafood-banner-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  width: fit-content;
+}
+
+.seafood-banner-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.seafood-banner-image {
+  position: relative;
+  height: 100%;
+  min-height: 300px;
+  overflow: hidden;
+}
+
+.seafood-banner-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.seafood-banner:hover .seafood-banner-image img {
+  transform: scale(1.05);
+}
+
+.seafood-banner-reverse .seafood-banner-content {
+  direction: rtl;
+}
+
+.seafood-banner-reverse .seafood-banner-content > * {
+  direction: ltr;
+}
+
+/* Responsive for banners */
+@media (max-width: 968px) {
+  .modern-hero-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .modern-hero-content {
+    text-align: center;
+  }
+
+  .modern-hero-title {
+    text-align: center;
+  }
+
+  .hero-seafood-image {
+    min-height: 300px;
+  }
+
+  .seafood-banner-content {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .seafood-banner-text {
+    padding: 32px 24px;
+    order: 2;
+  }
+
+  .seafood-banner-image {
+    order: 1;
+    min-height: 250px;
+  }
+
+  .seafood-banner-title {
+    font-size: 1.6rem;
+  }
+
+  .seafood-banner-desc {
+    font-size: 1rem;
+  }
 }

@@ -157,13 +157,31 @@ const HomePage: React.FC = () => {
       <Header />
 
       <div className="home-page-shell">
-        {/* Modern Hero Section */}
+        {/* Modern Hero Section with Banner */}
         <div className="modern-hero">
-          <div className="modern-hero-content">
-            <h1 className="modern-hero-title">🦀 HẢI SẢN BIỂN ĐÔNG</h1>
-            <p className="modern-hero-subtitle">
-              Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
-            </p>
+          <div className="modern-hero-container">
+            <div className="modern-hero-content">
+              <h1 className="modern-hero-title">🦀 HẢI SẢN BIỂN ĐÔNG</h1>
+              <p className="modern-hero-subtitle">
+                Trải nghiệm hương vị tươi ngon từ biển cả - Nơi ẩm thực hội tụ đam mê
+              </p>
+              <div className="modern-hero-buttons">
+                <a href="/dat-ban" className="modern-btn modern-btn-primary">
+                  Đặt bàn ngay
+                </a>
+                <a href="/khuyen-mai" className="modern-btn modern-btn-secondary">
+                  Xem khuyến mãi
+                </a>
+              </div>
+            </div>
+            <div className="modern-hero-image">
+              <img 
+                src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&h=600&fit=crop" 
+                alt="Hải sản tươi ngon"
+                className="hero-seafood-image"
+              />
+              <div className="hero-image-overlay"></div>
+            </div>
           </div>
         </div>
 
@@ -216,6 +234,23 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Promotional Banner 1 */}
+        <div className="seafood-banner">
+          <div className="seafood-banner-content">
+            <div className="seafood-banner-text">
+              <h2 className="seafood-banner-title">🎣 HẢI SẢN TƯƠI SỐNG MỖI NGÀY</h2>
+              <p className="seafood-banner-desc">Nhập khẩu trực tiếp từ biển, đảm bảo độ tươi ngon tuyệt đối</p>
+              <a href="/sp/group/hai-san" className="seafood-banner-btn">Khám phá ngay →</a>
+            </div>
+            <div className="seafood-banner-image">
+              <img 
+                src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&h=400&fit=crop" 
+                alt="Hải sản tươi sống"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Categories Section */}
         <Categories />
 
@@ -245,6 +280,23 @@ const HomePage: React.FC = () => {
           backgroundColor="white"
           onCartUpdate={updateCartCount}
         />
+
+        {/* Promotional Banner 2 */}
+        <div className="seafood-banner seafood-banner-reverse">
+          <div className="seafood-banner-content">
+            <div className="seafood-banner-image">
+              <img 
+                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=400&fit=crop" 
+                alt="Món nướng hải sản"
+              />
+            </div>
+            <div className="seafood-banner-text">
+              <h2 className="seafood-banner-title">🔥 MÓN NƯỚNG ĐẶC BIỆT</h2>
+              <p className="seafood-banner-desc">Tôm, cua, cá nướng thơm lừng với công thức bí truyền</p>
+              <a href="/sp/group/hai-san-nuong" className="seafood-banner-btn">Đặt món ngay →</a>
+            </div>
+          </div>
+        </div>
 
         {/* Hotpot & Soup Section */}
         <ProductSection

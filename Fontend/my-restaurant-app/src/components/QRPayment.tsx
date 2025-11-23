@@ -294,21 +294,21 @@ const QRPayment: React.FC<QRPaymentProps> = ({
           <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6b7280' }}>Ngân hàng:</span>
-              <span style={{ fontWeight: '600' }}>{bankInfo.bankName}</span>
+              <span style={{ fontWeight: '600', color: '#000000' }}>{bankInfo.bankName}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6b7280' }}>Số tài khoản:</span>
-              <span style={{ fontWeight: '600', fontFamily: 'monospace' }}>
+              <span style={{ fontWeight: '600', fontFamily: 'monospace', color: '#000000' }}>
                 {bankInfo.accountNumber}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6b7280' }}>Chủ tài khoản:</span>
-              <span style={{ fontWeight: '600' }}>{bankInfo.accountName}</span>
+              <span style={{ fontWeight: '600', color: '#000000' }}>{bankInfo.accountName}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#6b7280' }}>Nội dung:</span>
-              <span style={{ fontWeight: '600', fontSize: '12px' }}>
+              <span style={{ fontWeight: '600', fontSize: '12px', color: '#000000' }}>
                 DAT MON {orderCode || Date.now()}
               </span>
             </div>

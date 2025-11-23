@@ -437,8 +437,9 @@ exports.createOrder = async (req, res) => {
         }
 
         // Notify admins/managers about new order
+        // Use emit to all (like reservation) to ensure all admins receive it
         console.log(
-          "🔔 [SOCKET DEBUG] Emitting admin_order_created to all staff roles"
+          "🔔 [SOCKET DEBUG] Emitting admin_order_created to all clients (like reservation)"
         );
         console.log("🔔 [SOCKET DEBUG] Order details for admin:", {
           orderNumber: order.orderNumber,
@@ -447,6 +448,23 @@ exports.createOrder = async (req, res) => {
           customerName: order.customerInfo.name,
           total: order.pricing.total,
         });
+        
+        // Emit to all clients first (like reservation does with req.io.emit)
+        req.io.emit("admin_order_created", {
+          type: "admin_order_created",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          orderValue: order.pricing.total,
+          orderType: order.delivery.type,
+          customerName: order.customerInfo.name,
+          items: order.items.length,
+          message: `Đơn hàng mới ${
+            order.orderNumber
+          } - ${order.pricing.total.toLocaleString()}đ`,
+          timestamp: new Date(),
+        });
+        
+        // Also emit to specific rooms for backward compatibility
         req.io
           .to("role_admin")
           .to("role_manager")
@@ -455,6 +473,7 @@ exports.createOrder = async (req, res) => {
           .to("role_cashier")
           .to("role_delivery")
           .to("role_receptionist")
+          .to("staff")
           .emit("admin_order_created", {
             type: "admin_order_created",
             orderId: order._id,

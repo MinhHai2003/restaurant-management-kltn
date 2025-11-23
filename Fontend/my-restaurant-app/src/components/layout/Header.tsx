@@ -271,55 +271,61 @@ const Header: React.FC = () => {
                 {user ? (
                   <UserProfile />
                 ) : (
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                     <a href="/login" style={{ 
-                      padding: '0.5rem 1.1rem',
+                      padding: '0.35rem 0.85rem',
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       color: 'white',
                       textDecoration: 'none',
-                      fontSize: '0.85rem',
+                      fontSize: '0.8rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
+                      borderRadius: '10px',
                       border: 'none',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)',
-                      transition: 'all 0.3s ease',
+                      boxShadow: '0 2px 6px rgba(102, 126, 234, 0.3)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       display: 'inline-block',
-                      letterSpacing: '0.3px'
+                      letterSpacing: '0.2px',
+                      whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.5)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 10px rgba(102, 126, 234, 0.4)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #7c8ff0 0%, #8a5fb8 100%)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(102, 126, 234, 0.3)';
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                     }}>
                       Đăng nhập
                     </a>
                     <a href="/register" style={{ 
-                      padding: '0.5rem 1.1rem',
-                      background: 'rgba(255, 255, 255, 0.95)',
-                      color: '#667eea',
+                      padding: '0.35rem 0.85rem',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      color: 'white',
                       textDecoration: 'none',
-                      fontSize: '0.85rem',
+                      fontSize: '0.8rem',
                       fontWeight: '600',
-                      borderRadius: '8px',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      boxShadow: '0 2px 8px rgba(255, 255, 255, 0.3)',
-                      transition: 'all 0.3s ease',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                       display: 'inline-block',
-                      letterSpacing: '0.3px',
-                      backdropFilter: 'blur(10px)'
+                      letterSpacing: '0.2px',
+                      backdropFilter: 'blur(10px)',
+                      whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.background = 'white';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.5)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)';
+                      e.currentTarget.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.15)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 255, 255, 0.3)';
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.1)';
                     }}>
                       Đăng ký
                     </a>

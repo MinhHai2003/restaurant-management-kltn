@@ -53,12 +53,12 @@ export const MessageList: React.FC<MessageListProps> = ({
     <div
       style={{
         flex: 1,
-        padding: '16px',
+        padding: '20px',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
-        backgroundColor: '#f9fafb',
+        gap: '16px',
+        background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
       }}
     >
       {messages.map((message) => {
@@ -71,6 +71,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             style={{
               display: 'flex',
               justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+              animation: 'fadeIn 0.3s ease',
             }}
           >
             <div
@@ -79,15 +80,16 @@ export const MessageList: React.FC<MessageListProps> = ({
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
-                gap: '4px',
+                gap: '6px',
               }}
             >
               {!isOwnMessage && (
                 <span
                   style={{
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: '#6b7280',
-                    fontWeight: '500',
+                    fontWeight: '600',
+                    paddingLeft: '4px',
                   }}
                 >
                   {message.senderName}
@@ -100,15 +102,20 @@ export const MessageList: React.FC<MessageListProps> = ({
                     ? '16px 16px 4px 16px'
                     : '16px 16px 16px 4px',
                   background: isOwnMessage
-                    ? 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)'
+                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                     : isAdmin
-                    ? '#e0f2fe'
+                    ? 'white'
                     : '#f3f4f6',
-                  color: isOwnMessage ? 'white' : '#374151',
-                  fontSize: '14px',
-                  lineHeight: '1.5',
+                  color: isOwnMessage ? 'white' : '#1f2937',
+                  fontSize: '15px',
+                  lineHeight: '1.6',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
+                  boxShadow: isOwnMessage 
+                    ? '0 4px 12px rgba(102, 126, 234, 0.3)' 
+                    : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  border: isAdmin && !isOwnMessage ? '1px solid #e5e7eb' : 'none',
+                  transition: 'all 0.3s ease',
                 }}
               >
                 {message.content}
@@ -117,20 +124,22 @@ export const MessageList: React.FC<MessageListProps> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '13px',
-                  color: '#323d4d',
-                  fontWeight: '700',
+                  gap: '6px',
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  fontWeight: '600',
+                  paddingLeft: isOwnMessage ? '0' : '4px',
+                  paddingRight: isOwnMessage ? '4px' : '0',
                 }}
               >
-                <span style={{ fontWeight: '700' }}>{formatTime(message.createdAt)}</span>
+                <span>{formatTime(message.createdAt)}</span>
                 {/* Read receipt - only show for own messages */}
                 {isOwnMessage && (
                   <span
                     style={{
-                      fontSize: '16px',
+                      fontSize: '14px',
                       fontWeight: 'bold',
-                      color: '#323d4d',
+                      color: message.isRead ? '#667eea' : '#9ca3af',
                       lineHeight: '1',
                       display: 'inline-block',
                     }}
@@ -151,20 +160,22 @@ export const MessageList: React.FC<MessageListProps> = ({
             style={{
               padding: '12px 16px',
               borderRadius: '16px 16px 16px 4px',
-              background: '#f3f4f6',
-              color: '#374151',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              color: '#6b7280',
               fontSize: '14px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             }}
           >
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span>{typingUserName || 'Admin'} đang gõ</span>
-              <div style={{ display: 'flex', gap: '2px' }}>
+              <span style={{ fontWeight: '500' }}>{typingUserName || 'Admin'} đang gõ</span>
+              <div style={{ display: 'flex', gap: '3px' }}>
                 <div
                   style={{
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: '#6b7280',
+                    background: '#667eea',
                     animation: 'pulse 1.5s ease-in-out infinite',
                   }}
                 />
@@ -173,7 +184,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: '#6b7280',
+                    background: '#667eea',
                     animation: 'pulse 1.5s ease-in-out infinite 0.2s',
                   }}
                 />
@@ -182,7 +193,7 @@ export const MessageList: React.FC<MessageListProps> = ({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: '#6b7280',
+                    background: '#667eea',
                     animation: 'pulse 1.5s ease-in-out infinite 0.4s',
                   }}
                 />

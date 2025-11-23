@@ -431,60 +431,77 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           backgroundColor: 'white',
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
-            color: 'white',
-            padding: '16px',
-            borderRadius: '16px 16px 0 0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px',
-              }}
-            >
-              💬
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
-                Hỗ trợ khách hàng
-              </h3>
-              <p style={{ margin: 0, fontSize: '12px', opacity: 0.9 }}>
-                Sẵn sàng trợ giúp
-              </p>
-            </div>
+      {/* Header */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '16px 16px 0 0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              border: '2px solid rgba(255,255,255,0.3)',
+            }}
+          >
+            💬
           </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                fontSize: '18px',
-                cursor: 'pointer',
-                padding: '4px',
-              }}
-            >
-              ✕
-            </button>
-          )}
+          <div>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', letterSpacing: '0.3px' }}>
+              Hỗ trợ khách hàng
+            </h3>
+            <p style={{ margin: 0, fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>
+              Đang trực tuyến • Sẵn sàng trợ giúp
+            </p>
+          </div>
         </div>
-
-        {/* Empty state - ready to chat */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '8px',
+              transition: 'all 0.3s ease',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>        {/* Empty state - ready to chat */}
         <div
           style={{
             flex: 1,
@@ -494,17 +511,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             justifyContent: 'center',
             padding: '40px 20px',
             textAlign: 'center',
-            color: '#6b7280',
+            background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
           }}
         >
-          <div style={{ fontSize: '64px', marginBottom: '24px', opacity: 0.3 }}>
+          <div style={{
+            width: '100px',
+            height: '100px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '48px',
+            marginBottom: '24px',
+            boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+          }}>
             💬
           </div>
-          <div style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px', color: '#374151' }}>
-            Chào mừng bạn đến với hỗ trợ khách hàng
+          <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '12px', color: '#1f2937', letterSpacing: '0.3px' }}>
+            Chào mừng bạn! 👋
           </div>
-          <div style={{ fontSize: '14px', opacity: 0.7, marginBottom: '24px' }}>
-            Nhập tin nhắn bên dưới để bắt đầu cuộc trò chuyện
+          <div style={{ fontSize: '15px', color: '#6b7280', marginBottom: '8px', lineHeight: '1.6' }}>
+            Nhập tin nhắn bên dưới để bắt đầu trò chuyện
+          </div>
+          <div style={{ fontSize: '14px', color: '#9ca3af', fontStyle: 'italic' }}>
+            Chúng tôi sẽ phản hồi ngay lập tức
           </div>
         </div>
 
@@ -532,36 +563,53 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          padding: '16px',
+          padding: '20px',
           borderRadius: '16px 16px 0 0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
-              width: '40px',
-              height: '40px',
+              width: '48px',
+              height: '48px',
               borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
+              backdropFilter: 'blur(10px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '20px',
+              fontSize: '24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              border: '2px solid rgba(255,255,255,0.3)',
+              position: 'relative',
             }}
           >
             💬
+            {isConnected && (
+              <div style={{
+                position: 'absolute',
+                bottom: '2px',
+                right: '2px',
+                width: '12px',
+                height: '12px',
+                background: '#10b981',
+                borderRadius: '50%',
+                border: '2px solid white',
+              }} />
+            )}
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', letterSpacing: '0.3px' }}>
               {conversation.adminName || 'Hỗ trợ khách hàng'}
             </h3>
-            <p style={{ margin: 0, fontSize: '12px', opacity: 0.9 }}>
-              {isConnected ? 'Đang trực tuyến' : 'Đang kết nối...'}
+            <p style={{ margin: 0, fontSize: '13px', opacity: 0.95, fontWeight: '500' }}>
+              {isConnected ? '🟢 Đang trực tuyến' : '🔄 Đang kết nối...'}
             </p>
           </div>
         </div>
@@ -569,12 +617,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           <button
             onClick={onClose}
             style={{
-              background: 'none',
+              background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
-              fontSize: '18px',
+              fontSize: '20px',
               cursor: 'pointer',
-              padding: '4px',
+              padding: '8px',
+              borderRadius: '8px',
+              transition: 'all 0.3s ease',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             ✕
@@ -616,11 +679,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Actions */}
       <div
         style={{
-          padding: '8px 16px',
+          padding: '16px',
           borderTop: '1px solid #e5e7eb',
           display: 'flex',
           gap: '8px',
-          backgroundColor: '#f9fafb',
+          background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
         }}
       >
         {(conversation.status === 'open' || conversation.status === 'waiting') && (
@@ -645,16 +708,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               }
             }}
             style={{
-              padding: '6px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '12px',
-              backgroundColor: 'white',
-              color: '#374151',
+              flex: 1,
+              padding: '12px 16px',
+              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
+              color: '#667eea',
+              border: '1px solid rgba(102, 126, 234, 0.3)',
+              borderRadius: '10px',
+              fontSize: '15px',
+              fontWeight: '600',
+              letterSpacing: '0.3px',
               cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(102, 126, 234, 0.15)';
             }}
           >
-            Đóng cuộc trò chuyện
+            ✓ Đóng cuộc trò chuyện
           </button>
         )}
       </div>

@@ -337,155 +337,6 @@ exports.createOrder = async (req, res) => {
     const order = new Order(orderData);
     await order.save();
 
-    // 🔔 Emit real-time notifications via Socket.io
-    if (req.io) {
-      console.log(
-        "🔔 [SOCKET DEBUG] Starting to emit Socket.io events for order:",
-        order.orderNumber
-      );
-      console.log(
-        "🔔 [SOCKET DEBUG] Customer ID:",
-        req.customerId || "Guest",
-        "Session ID:",
-        req.sessionId || "None",
-        "Order type:",
-        order.delivery.type
-      );
-      console.log(
-        "🔔 [SOCKET DEBUG] Customer email:",
-        order.customerInfo.email,
-        "Customer name:",
-        order.customerInfo.name
-      );
-
-      // Notify customer about order confirmation (only for authenticated users)
-      if (req.customerId) {
-        req.io.to(`user_${req.customerId}`).emit("order_created", {
-          type: "order_confirmed",
-          orderId: order._id,
-          orderNumber: order.orderNumber,
-          status: order.status,
-          total: order.pricing.total,
-          estimatedTime: order.delivery.estimatedTime,
-          message: `Đơn hàng ${order.orderNumber} đã được tạo thành công!`,
-        });
-      }
-      // Note: Guest users won't receive real-time notifications
-      // They can check order status via order tracking page
-
-      // Notify kitchen staff about new order
-      req.io.to("role_chef").emit("new_order_kitchen", {
-        type: "new_order",
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        items: order.items,
-        specialInstructions: order.notes.kitchen,
-        priority: order.priority || "normal",
-        message: `Đơn hàng mới ${order.orderNumber} cần chuẩn bị`,
-      });
-
-      // Notify waiters/service staff about new order
-      req.io.to("role_waiter").emit("new_order_service", {
-        type: "new_order_service",
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        customerName: order.customerInfo.name,
-        tableNumber: order.tableNumber || null,
-        orderType: order.delivery.type,
-        items: order.items.length,
-        message: `Đơn hàng mới ${order.orderNumber} - ${order.customerInfo.name}`,
-      });
-
-      // Notify cashier about new order for payment processing
-      req.io.to("role_cashier").emit("new_order_payment", {
-        type: "new_order_payment",
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        paymentMethod: order.payment.method,
-        total: order.pricing.total,
-        paymentStatus: order.payment.status,
-        message: `Đơn hàng ${
-          order.orderNumber
-        } - ${order.pricing.total.toLocaleString()}đ (${order.payment.method})`,
-      });
-
-      // Notify all staff about general order activity
-      req.io.to("staff").emit("order_activity", {
-        type: "order_created",
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        customerName: order.customerInfo.name,
-        total: order.pricing.total,
-        orderType: order.delivery.type,
-        message: `Đơn hàng ${order.orderNumber} - ${order.customerInfo.name}`,
-      });
-
-      // Notify delivery staff if it's a delivery order
-      if (order.delivery.type === "delivery") {
-        req.io.to("role_delivery").emit("new_delivery", {
-          type: "new_delivery",
-          orderId: order._id,
-          orderNumber: order.orderNumber,
-          address: order.delivery.address,
-          customerPhone: order.customerInfo.phone,
-          message: `Đơn giao hàng mới ${order.orderNumber}`,
-        });
-      }
-
-      // Notify admins/managers about new order
-      console.log(
-        "🔔 [SOCKET DEBUG] Emitting admin_order_created to all staff roles"
-      );
-      console.log("🔔 [SOCKET DEBUG] Order details for admin:", {
-        orderNumber: order.orderNumber,
-        customerId: req.customerId,
-        customerEmail: order.customerInfo.email,
-        customerName: order.customerInfo.name,
-        total: order.pricing.total,
-      });
-      req.io
-        .to("role_admin")
-        .to("role_manager")
-        .to("role_waiter")
-        .to("role_chef")
-        .to("role_cashier")
-        .to("role_delivery")
-        .to("role_receptionist")
-        .emit("admin_order_created", {
-          type: "admin_order_created",
-          orderId: order._id,
-          orderNumber: order.orderNumber,
-          orderValue: order.pricing.total,
-          orderType: order.delivery.type,
-          customerName: order.customerInfo.name,
-          items: order.items.length,
-          message: `Đơn hàng mới ${
-            order.orderNumber
-          } - ${order.pricing.total.toLocaleString()}đ`,
-          timestamp: new Date(),
-        });
-
-      // Also emit order analytics for dashboard
-      console.log(
-        "🔔 [SOCKET DEBUG] Emitting order_analytics to all staff for dashboard updates"
-      );
-      req.io
-        .to("role_admin")
-        .to("role_manager")
-        .to("role_waiter")
-        .to("role_chef")
-        .to("role_cashier")
-        .to("role_delivery")
-        .to("role_receptionist")
-        .emit("order_analytics", {
-          type: "new_order_stats",
-          orderId: order._id,
-          orderValue: order.pricing.total,
-          orderType: order.delivery.type,
-          timestamp: new Date(),
-        });
-    }
-
     // Cập nhật thống kê user sau khi order đã lưu thành công
     try {
       console.log(
@@ -525,6 +376,166 @@ exports.createOrder = async (req, res) => {
       // If stock reservation fails, delete the order
       await Order.findByIdAndDelete(order._id);
       throw stockError;
+    }
+
+    // 🔔 Emit real-time notifications via Socket.io (after inventory reduction succeeds)
+    // This ensures order is fully created before notifying admins
+    try {
+      if (!req.io) {
+        console.warn("⚠️ [SOCKET] req.io is not available for order:", order.orderNumber);
+      } else {
+        console.log(
+          "🔔 [SOCKET DEBUG] Starting to emit Socket.io events for order:",
+          order.orderNumber
+        );
+        console.log(
+          "🔔 [SOCKET DEBUG] Customer ID:",
+          req.customerId || "Guest",
+          "Session ID:",
+          req.sessionId || "None",
+          "Order type:",
+          order.delivery.type
+        );
+        console.log(
+          "🔔 [SOCKET DEBUG] Customer email:",
+          order.customerInfo.email,
+          "Customer name:",
+          order.customerInfo.name
+        );
+
+        // Notify customer about order confirmation (only for authenticated users)
+        if (req.customerId) {
+          req.io.to(`user_${req.customerId}`).emit("order_created", {
+            type: "order_confirmed",
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            total: order.pricing.total,
+            estimatedTime: order.delivery.estimatedTime,
+            message: `Đơn hàng ${order.orderNumber} đã được tạo thành công!`,
+          });
+        }
+        // Note: Guest users won't receive real-time notifications
+        // They can check order status via order tracking page
+
+        // Notify kitchen staff about new order
+        req.io.to("role_chef").emit("new_order_kitchen", {
+          type: "new_order",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          items: order.items,
+          specialInstructions: order.notes.kitchen,
+          priority: order.priority || "normal",
+          message: `Đơn hàng mới ${order.orderNumber} cần chuẩn bị`,
+        });
+
+        // Notify waiters/service staff about new order
+        req.io.to("role_waiter").emit("new_order_service", {
+          type: "new_order_service",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerInfo.name,
+          tableNumber: order.tableNumber || null,
+          orderType: order.delivery.type,
+          items: order.items.length,
+          message: `Đơn hàng mới ${order.orderNumber} - ${order.customerInfo.name}`,
+        });
+
+        // Notify cashier about new order for payment processing
+        req.io.to("role_cashier").emit("new_order_payment", {
+          type: "new_order_payment",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          paymentMethod: order.payment.method,
+          total: order.pricing.total,
+          paymentStatus: order.payment.status,
+          message: `Đơn hàng ${
+            order.orderNumber
+          } - ${order.pricing.total.toLocaleString()}đ (${order.payment.method})`,
+        });
+
+        // Notify all staff about general order activity
+        req.io.to("staff").emit("order_activity", {
+          type: "order_created",
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerInfo.name,
+          total: order.pricing.total,
+          orderType: order.delivery.type,
+          message: `Đơn hàng ${order.orderNumber} - ${order.customerInfo.name}`,
+        });
+
+        // Notify delivery staff if it's a delivery order
+        if (order.delivery.type === "delivery") {
+          req.io.to("role_delivery").emit("new_delivery", {
+            type: "new_delivery",
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            address: order.delivery.address,
+            customerPhone: order.customerInfo.phone,
+            message: `Đơn giao hàng mới ${order.orderNumber}`,
+          });
+        }
+
+        // Notify admins/managers about new order
+        console.log(
+          "🔔 [SOCKET DEBUG] Emitting admin_order_created to all staff roles"
+        );
+        console.log("🔔 [SOCKET DEBUG] Order details for admin:", {
+          orderNumber: order.orderNumber,
+          customerId: req.customerId,
+          customerEmail: order.customerInfo.email,
+          customerName: order.customerInfo.name,
+          total: order.pricing.total,
+        });
+        req.io
+          .to("role_admin")
+          .to("role_manager")
+          .to("role_waiter")
+          .to("role_chef")
+          .to("role_cashier")
+          .to("role_delivery")
+          .to("role_receptionist")
+          .emit("admin_order_created", {
+            type: "admin_order_created",
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            orderValue: order.pricing.total,
+            orderType: order.delivery.type,
+            customerName: order.customerInfo.name,
+            items: order.items.length,
+            message: `Đơn hàng mới ${
+              order.orderNumber
+            } - ${order.pricing.total.toLocaleString()}đ`,
+            timestamp: new Date(),
+          });
+
+        // Also emit order analytics for dashboard
+        console.log(
+          "🔔 [SOCKET DEBUG] Emitting order_analytics to all staff for dashboard updates"
+        );
+        req.io
+          .to("role_admin")
+          .to("role_manager")
+          .to("role_waiter")
+          .to("role_chef")
+          .to("role_cashier")
+          .to("role_delivery")
+          .to("role_receptionist")
+          .emit("order_analytics", {
+            type: "new_order_stats",
+            orderId: order._id,
+            orderValue: order.pricing.total,
+            orderType: order.delivery.type,
+            timestamp: new Date(),
+          });
+
+        console.log("✅ [SOCKET DEBUG] All socket events emitted successfully for order:", order.orderNumber);
+      }
+    } catch (socketError) {
+      // Log socket error but don't fail the order creation
+      console.error("❌ [SOCKET ERROR] Failed to emit socket events for order:", order.orderNumber, socketError);
+      // Order is still created successfully, just socket notification failed
     }
 
     // 9. Process payment if not cash

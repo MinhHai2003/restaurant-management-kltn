@@ -201,6 +201,9 @@ io.on("connection", (socket) => {
 // Make io available to routes
 app.use((req, res, next) => {
   req.io = io;
+  if (!req.io) {
+    console.warn("⚠️ [SOCKET MIDDLEWARE] req.io is not available - socket may not be initialized");
+  }
   next();
 });
 app.use(express.urlencoded({ extended: true }));

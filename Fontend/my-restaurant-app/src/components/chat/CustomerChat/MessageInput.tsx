@@ -124,14 +124,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       style={{
         padding: '16px',
         borderTop: '1px solid #e5e7eb',
-        backgroundColor: 'white',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
         borderRadius: '0 0 16px 16px',
       }}
     >
       <div
         style={{
           display: 'flex',
-          gap: '8px',
+          gap: '10px',
           alignItems: 'flex-end',
         }}
       >
@@ -144,17 +144,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           disabled={disabled}
           style={{
             flex: 1,
-            padding: '12px',
+            padding: '12px 16px',
             border: '1px solid #d1d5db',
             borderRadius: '12px',
-            fontSize: '14px',
+            fontSize: '15px',
             resize: 'none',
-            minHeight: '44px',
+            minHeight: '48px',
             maxHeight: '120px',
             outline: 'none',
             fontFamily: 'inherit',
             backgroundColor: disabled ? '#f3f4f6' : 'white',
             cursor: disabled ? 'not-allowed' : 'text',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = '#667eea';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = '#d1d5db';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
           }}
           rows={1}
         />
@@ -165,27 +175,33 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             padding: '12px',
             background:
               inputValue.trim() && !disabled
-                ? 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)'
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 : '#d1d5db',
             color: 'white',
             border: 'none',
             borderRadius: '12px',
             cursor: inputValue.trim() && !disabled ? 'pointer' : 'not-allowed',
-            fontSize: '16px',
-            minWidth: '44px',
-            height: '44px',
+            fontSize: '18px',
+            minWidth: '48px',
+            height: '48px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s',
+            transition: 'all 0.3s ease',
+            boxShadow: inputValue.trim() && !disabled ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
+            fontWeight: '600',
           }}
           onMouseEnter={(e) => {
             if (inputValue.trim() && !disabled) {
-              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
             }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
+            if (inputValue.trim() && !disabled) {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+            }
           }}
         >
           ➤

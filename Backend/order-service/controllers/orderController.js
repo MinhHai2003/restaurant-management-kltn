@@ -337,49 +337,8 @@ exports.createOrder = async (req, res) => {
     const order = new Order(orderData);
     await order.save();
 
-    // Cập nhật thống kê user sau khi order đã lưu thành công
-    try {
-      console.log(
-        "[ORDER DEBUG] Gọi updateLoyaltyPoints cho user:",
-        req.customerId,
-        "với tổng tiền:",
-        pricing.total
-      );
-      const loyaltyResult = await customerApiClient.updateLoyaltyPoints(
-        req.customerId,
-        pricing.total,
-        req.token
-      );
-      console.log("[ORDER DEBUG] Kết quả updateLoyaltyPoints:", loyaltyResult);
-    } catch (err) {
-      console.error(
-        "[ORDER DEBUG] Failed to update customer stats after order:",
-        err.message
-      );
-      // Không trả lỗi cho client, chỉ log
-    }
-
-    // 8. Reduce inventory based on recipe ingredients
-    try {
-      const inventoryReduction =
-        await inventoryApiClient.reduceInventoryByMenuItems(
-          validatedItems.items.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-          }))
-        );
-      console.log(
-        "[ORDER DEBUG] Inventory reduced successfully:",
-        inventoryReduction
-      );
-    } catch (stockError) {
-      // If stock reservation fails, delete the order
-      await Order.findByIdAndDelete(order._id);
-      throw stockError;
-    }
-
-    // 🔔 Emit real-time notifications via Socket.io (after inventory reduction succeeds)
-    // This ensures order is fully created before notifying admins
+    // 🔔 Emit real-time notifications via Socket.io IMMEDIATELY after order.save()
+    // Similar to reservation - emit socket right after save to ensure consistency
     try {
       if (!req.io) {
         console.warn("⚠️ [SOCKET] req.io is not available for order:", order.orderNumber);
@@ -536,6 +495,68 @@ exports.createOrder = async (req, res) => {
       // Log socket error but don't fail the order creation
       console.error("❌ [SOCKET ERROR] Failed to emit socket events for order:", order.orderNumber, socketError);
       // Order is still created successfully, just socket notification failed
+    }
+
+    // Cập nhật thống kê user sau khi order đã lưu thành công
+    try {
+      console.log(
+        "[ORDER DEBUG] Gọi updateLoyaltyPoints cho user:",
+        req.customerId,
+        "với tổng tiền:",
+        pricing.total
+      );
+      const loyaltyResult = await customerApiClient.updateLoyaltyPoints(
+        req.customerId,
+        pricing.total,
+        req.token
+      );
+      console.log("[ORDER DEBUG] Kết quả updateLoyaltyPoints:", loyaltyResult);
+    } catch (err) {
+      console.error(
+        "[ORDER DEBUG] Failed to update customer stats after order:",
+        err.message
+      );
+      // Không trả lỗi cho client, chỉ log
+    }
+
+    // 8. Reduce inventory based on recipe ingredients
+    try {
+      const inventoryReduction =
+        await inventoryApiClient.reduceInventoryByMenuItems(
+          validatedItems.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+          }))
+        );
+      console.log(
+        "[ORDER DEBUG] Inventory reduced successfully:",
+        inventoryReduction
+      );
+    } catch (stockError) {
+      // If stock reservation fails, delete the order and notify via socket
+      console.error("[ORDER DEBUG] Inventory reduction failed, deleting order:", stockError);
+      
+      // Notify admins that order was cancelled due to inventory issue
+      if (req.io) {
+        try {
+          req.io
+            .to("role_admin")
+            .to("role_manager")
+            .emit("admin_order_cancelled", {
+              type: "admin_order_cancelled",
+              orderId: order._id,
+              orderNumber: order.orderNumber,
+              reason: "inventory_insufficient",
+              message: `Đơn hàng ${order.orderNumber} đã bị hủy do thiếu nguyên liệu`,
+              timestamp: new Date(),
+            });
+        } catch (notifyError) {
+          console.error("[ORDER DEBUG] Failed to notify about order cancellation:", notifyError);
+        }
+      }
+      
+      await Order.findByIdAndDelete(order._id);
+      throw stockError;
     }
 
     // 9. Process payment if not cash

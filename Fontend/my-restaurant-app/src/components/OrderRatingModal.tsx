@@ -89,8 +89,8 @@ const OrderRatingModal: React.FC<OrderRatingModalProps> = ({
   const handleSubmit = async () => {
     if (!order) return;
 
-    // Check if order is delivered
-    if (order.status !== 'delivered') {
+    // Check if order is delivered or completed
+    if (order.status !== 'delivered' && order.status !== 'completed') {
       setError('Chỉ có thể đánh giá đơn hàng đã hoàn thành');
       return;
     }
@@ -182,7 +182,7 @@ const OrderRatingModal: React.FC<OrderRatingModalProps> = ({
               }}>
                 Đơn hàng #{order.orderNumber} • {order.customerInfo?.name || 'Khách hàng'}
               </p>
-              {order.status !== 'delivered' && (
+              {order.status !== 'delivered' && order.status !== 'completed' && (
                 <p style={{
                   color: '#fecaca',
                   margin: '0.25rem 0 0 0',
@@ -363,29 +363,29 @@ const OrderRatingModal: React.FC<OrderRatingModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || order.status !== 'delivered'}
+            disabled={isSubmitting || (order.status !== 'delivered' && order.status !== 'completed')}
             style={{
               padding: '0.75rem 2rem',
               backgroundColor: '#f97316',
               color: 'white',
               border: 'none',
               borderRadius: '0.5rem',
-              cursor: order.status !== 'delivered' || isSubmitting ? 'not-allowed' : 'pointer',
+              cursor: (order.status !== 'delivered' && order.status !== 'completed') || isSubmitting ? 'not-allowed' : 'pointer',
               fontWeight: '500',
               fontSize: '1rem',
-              opacity: (order.status !== 'delivered' || isSubmitting) ? 0.5 : 1,
+              opacity: ((order.status !== 'delivered' && order.status !== 'completed') || isSubmitting) ? 0.5 : 1,
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              if (order.status === 'delivered' && !isSubmitting) {
+              if ((order.status === 'delivered' || order.status === 'completed') && !isSubmitting) {
                 e.currentTarget.style.backgroundColor = '#ea580c';
               }
             }}
             onMouseLeave={(e) => {
-              if (order.status === 'delivered' && !isSubmitting) {
+              if ((order.status === 'delivered' || order.status === 'completed') && !isSubmitting) {
                 e.currentTarget.style.backgroundColor = '#f97316';
               }
             }}
@@ -402,7 +402,7 @@ const OrderRatingModal: React.FC<OrderRatingModalProps> = ({
                 </svg>
                 Đang gửi...
               </>
-            ) : order.status !== 'delivered' ? (
+            ) : (order.status !== 'delivered' && order.status !== 'completed') ? (
               'Chỉ đánh giá đơn đã hoàn thành'
             ) : (
               'Gửi đánh giá'

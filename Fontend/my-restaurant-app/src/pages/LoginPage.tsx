@@ -228,48 +228,9 @@ const LoginPage: React.FC = () => {
             </p>
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  background: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'}
-                onMouseOut={(e) => e.currentTarget.style.boxShadow = 'none'}
-              >
-                <img 
-                  src="https://developers.google.com/identity/images/g-logo.png" 
-                  alt="Google" 
-                  style={{ width: '20px', height: '20px' }}
-                />
-                <span style={{ fontSize: '0.875rem' }}>Google</span>
-              </button>
               
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  background: '#1877f2',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#166fe5'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#1877f2'}
-              >
-                <span style={{ fontSize: '1rem' }}>📘</span>
-                <span style={{ fontSize: '0.875rem' }}>Facebook</span>
-              </button>
+              
+              
             </div>
             
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>

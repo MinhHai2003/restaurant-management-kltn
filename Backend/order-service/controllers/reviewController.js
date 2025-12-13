@@ -51,16 +51,16 @@ exports.createReview = async (req, res) => {
       });
     }
 
-    // Check if order can be rated - only delivered orders
+    // Check if order can be rated - only delivered or completed orders
     console.log('Order status:', order.status);
     console.log('Order itemRatings:', order.itemRatings);
     
-    const canRate = order.status === 'delivered' && 
+    const canRate = (order.status === 'delivered' || order.status === 'completed') && 
                    (!order.itemRatings || !order.itemRatings.isRated);
     
     if (!canRate) {
-      if (order.status !== 'delivered') {
-        console.log('Order status is not delivered:', order.status);
+      if (order.status !== 'delivered' && order.status !== 'completed') {
+        console.log('Order status is not delivered or completed:', order.status);
         return res.status(400).json({
           success: false,
           message: "Chỉ có thể đánh giá đơn hàng đã hoàn thành",
